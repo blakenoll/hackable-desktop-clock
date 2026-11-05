@@ -3,7 +3,7 @@
 #include <TFT_eSPI.h>
 #include <lvgl.h>
 #include <time.h>
-#include "secrets.h"
+#include "provisioning.h"
 #include "ui.h"
 
 static TFT_eSPI tft;
@@ -38,19 +38,30 @@ void setup() {
   ui_init();
   ui_set_status("Connecting...");
 
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  ClockConfig cfg;
+  if (!prov_load(cfg)) prov_run(false);  // first boot: no WiFi saved yet
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(cfg.ssid.c_str(), cfg.pass.c_str());
+  uint32_t start = millis();
   while (WiFi.status() != WL_CONNECTED) {
+    // Long-press BOOT, or fail to connect for 20 s -> setup mode.
+    if (prov_button_long_press() || millis() - start > 20000) prov_run(true);
     lv_timer_handler();
     delay(50);
   }
   ui_set_status("Syncing time...");
-  configTzTime(TIMEZONE, "pool.ntp.org", "time.nist.gov");
+  configTzTime(cfg.tz.c_str(), "pool.ntp.org", "time.nist.gov");
   tm t;
-  while (!getLocalTime(&t, 100)) lv_timer_handler();
+  while (!getLocalTime(&t, 100)) {
+    if (prov_button_long_press()) prov_run(true);
+    lv_timer_handler();
+  }
   ui_set_status(nullptr);
 }
 
 void loop() {
+  if (prov_button_long_press()) prov_run(true);
   static int lastSec = -1;
   tm t;
   if (getLocalTime(&t, 0) && t.tm_sec != lastSec) {

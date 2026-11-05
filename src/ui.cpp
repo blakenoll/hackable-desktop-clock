@@ -1,5 +1,6 @@
 #include <lvgl.h>
 #include <stdio.h>
+#include <string.h>
 #include "ui.h"
 
 // Scale runs 0..60 for hour, minute and second hands alike.
@@ -71,4 +72,34 @@ void ui_set_status(const char *msg) {
   } else {
     lv_obj_add_flag(status, LV_OBJ_FLAG_HIDDEN);
   }
+}
+
+void ui_show_setup(const char *apSsid, const char *apPass, const char *qrPayload, const char *ip) {
+  lv_obj_t *scr = lv_obj_create(nullptr);
+  lv_obj_set_style_bg_color(scr, lv_color_black(), 0);
+
+  lv_obj_t *qr = lv_qrcode_create(scr);
+  lv_qrcode_set_size(qr, 104);
+  lv_qrcode_set_dark_color(qr, lv_color_black());
+  lv_qrcode_set_light_color(qr, lv_color_white());
+  lv_qrcode_update(qr, qrPayload, strlen(qrPayload));
+  lv_obj_set_style_border_color(qr, lv_color_white(), 0);  // quiet zone around the code
+  lv_obj_set_style_border_width(qr, 5, 0);
+  lv_obj_align(qr, LV_ALIGN_CENTER, 0, -38);
+
+  char buf[48];
+  auto addLabel = [&](const char *text, lv_color_t color, int y) {
+    lv_obj_t *l = lv_label_create(scr);
+    lv_label_set_text(l, text);
+    lv_obj_set_style_text_font(l, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(l, color, 0);
+    lv_obj_align(l, LV_ALIGN_CENTER, 0, y);
+  };
+  addLabel(apSsid, lv_color_white(), 32);
+  snprintf(buf, sizeof(buf), "Password: %s", apPass);
+  addLabel(buf, lv_color_white(), 52);
+  snprintf(buf, sizeof(buf), "then open %s", ip);
+  addLabel(buf, lv_color_hex(0x808080), 74);
+
+  lv_screen_load(scr);
 }
