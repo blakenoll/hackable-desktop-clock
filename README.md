@@ -89,7 +89,7 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 | `src/ui.cpp`, `src/ui.h` | The clock face, seconds ring, night mode, setup (QR) screen |
 | `src/weather.cpp`, `src/weather.h` | Open-Meteo geocoding + forecast in a background task |
 | `src/provisioning.cpp`, `src/provisioning.h` | Saved settings (NVS), setup AP + captive portal + web form, BOOT long-press |
-| `src/font_weather.c` | Generated 32 px weather-icon font (12 glyphs) |
+| `src/font_weather.c` | Generated 26 px weather-icon font (12 glyphs) |
 | `src/font_manrope_*.c` | Generated Manrope text fonts (14, 20, 48 px) |
 | `include/lv_conf.h` | LVGL config: enabled fonts and widgets, memory |
 | `fix_tft.py` | Build-time patch for a TFT_eSPI/ESP32-C3 crash; see [docs/HARDWARE.md](docs/HARDWARE.md) |

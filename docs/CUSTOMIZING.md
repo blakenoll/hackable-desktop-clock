@@ -107,7 +107,7 @@ Icons come from `src/font_weather.c`, a subset of the Weather Icons font generat
 3. Regenerate, listing every codepoint you want:
 
    ```
-   npx lv_font_conv --font /path/to/weathericons-regular-webfont.ttf --size 32 --bpp 4 \
+   npx lv_font_conv --font /path/to/weathericons-regular-webfont.ttf --size 26 --bpp 4 \
      --no-compress --no-kerning --format lvgl --lv-include lvgl.h --lv-font-name weather_icons \
      -r 0xf00d,0xf02e,0xf002,0xf086,0xf013,0xf014,0xf01c,0xf019,0xf0b5,0xf01b,0xf01a,0xf01e \
      -o src/font_weather.c
