@@ -6,6 +6,7 @@ struct WeatherData {
   float temp = 0;
   int code = 0;           // WMO weather code
   bool isDay = true;
+  bool loading = false;   // true from weather_begin() until the first result (or error) arrives
   bool hasRange = false;  // today's high/low available
   float hi = 0, lo = 0;
   char unit = 'F';

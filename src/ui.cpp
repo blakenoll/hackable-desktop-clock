@@ -6,7 +6,7 @@
 
 LV_FONT_DECLARE(weather_icons);
 
-static lv_obj_t *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *timeLabel, *dateLabel, *status;
+static lv_obj_t *spinner, *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *timeLabel, *dateLabel, *status;
 
 // ---- Seconds ring: 60 ticks around the rim --------------------------------------
 // Elapsed seconds are softly lit, the current second is bright red, upcoming ones are dim.
@@ -76,6 +76,14 @@ void ui_init() {
   lv_obj_set_flex_flow(weatherRow, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(weatherRow, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_set_style_pad_column(weatherRow, 8, 0);
+  spinner = lv_spinner_create(weatherRow);
+  lv_obj_set_size(spinner, 30, 30);
+  lv_spinner_set_anim_params(spinner, 1000, 90);
+  lv_obj_set_style_arc_width(spinner, 4, LV_PART_MAIN);
+  lv_obj_set_style_arc_width(spinner, 4, LV_PART_INDICATOR);
+  lv_obj_set_style_arc_opa(spinner, LV_OPA_TRANSP, LV_PART_MAIN);  // no track, just the moving arc
+  lv_obj_set_style_arc_color(spinner, lv_color_hex(0x8AB4F8), LV_PART_INDICATOR);
+  lv_obj_add_flag(spinner, LV_OBJ_FLAG_HIDDEN);
   weatherIcon = lv_label_create(weatherRow);
   lv_obj_set_style_text_font(weatherIcon, &weather_icons, 0);
   lv_label_set_text(weatherIcon, "");
@@ -145,11 +153,24 @@ void ui_set_night(bool n) {
   lv_obj_set_style_text_color(loLabel, lv_color_hex(n ? 0x801010 : 0x6FB6FF), 0);  // dimmer than the high
   lv_obj_set_style_text_color(status, lv_color_hex(n ? 0xC01515 : 0xFFFFFF), 0);
   applyIconColor();
+  lv_obj_set_style_arc_color(spinner, lv_color_hex(n ? 0xC01515 : 0x8AB4F8), LV_PART_INDICATOR);
   for (int i = 0; i < TICK_COUNT; i++) styleTick(i, ringSec);
+}
+
+void ui_set_weather_loading(bool loading) {
+  if (loading) {
+    lv_obj_add_flag(weatherIcon, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(weatherLabel, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(hiloBox, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_remove_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+  } else {
+    lv_obj_add_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+  }
 }
 
 void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, const char *hi, const char *lo) {
   lv_label_set_text(weatherLabel, text ? text : "");
+  lv_obj_remove_flag(weatherLabel, LV_OBJ_FLAG_HIDDEN);  // may have been hidden by the spinner
   if (hi && lo) {
     lv_label_set_text(hiLabel, hi);
     lv_label_set_text(loLabel, lo);

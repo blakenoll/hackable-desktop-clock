@@ -21,6 +21,7 @@ static void publish(bool valid, float temp, int code, bool isDay, float hi, floa
   g_data.hi = hi;
   g_data.lo = lo;
   g_data.hasRange = hasRange;
+  g_data.loading = false;
   g_data.unit = unit;
   strlcpy(g_data.error, err ? err : "", sizeof(g_data.error));
   g_data.version++;
@@ -178,5 +179,7 @@ static void weatherTask(void *) {
 void weather_begin(const ClockConfig &cfg) {
   if (cfg.city.length() == 0) return;
   g_mu = xSemaphoreCreateMutex();
+  g_data.loading = true;  // show the spinner until the first fetch resolves
+  g_data.version = 1;     // differs from the UI's initial 0, so it redraws right away
   xTaskCreate(weatherTask, "weather", 10240, nullptr, 1, nullptr);
 }

@@ -84,7 +84,10 @@ void loop() {
     if (w.version != shownWx) {
       shownWx = w.version;
       char buf[32];
-      if (w.valid) {
+      ui_set_weather_loading(w.loading);
+      if (w.loading) {
+        // spinner only; wait for the first result
+      } else if (w.valid) {
 #ifndef FORCE_NIGHT
         if (w.isDay == g_night) {  // is_day flipped
           g_night = !w.isDay;
