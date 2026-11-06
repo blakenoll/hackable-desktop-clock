@@ -22,8 +22,10 @@ static void flushCb(lv_display_t *disp, const lv_area_t *area, uint8_t *px) {
 
 void setup() {
   Serial.begin(115200);
+#ifdef TFT_BL  // optional: some modules have no BLK pin (backlight always on)
   pinMode(TFT_BL, OUTPUT);
   digitalWrite(TFT_BL, HIGH);
+#endif
 
   tft.init();
   tft.fillScreen(TFT_BLACK);

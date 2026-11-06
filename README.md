@@ -13,7 +13,9 @@ Analog desktop clock for an ESP32-C3 Mini (Lolin C3 Mini) with a 240x240 round G
 | CS     | 5            |
 | DC     | 1            |
 | RST    | 0            |
-| BLK    | 3            |
+| BLK    | 3 (optional) |
+
+BLK is optional: many modules have no such pin (backlight always on). If yours does, uncomment `-DTFT_BL=3` and `-DTFT_BACKLIGHT_ON=HIGH` in `platformio.ini`.
 
 Pins are set in `platformio.ini` build flags. Avoid GPIO 2/8/9 (strapping pins).
 
