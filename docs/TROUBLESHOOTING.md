@@ -62,9 +62,9 @@
 
 **Weather is blank and there's no night mode.** No ZIP code was entered. Re-open setup and add one. Night mode depends on the weather fetch.
 
-**Night mode comes on a bit late or early.** It follows Open-Meteo's `is_day` flag, which is checked every 15 minutes.
+**Night mode comes on a bit late or early.** It follows Open-Meteo's `is_day` flag, which is checked every 10 minutes.
 
-**There's no degree sign (`°`).** The built-in fonts have no degree sign, so temperatures read `72F`. See [CUSTOMIZING.md](CUSTOMIZING.md) to add one.
+**There's no degree sign (`°`).** Temperatures read `72°` using the 20 pt font's `°` glyph (U+00B0). If you regenerate that font, keep `0xB0` in its `-r` ranges.
 
 ## Reading logs
 

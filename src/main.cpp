@@ -101,13 +101,10 @@ void loop() {
 #endif
         uint32_t color;
         const char *icon = weather_icon(w.code, w.isDay, &color);
-        snprintf(buf, sizeof(buf), "%d%c", (int)lroundf(w.temp), w.unit);
-        char hi[16], lo[16];
-        snprintf(hi, sizeof(hi), LV_SYMBOL_UP " %d", (int)lroundf(w.hi));
-        snprintf(lo, sizeof(lo), LV_SYMBOL_DOWN " %d", (int)lroundf(w.lo));
-        ui_set_weather(icon, color, buf, w.hasRange ? hi : nullptr, w.hasRange ? lo : nullptr);
+        snprintf(buf, sizeof(buf), "%d\xC2\xB0", (int)lroundf(w.temp));  // "80°" (the 20 pt font includes U+00B0)
+        ui_set_weather(icon, color, buf, w.hasRange, (int)lroundf(w.lo), (int)lroundf(w.hi), w.temp);
       } else {
-        ui_set_weather(nullptr, 0, w.error, nullptr, nullptr);
+        ui_set_weather(nullptr, 0, w.error, false, 0, 0, 0);
       }
     }
   }

@@ -11,7 +11,7 @@ LV_FONT_DECLARE(manrope_14);
 LV_FONT_DECLARE(manrope_20);
 LV_FONT_DECLARE(manrope_56);
 
-static lv_obj_t *skeleton, *skelShape[4], *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *timeH, *timeC, *timeM, *ampmLabel, *dayLabel, *dateLabel, *status;
+static lv_obj_t *skeleton, *skelShape[4], *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *rangeTrack, *rangeDot, *timeH, *timeC, *timeM, *ampmLabel, *dayLabel, *dateLabel, *status;
 
 
 // ---- Seconds ring: 60 ticks around the rim --------------------------------------
@@ -40,6 +40,9 @@ static const Accent ACCENTS[] = {
     {0xFFFFFF, 0xFFFFFF},  // white
 };
 static constexpr int ACCENT_COUNT = sizeof(ACCENTS) / sizeof(ACCENTS[0]);
+
+// Vertical temperature range bar next to the temperature: high number at the top, low at the bottom.
+static constexpr int RANGE_H = 34, RANGE_W = 4, RANGE_DOT = 10;
 
 // Day/night pair blended by nightMix, so a day->night switch can fade instead of snapping.
 static lv_color_t mixDN(uint32_t day, uint32_t nt) {
@@ -361,20 +364,43 @@ void ui_init() {
   lv_obj_set_style_text_color(weatherLabel, lv_color_hex(0xD0D8E0), 0);
   lv_label_set_text(weatherLabel, "");
 
-  // Small stacked high (top) / low (bottom) to the right of the temperature.
+  // Vertical range bar right of the temperature: [bar with dot] over [high / low numbers]. The dot marks
+  // the current temperature between today's low (bottom) and high (top).
   hiloBox = lv_obj_create(weatherRow);
   lv_obj_remove_style_all(hiloBox);
   lv_obj_set_size(hiloBox, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-  lv_obj_set_flex_flow(hiloBox, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_style_pad_row(hiloBox, 0, 0);
+  lv_obj_set_flex_flow(hiloBox, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(hiloBox, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(hiloBox, 5, 0);
   lv_obj_set_style_pad_left(hiloBox, 4, 0);
-  hiLabel = lv_label_create(hiloBox);
+  rangeTrack = lv_obj_create(hiloBox);
+  lv_obj_remove_style_all(rangeTrack);
+  lv_obj_set_size(rangeTrack, RANGE_W, RANGE_H);
+  lv_obj_set_style_radius(rangeTrack, 2, 0);
+  lv_obj_set_style_bg_opa(rangeTrack, LV_OPA_COVER, 0);
+  lv_obj_set_style_bg_grad_dir(rangeTrack, LV_GRAD_DIR_VER, 0);
+  lv_obj_add_flag(rangeTrack, LV_OBJ_FLAG_OVERFLOW_VISIBLE);  // the dot is wider than the track
+  rangeDot = lv_obj_create(rangeTrack);
+  lv_obj_remove_style_all(rangeDot);
+  lv_obj_set_size(rangeDot, RANGE_DOT, RANGE_DOT);
+  lv_obj_set_style_radius(rangeDot, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_bg_opa(rangeDot, LV_OPA_COVER, 0);
+  lv_obj_set_style_border_width(rangeDot, 2, 0);  // black outline separates the dot from the gradient bar
+  lv_obj_set_style_border_color(rangeDot, lv_color_black(), 0);
+  lv_obj_set_style_border_opa(rangeDot, LV_OPA_COVER, 0);
+  lv_obj_t *nums = lv_obj_create(hiloBox);  // high pinned to the top, low to the bottom of the bar's height
+  lv_obj_remove_style_all(nums);
+  lv_obj_set_size(nums, 24, RANGE_H);
+  hiLabel = lv_label_create(nums);
   lv_obj_set_style_text_font(hiLabel, &manrope_14, 0);
   lv_obj_set_style_text_color(hiLabel, lv_color_hex(0xFF8A65), 0);
-  loLabel = lv_label_create(hiloBox);
+  lv_obj_align(hiLabel, LV_ALIGN_TOP_LEFT, 0, -3);
+  loLabel = lv_label_create(nums);
   lv_obj_set_style_text_font(loLabel, &manrope_14, 0);
   lv_obj_set_style_text_color(loLabel, lv_color_hex(0x6FB6FF), 0);
+  lv_obj_align(loLabel, LV_ALIGN_BOTTOM_LEFT, 0, 3);
   lv_obj_add_flag(hiloBox, LV_OBJ_FLAG_HIDDEN);
+
   // Time row, dead centre: hours, blinking colon, minutes. The small AM/PM is NOT in the row (it would
   // pull the digits off-centre); ui_update() hangs it off the right of the minutes, on the baseline.
   lv_obj_t *timeRow = lv_obj_create(scr);
@@ -427,6 +453,19 @@ void ui_init() {
 }
 
 // Layout: seconds ring on the rim; date on top, time dead centre, weather (icon, temp, stacked high/low) below.
+// ---- Range dot ---------------------------------------------------------------------------
+static int32_t rangeFrac = 500;  // 0..1000 = current temp's position between today's low (0) and high (1000)
+
+static void rangePlace() {
+  float f = rangeFrac / 1000.0f;
+  lv_obj_set_pos(rangeDot, -(RANGE_DOT - RANGE_W) / 2, (int)lroundf((1.0f - f) * (RANGE_H - RANGE_DOT)));
+}
+
+static void rangeExec(void *, int32_t v) {
+  rangeFrac = v;
+  rangePlace();
+}
+
 // ---- Minute-change transition: the changed digits fade out (rising), swap text, fade back in ----
 struct Swap { lv_obj_t *label; char text[32]; };
 enum { SW_HOURS, SW_MINUTES, SW_ICON, SW_TEMP, SW_HI, SW_LO, SW_COUNT };
@@ -554,6 +593,9 @@ static void applyTheme() {
   lv_obj_set_style_text_color(weatherLabel, mixDN(0xD0D8E0, 0xC01515), 0);
   lv_obj_set_style_text_color(hiLabel, mixDN(0xFF8A65, 0xC01515), 0);
   lv_obj_set_style_text_color(loLabel, mixDN(0x6FB6FF, 0x801010), 0);  // dimmer than the high
+  lv_obj_set_style_bg_color(rangeTrack, mixDN(0xFF8A65, 0xC01515), 0);       // top = high
+  lv_obj_set_style_bg_grad_color(rangeTrack, mixDN(0x6FB6FF, 0x801010), 0);  // bottom = low
+  lv_obj_set_style_bg_color(rangeDot, mixDN(0xFFFFFF, 0xFF4040), 0);
   lv_obj_set_style_text_color(status, mixDN(0xFFFFFF, 0xC01515), 0);
   applyIconColor();
   wifiPaint();    // these three only show during boot/setup and follow the target mode
@@ -631,17 +673,36 @@ void ui_set_weather_loading(bool loading) {
 }
 
 // Updates fade (out, swap, in) instead of snapping; content appearing after the skeleton fades in.
-void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, const char *hi, const char *lo) {
+// The range dot glides to its new position.
+void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool hasRange, int lo, int hi, float cur) {
   swapText(SW_TEMP, weatherLabel, text ? text : "");
-  if (hi && lo) {
-    if (lv_obj_has_flag(hiloBox, LV_OBJ_FLAG_HIDDEN)) {
-      lv_label_set_text(hiLabel, hi);
-      lv_label_set_text(loLabel, lo);
+  if (hasRange) {
+    char h[12], l[12];
+    snprintf(h, sizeof(h), "%d", hi);
+    snprintf(l, sizeof(l), "%d", lo);
+    float f = hi > lo ? (cur - lo) / (float)(hi - lo) : 0.5f;
+    int32_t target = (int32_t)lroundf(fminf(fmaxf(f, 0.0f), 1.0f) * 1000);
+    lv_anim_delete(&rangeFrac, nullptr);
+    if (lv_obj_has_flag(hiloBox, LV_OBJ_FLAG_HIDDEN)) {  // first appearance: place, then fade in
+      lv_label_set_text(hiLabel, h);
+      lv_label_set_text(loLabel, l);
+      rangeFrac = target;
+      rangePlace();
       lv_obj_remove_flag(hiloBox, LV_OBJ_FLAG_HIDDEN);
       fadeIn(hiloBox);
     } else {
-      swapText(SW_HI, hiLabel, hi);
-      swapText(SW_LO, loLabel, lo);
+      swapText(SW_HI, hiLabel, h);
+      swapText(SW_LO, loLabel, l);
+      if (target != rangeFrac) {
+        lv_anim_t g;
+        lv_anim_init(&g);
+        lv_anim_set_var(&g, &rangeFrac);
+        lv_anim_set_exec_cb(&g, rangeExec);
+        lv_anim_set_values(&g, rangeFrac, target);
+        lv_anim_set_duration(&g, 700);
+        lv_anim_set_path_cb(&g, lv_anim_path_ease_in_out);
+        lv_anim_start(&g);
+      }
     }
   } else {
     lv_anim_delete(hiloBox, nullptr);

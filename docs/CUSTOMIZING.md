@@ -52,7 +52,7 @@ In `ui_init()`:
 - Date: `makeLabel(..., -58)` and weather row: `lv_obj_align(weatherRow, LV_ALIGN_CENTER, 0, 58)`. The numbers are pixel offsets from the center; smaller = closer to the time.
 - The time is a row of labels (hours, colon, minutes; AM/PM hangs off the right) in the 56 pt font, centred; date and weather sit at y = ∓62.
 - Loading states: `ui_set_connecting()` shows an animated WiFi glyph (dot + 3 arcs lit in sequence by an `lv_timer`, built in `createWifi()`) during WiFi connect; `ui_set_weather_loading()` shows a pulsing skeleton (`skeleton`, an `lv_anim` on opacity) in the weather row until the first fetch resolves. Both only animate while the main loop calls `lv_timer_handler()`, so keep that call in any blocking wait in `setup()`.
-- Fonts: Manrope (SIL OFL), generated into `src/font_manrope_14.c` (500 weight), `_20.c` (500) and `_56.c` (600, digits and `:` only). The 14 pt font falls back to built-in Montserrat 14 for the `LV_SYMBOL_UP/DOWN` arrows. Regenerate with `npx lv_font_conv --font manrope-latin-<weight>-normal.woff --size <px> --bpp 4 --no-compress --format lvgl --lv-include lvgl.h --lv-font-name manrope_<px> -r <ranges> -o src/font_manrope_<px>.c` (static weights from the `@fontsource/manrope` npm package; download into its own empty folder). Each size costs flash.
+- Fonts: Manrope (SIL OFL), generated into `src/font_manrope_14.c` (500 weight), `_20.c` (500) and `_56.c` (600, digits and `:` only). Regenerate with `npx lv_font_conv --font manrope-latin-<weight>-normal.woff --size <px> --bpp 4 --no-compress --format lvgl --lv-include lvgl.h --lv-font-name manrope_<px> -r <ranges> -o src/font_manrope_<px>.c` (static weights from the `@fontsource/manrope` npm package; download into its own empty folder). Each size costs flash.
 
 ## Seconds ring
 
@@ -90,7 +90,7 @@ Then use `cfg.yourfield` in `setup()`/`weather_begin()`. Settings live in NVS un
 
 In `src/weather.cpp`:
 
-- **Refresh interval:** `REFRESH_MS` (15 min — Open-Meteo's current data updates about that often, so shorter is pointless). Failed fetches retry after `RETRY_MS` (60 s).
+- **Refresh interval:** `REFRESH_MS` (10 min; Open-Meteo's current data itself updates about every 15 min, so going much shorter mostly returns unchanged values). Failed fetches retry after `RETRY_MS` (60 s).
 - **Other fields:** add them to the `current=`/`daily=` list in `fetchCurrent()` and read them with `findNum()` (a tiny parser; no JSON library). Add the value to `WeatherData` (`weather.h`) and `publish()`. [Open-Meteo parameters](https://open-meteo.com/en/docs).
 - **Non-US locations:** the lookup is restricted to US ZIP codes via `countryCode=US` in `geocode()`, and the setup field accepts 5 digits (`pattern` in `buildForm()`). Remove both to allow city names or other postal codes (Open-Meteo's geocoder does not understand free text like "Paris France"; a bare name or a postal code works).
 - **Which icon for which weather:** `weather_icon()` maps WMO weather codes to glyphs and colors.

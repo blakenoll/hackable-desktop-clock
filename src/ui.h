@@ -24,10 +24,11 @@ void ui_boot_splash();
 // Spinner in the weather row's spot while the first fetch is in flight (hides the other row content).
 void ui_set_weather_loading(bool loading);
 
-// Row below the time: icon glyph (weather_icons font, UTF-8) + text + optional small stacked
-// high/low. icon may be nullptr (text only, e.g. an error message); hi/lo nullptr hides them;
-// text nullptr/"" clears the row.
-void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, const char *hi, const char *lo);
+// Row below the time: icon glyph (weather_icons font, UTF-8) + temperature text + a small vertical
+// range bar (today's high at the top, low at the bottom, a dot at the current temperature).
+// icon may be nullptr (text only, e.g. an error message); hasRange false hides the bar;
+// text nullptr/"" clears the temperature.
+void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool hasRange, int lo, int hi, float cur);
 
 // Replaces the clock face with the WiFi-setup screen (join QR + credentials).
 void ui_show_setup(const char *apSsid, const char *apPass, const char *qrPayload, const char *ip);

@@ -5,7 +5,7 @@
 #include <freertos/semphr.h>
 #include <math.h>
 
-static constexpr uint32_t REFRESH_MS = 15UL * 60 * 1000;  // Open-Meteo "current" updates ~every 15 min
+static constexpr uint32_t REFRESH_MS = 10UL * 60 * 1000;  // Open-Meteo "current" data itself updates ~every 15 min, so some polls return unchanged values
 static constexpr uint32_t RETRY_MS = 60UL * 1000;
 
 static WeatherData g_data;

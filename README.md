@@ -4,7 +4,7 @@ A digital desk clock for an ESP32-C3 and a 240x240 round GC9A01 display, built w
 
 - Time over NTP, 12-hour, with the date above it
 - A 60-tick **seconds ring** around the rim
-- **Weather** from [Open-Meteo](https://open-meteo.com/) (no API key): icon, temperature and the day's high/low, refreshed every 15 minutes
+- **Weather** from [Open-Meteo](https://open-meteo.com/) (no API key): icon, temperature and the day's high/low, refreshed every 10 minutes
 - **Night mode**: everything turns dim red after sunset
 - **No secrets in the firmware**: WiFi, timezone, time/date format, accent colour, ZIP code and units are set from your phone through a captive-portal setup page on the clock itself
 
@@ -60,7 +60,7 @@ Settings are stored in flash and survive reboots and reflashing. To change them 
 
 ## Using it
 
-- **Date / time / weather:** date on top, time in the middle, weather icon + temperature + stacked ▲ high / ▼ low below. A pulsing skeleton placeholder shows in the weather spot during the first fetch.
+- **Date / time / weather:** date on top, time in the middle, weather icon + temperature + a small vertical high/low bar with a dot at the current temperature. A pulsing skeleton placeholder shows in the weather spot during the first fetch.
 - **Seconds ring:** elapsed seconds are lit, the current second is bright, upcoming ones are dim.
 - **Night mode:** when Open-Meteo says it's dark (`is_day = 0`) everything switches to red tones. It needs a ZIP code, since the flag comes from the weather fetch. The last state is remembered across reboots.
 - **No ZIP entered:** weather and night mode are simply off.
