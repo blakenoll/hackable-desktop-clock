@@ -64,6 +64,9 @@ bool prov_load(ClockConfig &cfg) {
   cfg.tz = p.getString("tz", DEFAULT_TZ);
   cfg.city = p.getString("city", "");
   cfg.units = p.getString("units", "F")[0] == 'C' ? 'C' : 'F';
+  cfg.h24 = p.getBool("h24", false);
+  cfg.dateFmt = p.getUChar("datefmt", 0) == 1 ? 1 : 0;
+  cfg.accent = p.getUChar("accent", 0);
   cfg.geocity = p.getString("geocity", "");
   cfg.lat = p.getFloat("lat", 0);
   cfg.lon = p.getFloat("lon", 0);
@@ -79,6 +82,9 @@ static void saveConfig(const ClockConfig &cfg) {
   p.putString("tz", cfg.tz);
   p.putString("city", cfg.city);
   p.putString("units", String(cfg.units));
+  p.putBool("h24", cfg.h24);
+  p.putUChar("datefmt", cfg.dateFmt);
+  p.putUChar("accent", cfg.accent);
   p.end();
 }
 
@@ -167,6 +173,14 @@ static String buildForm(const String &netOptions, const ClockConfig &cur) {
   if (!matched && cur.tz.length())
     h = String(h) + "<option value=\"" + esc(cur.tz) + "\" selected>Saved: " + esc(cur.tz) + "</option>";
   h += "</select>";
+  auto opt = [](int v, int cur, const char *label) {
+    return String("<option value=") + v + (v == cur ? " selected" : "") + ">" + label + "</option>";
+  };
+  h += "<label>Time format</label><select name=h24>" + opt(0, cur.h24, "12-hour (2:30 PM)") + opt(1, cur.h24, "24-hour (14:30)") + "</select>";
+  h += "<label>Date format</label><select name=datefmt>" + opt(0, cur.dateFmt, "Fri Nov 6") + opt(1, cur.dateFmt, "Fri 6 Nov") + "</select>";
+  h += "<label>Accent colour <small>(weekday and current-second tick)</small></label><select name=accent>" +
+       opt(0, cur.accent, "Red") + opt(1, cur.accent, "Amber") + opt(2, cur.accent, "Green") +
+       opt(3, cur.accent, "Cyan") + opt(4, cur.accent, "Pink") + opt(5, cur.accent, "White") + "</select>";
   h += "<label>ZIP code for weather <small>(optional, US 5-digit)</small></label>"
        "<input name=city inputmode=numeric pattern=\"[0-9]{5}\" maxlength=5 title=\"5-digit US ZIP code\" value=\"" + esc(cur.city) + "\">";
   h += String("<label>Temperature units</label><select name=units><option value=F") + (cur.units == 'F' ? " selected" : "") +
@@ -250,6 +264,9 @@ static String scanOptions() {
     n.city = server.arg("city");
     n.city.trim();
     n.units = server.arg("units") == "C" ? 'C' : 'F';
+    n.h24 = server.arg("h24") == "1";
+    n.dateFmt = server.arg("datefmt") == "1" ? 1 : 0;
+    n.accent = (uint8_t)constrain(server.arg("accent").toInt(), 0, 5);
     if (n.ssid.length() == 0) {
       server.send(400, "text/plain", "WiFi network name is required.");
       return;

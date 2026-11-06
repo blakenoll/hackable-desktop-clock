@@ -40,16 +40,19 @@ void setup() {
                          LV_DISPLAY_RENDER_MODE_PARTIAL);
 
   ui_init();
+  ClockConfig cfg;
+  bool haveCfg = prov_load(cfg);
+  ui_set_options(cfg.h24, cfg.dateFmt, cfg.accent);
 #ifdef FORCE_NIGHT  // dev preview (-DFORCE_NIGHT=1): pin night mode on, ignore is_day, persist nothing
   g_night = true;
 #else
   g_night = prov_load_night();
 #endif
   ui_set_night(g_night);
+  ui_boot_splash();
   ui_set_connecting(true);
 
-  ClockConfig cfg;
-  if (!prov_load(cfg)) prov_run(false);  // first boot: no WiFi saved yet
+  if (!haveCfg) prov_run(false);  // first boot: no WiFi saved yet
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(cfg.ssid.c_str(), cfg.pass.c_str());

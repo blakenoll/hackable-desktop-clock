@@ -15,20 +15,15 @@ Rules of thumb:
 
 - **Only the main loop touches LVGL.** The weather task writes to a mutex-protected struct (`weather_get()`); the loop copies it into the UI. Don't call `lv_*` functions from the task.
 - **The display is round.** Anything near a corner is clipped by the bezel. Text at vertical offset `y` from center has about `2 * sqrt(120² - y²)` pixels of usable width. The seconds ring uses the outer ~12 px.
-- **Flash budget:** the firmware is ~1.39 MB of the 3 MB `huge_app` partition. Fonts are the big cost (the 48 pt font alone is ~92 KB).
+- **Flash budget:** the firmware is ~1.39 MB of the 3 MB `huge_app` partition. Fonts are the big cost (the 56 pt font alone is ~120 KB).
 
 ## Time and date
 
 All in `ui_update()` in `src/ui.cpp`.
 
-**24-hour time** — replace the `h12` lines:
+**12/24-hour time, date order, accent colour** — these are setup-page settings (NVS keys `h24`, `datefmt`, `accent`), applied by `ui_set_options()` at boot and used in `ui_update()` / `ACCENTS[]` in `src/ui.cpp`. To add an accent colour, append `{weekday colour, current-tick colour}` to `ACCENTS[]` and an `<option>` in `buildForm()` (clamp in `/save`).
 
-```cpp
-snprintf(buf, sizeof(buf), "%d:%02d", t.tm_hour, t.tm_min);   // 13:05
-// or zero-padded: "%02d:%02d"
-```
-
-**Date format** — the date is two labels side by side: the weekday in red (`dayLabel`, from `strftime("%a")`) and `Nov 6` in gray (`dateLabel`, built from `strftime("%b")` and `t.tm_mday`; the day is printed with `%d` through `snprintf` rather than `strftime` so single digits have no leading zero). For a different order or wording, change those lines in `ui_update()`; to show the weekday in the same color as the rest, give both labels the same color. The date uses a 20 pt font; keep it under about 14 characters so it fits inside the ring.
+**Date format details** — the date is two labels side by side: the weekday in red (`dayLabel`, from `strftime("%a")`) and `Nov 6` in gray (`dateLabel`, built from `strftime("%b")` and `t.tm_mday`; the day is printed with `%d` through `snprintf` rather than `strftime` so single digits have no leading zero). `datefmt` 0/1 picks the order; for other wording, change those lines in `ui_update()`; to show the weekday in the same color as the rest, give both labels the same color. The date uses a 20 pt font; keep it under about 14 characters so it fits inside the ring.
 
 **Show seconds as digits instead of (or as well as) the ring** — add a label and set it from `t.tm_sec` each second; remove the ring as described below.
 
@@ -55,9 +50,9 @@ Keep night mode to reds: blue and green light is what hurts night vision. If you
 In `ui_init()`:
 
 - Date: `makeLabel(..., -58)` and weather row: `lv_obj_align(weatherRow, LV_ALIGN_CENTER, 0, 58)`. The numbers are pixel offsets from the center; smaller = closer to the time.
-- Time is at offset 0 in the 48 pt font.
+- The time is a row of labels (hours, colon, minutes; AM/PM hangs off the right) in the 56 pt font, centred; date and weather sit at y = ∓62.
 - Loading states: `ui_set_connecting()` shows an animated WiFi glyph (dot + 3 arcs lit in sequence by an `lv_timer`, built in `createWifi()`) during WiFi connect; `ui_set_weather_loading()` shows a pulsing skeleton (`skeleton`, an `lv_anim` on opacity) in the weather row until the first fetch resolves. Both only animate while the main loop calls `lv_timer_handler()`, so keep that call in any blocking wait in `setup()`.
-- Fonts: Manrope (SIL OFL), generated into `src/font_manrope_14.c` (500 weight), `_20.c` (500) and `_48.c` (600, digits and `:` only). The 14 pt font falls back to built-in Montserrat 14 for the `LV_SYMBOL_UP/DOWN` arrows. Regenerate with `npx lv_font_conv --font manrope-latin-<weight>-normal.woff --size <px> --bpp 4 --no-compress --format lvgl --lv-include lvgl.h --lv-font-name manrope_<px> -r <ranges> -o src/font_manrope_<px>.c` (static weights from the `@fontsource/manrope` npm package; download into its own empty folder). Each size costs flash.
+- Fonts: Manrope (SIL OFL), generated into `src/font_manrope_14.c` (500 weight), `_20.c` (500) and `_56.c` (600, digits and `:` only). The 14 pt font falls back to built-in Montserrat 14 for the `LV_SYMBOL_UP/DOWN` arrows. Regenerate with `npx lv_font_conv --font manrope-latin-<weight>-normal.woff --size <px> --bpp 4 --no-compress --format lvgl --lv-include lvgl.h --lv-font-name manrope_<px> -r <ranges> -o src/font_manrope_<px>.c` (static weights from the `@fontsource/manrope` npm package; download into its own empty folder). Each size costs flash.
 
 ## Seconds ring
 

@@ -31,7 +31,7 @@ Change the `-DTFT_*` pin flags and rewire to match. On the C3, avoid GPIO 2, 8 a
 
 ## A different ESP32 board
 
-- Change `board =` and the pin flags. Boards with fewer than 4 MB of flash can't use `huge_app.csv`; the firmware is ~1.39 MB, which is larger than the default 1.3 MB app slot, so you would have to trim it (subset the 48 pt font, disable unused LVGL features, drop the weather icons) or pick a smaller partition scheme.
+- Change `board =` and the pin flags. Boards with fewer than 4 MB of flash can't use `huge_app.csv`; the firmware is ~1.39 MB, which is larger than the default 1.3 MB app slot, so you would have to trim it (subset the 56 pt font, disable unused LVGL features, drop the weather icons) or pick a smaller partition scheme.
 - `-DARDUINO_USB_CDC_ON_BOOT=1` is for chips with native USB (C3, S3). Remove it for boards with a UART bridge chip.
 - The BOOT button is usually GPIO 0 on classic ESP32/S3 boards; change `BOOT_PIN`.
 - `fix_tft.py` only does anything for the ESP32-C3 header; on other chips it silently does nothing.
@@ -48,6 +48,6 @@ Change the `-DTFT_*` pin flags and rewire to match. On the C3, avoid GPIO 2, 8 a
 ## Flash and memory
 
 - Firmware is ~1.39 MB of the 3 MB partition; the weather/TLS code alone is ~158 KB.
-- The 48 pt Manrope time font is already subset to `0-9` and `:`.
+- The 56 pt Manrope time font is already subset to `0-9` and `:`.
 - RAM use is ~41%. `LV_MEM_SIZE` is 64 KB in `include/lv_conf.h`.
 - Saved settings (WiFi, timezone, ZIP, units, last day/night state) live in the NVS partition at `0x9000`, which the `huge_app` table keeps in the same place as the default table, so they survive a reflash. `pio run -t erase` wipes them.

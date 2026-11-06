@@ -6,6 +6,9 @@ struct ClockConfig {
   String ssid, pass, tz;
   String city;           // free-text place name for weather ("" = weather off)
   char units = 'F';      // 'F' or 'C'
+  bool h24 = false;      // 24-hour clock (default 12-hour with AM/PM)
+  uint8_t dateFmt = 0;   // 0 = "Fri Nov 6", 1 = "Fri 6 Nov"
+  uint8_t accent = 0;    // index into ACCENTS[] in ui.cpp (0 = red)
   // Coordinates the weather task resolved for `geocity` (cached in NVS).
   String geocity;
   float lat = 0, lon = 0;

@@ -6,7 +6,7 @@ A digital desk clock for an ESP32-C3 and a 240x240 round GC9A01 display, built w
 - A 60-tick **seconds ring** around the rim
 - **Weather** from [Open-Meteo](https://open-meteo.com/) (no API key): icon, temperature and the day's high/low, refreshed every 15 minutes
 - **Night mode**: everything turns dim red after sunset
-- **No secrets in the firmware**: WiFi, timezone, ZIP code and units are set from your phone through a captive-portal setup page on the clock itself
+- **No secrets in the firmware**: WiFi, timezone, time/date format, accent colour, ZIP code and units are set from your phone through a captive-portal setup page on the clock itself
 
 ## What you need
 
@@ -90,7 +90,7 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 | `src/weather.cpp`, `src/weather.h` | Open-Meteo geocoding + forecast in a background task |
 | `src/provisioning.cpp`, `src/provisioning.h` | Saved settings (NVS), setup AP + captive portal + web form, BOOT long-press |
 | `src/font_weather.c` | Generated 26 px weather-icon font (12 glyphs) |
-| `src/font_manrope_*.c` | Generated Manrope text fonts (14, 20, 48 px) |
+| `src/font_manrope_*.c` | Generated Manrope text fonts (14, 20, 56 px) |
 | `include/lv_conf.h` | LVGL config: enabled fonts and widgets, memory |
 | `fix_tft.py` | Build-time patch for a TFT_eSPI/ESP32-C3 crash; see [docs/HARDWARE.md](docs/HARDWARE.md) |
 | `platformio.ini` | Board, pins, pinned library versions, partition table |
