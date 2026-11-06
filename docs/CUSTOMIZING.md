@@ -44,6 +44,8 @@ Day colors are set where each label is created in `ui_init()`. Night colors are 
 | Temperature | `0xD0D8E0` | `0xC01515` |
 | High / Low | `0xFF8A65` / `0x6FB6FF` | `0xC01515` / `0x801010` |
 | Weather icon | per condition, in `weather_icon()` (`src/weather.cpp`) | `0xC01515` |
+| Skeleton loader shapes | `0x4A4F57` | `0x4A0E0E` |
+| WiFi connecting icon (lit / dim) | `0xFFFFFF` / `0x303030` | `0xC01515` / `0x2A0707` |
 | Ring (current / elapsed / upcoming) | `0xFF3030` / `0x8A95A3` / `0x2A3138` | `0xFF2020` / `0x8A1414` / `0x420C0C` |
 
 Keep night mode to reds: blue and green light is what hurts night vision. If you change a day color, change its night counterpart too.
@@ -54,6 +56,7 @@ In `ui_init()`:
 
 - Date: `makeLabel(..., -58)` and weather row: `lv_obj_align(weatherRow, LV_ALIGN_CENTER, 0, 58)`. The numbers are pixel offsets from the center; smaller = closer to the time.
 - Time is at offset 0 in the 48 pt font.
+- Loading states: `ui_set_connecting()` shows an animated WiFi glyph (dot + 3 arcs lit in sequence by an `lv_timer`, built in `createWifi()`) during WiFi connect; `ui_set_weather_loading()` shows a pulsing skeleton (`skeleton`, an `lv_anim` on opacity) in the weather row until the first fetch resolves. Both only animate while the main loop calls `lv_timer_handler()`, so keep that call in any blocking wait in `setup()`.
 - Fonts: Manrope (SIL OFL), generated into `src/font_manrope_14.c` (500 weight), `_20.c` (500) and `_48.c` (600, digits and `:` only). The 14 pt font falls back to built-in Montserrat 14 for the `LV_SYMBOL_UP/DOWN` arrows. Regenerate with `npx lv_font_conv --font manrope-latin-<weight>-normal.woff --size <px> --bpp 4 --no-compress --format lvgl --lv-include lvgl.h --lv-font-name manrope_<px> -r <ranges> -o src/font_manrope_<px>.c` (static weights from the `@fontsource/manrope` npm package; download into its own empty folder). Each size costs flash.
 
 ## Seconds ring
@@ -114,4 +117,4 @@ Icons come from `src/font_weather.c`, a subset of the Weather Icons font generat
    ```
 4. Use the glyph in `weather_icon()` as `""`. Keep the SIL OFL attribution in the README.
 
-The Manrope 14/20 fonts do include U+00B0 (`°`), so temperatures could show it; the weather text currently omits it.
+The icon size is the `--size` value above (currently 26; 32 clipped at the top of the weather row). Re-run with a different value to resize. The Manrope 14/20 fonts do include U+00B0 (`°`), so temperatures could show it; the weather text currently omits it.

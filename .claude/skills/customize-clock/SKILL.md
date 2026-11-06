@@ -19,6 +19,8 @@ Start from `docs/CUSTOMIZING.md`: it lists the exact file and function for each 
 
 - **Round bezel.** Content near the corners is clipped. Usable width at vertical offset `y` from center is about `2*sqrt(120^2 - y^2)` px; the seconds ring occupies the outer ~12 px.
 - **Only the main loop calls LVGL.** The weather task communicates through `weather_get()` (mutex-protected struct). Never call `lv_*` from another task.
+- **Loading states** (WiFi glyph, weather skeleton) are animated by LVGL timers/anims, so any blocking wait must keep calling `lv_timer_handler()`. Their colours need night variants too.
+- **macOS tooling.** `sed -i` needs `sed -i ''`; for multi-line edits prefer the Edit tool or `python3`. Symbols like `LV_SYMBOL_UP` aren't in custom fonts, so give a custom font `.fallback = &lv_font_montserrat_14`.
 - **Night mode parity.** Every day color needs a red-tone night counterpart in `ui_set_night()` / `styleTick()`; avoid blue/green at night. The QR setup screen is intentionally excluded (it needs black on white to scan).
 - **Fonts cost flash.** Fonts are generated Manrope files in `src/font_manrope_*.c` (see `docs/CUSTOMIZING.md`); a new size means generating a new file. Budget: firmware ~1.29 MB of a 3 MB partition.
 - **Icon font changes** need the `lv_font_conv` procedure in `docs/CUSTOMIZING.md`. Download the source font into a new empty folder outside the repo, run tools from elsewhere, and keep the SIL OFL credit in the README.
