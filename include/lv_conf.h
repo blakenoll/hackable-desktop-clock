@@ -11,8 +11,6 @@
 #define LV_DEF_REFR_PERIOD 33
 
 #define LV_FONT_MONTSERRAT_14 1
-#define LV_FONT_MONTSERRAT_20 1
-#define LV_FONT_MONTSERRAT_48 1
 
 // Widgets used by the clock face
 #define LV_USE_SCALE 0

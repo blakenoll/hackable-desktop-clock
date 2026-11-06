@@ -5,6 +5,9 @@
 #include "ui.h"
 
 LV_FONT_DECLARE(weather_icons);
+LV_FONT_DECLARE(manrope_14);
+LV_FONT_DECLARE(manrope_20);
+LV_FONT_DECLARE(manrope_48);
 
 static lv_obj_t *spinner, *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *timeLabel, *dayLabel, *dateLabel, *status;
 
@@ -88,7 +91,7 @@ void ui_init() {
   lv_obj_set_style_text_font(weatherIcon, &weather_icons, 0);
   lv_label_set_text(weatherIcon, "");
   weatherLabel = lv_label_create(weatherRow);
-  lv_obj_set_style_text_font(weatherLabel, &lv_font_montserrat_20, 0);
+  lv_obj_set_style_text_font(weatherLabel, &manrope_20, 0);
   lv_obj_set_style_text_color(weatherLabel, lv_color_hex(0xD0D8E0), 0);
   lv_label_set_text(weatherLabel, "");
 
@@ -100,13 +103,13 @@ void ui_init() {
   lv_obj_set_style_pad_row(hiloBox, 0, 0);
   lv_obj_set_style_pad_left(hiloBox, 4, 0);
   hiLabel = lv_label_create(hiloBox);
-  lv_obj_set_style_text_font(hiLabel, &lv_font_montserrat_14, 0);
+  lv_obj_set_style_text_font(hiLabel, &manrope_14, 0);
   lv_obj_set_style_text_color(hiLabel, lv_color_hex(0xFF8A65), 0);
   loLabel = lv_label_create(hiloBox);
-  lv_obj_set_style_text_font(loLabel, &lv_font_montserrat_14, 0);
+  lv_obj_set_style_text_font(loLabel, &manrope_14, 0);
   lv_obj_set_style_text_color(loLabel, lv_color_hex(0x6FB6FF), 0);
   lv_obj_add_flag(hiloBox, LV_OBJ_FLAG_HIDDEN);
-  timeLabel = makeLabel(scr, &lv_font_montserrat_48, lv_color_white(), 0);  // dead centre
+  timeLabel = makeLabel(scr, &manrope_48, lv_color_white(), 0);  // dead centre
   // Date row: weekday in red, then "Nov 6" in gray, centred together.
   lv_obj_t *dateRow = lv_obj_create(scr);
   lv_obj_remove_style_all(dateRow);
@@ -116,16 +119,16 @@ void ui_init() {
   lv_obj_set_flex_align(dateRow, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_set_style_pad_column(dateRow, 6, 0);
   dayLabel = lv_label_create(dateRow);
-  lv_obj_set_style_text_font(dayLabel, &lv_font_montserrat_20, 0);
+  lv_obj_set_style_text_font(dayLabel, &manrope_20, 0);
   lv_obj_set_style_text_color(dayLabel, lv_color_hex(0xFF4D4D), 0);
   lv_label_set_text(dayLabel, "");
   dateLabel = lv_label_create(dateRow);
-  lv_obj_set_style_text_font(dateLabel, &lv_font_montserrat_20, 0);
+  lv_obj_set_style_text_font(dateLabel, &manrope_20, 0);
   lv_obj_set_style_text_color(dateLabel, lv_color_hex(0xA0A0A0), 0);
   lv_label_set_text(dateLabel, "");
 
   status = lv_label_create(scr);
-  lv_obj_set_style_text_font(status, &lv_font_montserrat_20, 0);
+  lv_obj_set_style_text_font(status, &manrope_20, 0);
   lv_obj_set_style_text_color(status, lv_color_white(), 0);
   lv_obj_center(status);
   lv_obj_add_flag(status, LV_OBJ_FLAG_HIDDEN);
@@ -234,7 +237,7 @@ void ui_show_setup(const char *apSsid, const char *apPass, const char *qrPayload
   auto addLabel = [&](const char *text, lv_color_t color, int y) {
     lv_obj_t *l = lv_label_create(scr);
     lv_label_set_text(l, text);
-    lv_obj_set_style_text_font(l, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(l, &manrope_14, 0);
     lv_obj_set_style_text_color(l, color, 0);
     lv_obj_align(l, LV_ALIGN_CENTER, 0, y);
   };

@@ -54,7 +54,7 @@ In `ui_init()`:
 
 - Date: `makeLabel(..., -58)` and weather row: `lv_obj_align(weatherRow, LV_ALIGN_CENTER, 0, 58)`. The numbers are pixel offsets from the center; smaller = closer to the time.
 - Time is at offset 0 in the 48 pt font.
-- Fonts: `lv_font_montserrat_14 / 20 / 48`. A new size must be enabled in `include/lv_conf.h` (`#define LV_FONT_MONTSERRAT_28 1`) before it can be used. Each size costs flash.
+- Fonts: Manrope (SIL OFL), generated into `src/font_manrope_14.c` (500 weight), `_20.c` (500) and `_48.c` (600, digits and `:` only). The 14 pt font falls back to built-in Montserrat 14 for the `LV_SYMBOL_UP/DOWN` arrows. Regenerate with `npx lv_font_conv --font manrope-latin-<weight>-normal.woff --size <px> --bpp 4 --no-compress --format lvgl --lv-include lvgl.h --lv-font-name manrope_<px> -r <ranges> -o src/font_manrope_<px>.c` (static weights from the `@fontsource/manrope` npm package; download into its own empty folder). Each size costs flash.
 
 ## Seconds ring
 
@@ -114,4 +114,4 @@ Icons come from `src/font_weather.c`, a subset of the Weather Icons font generat
    ```
 4. Use the glyph in `weather_icon()` as `""`. Keep the SIL OFL attribution in the README.
 
-The built-in Montserrat fonts have no `°` glyph, which is why temperatures read `72F`. To add one, generate a small font that includes U+00B0 the same way.
+The Manrope 14/20 fonts do include U+00B0 (`°`), so temperatures could show it; the weather text currently omits it.

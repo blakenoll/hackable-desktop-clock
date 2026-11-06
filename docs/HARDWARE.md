@@ -48,6 +48,6 @@ Change the `-DTFT_*` pin flags and rewire to match. On the C3, avoid GPIO 2, 8 a
 ## Flash and memory
 
 - Firmware is ~1.39 MB of the 3 MB partition; the weather/TLS code alone is ~158 KB.
-- The 48 pt Montserrat font is ~92 KB because it includes every ASCII glyph. The big time text only needs `0-9` and `:`; a custom subset (via `lv_font_conv`, as for the icons) would save ~80 KB if space gets tight.
+- The 48 pt Manrope time font is already subset to `0-9` and `:`.
 - RAM use is ~41%. `LV_MEM_SIZE` is 64 KB in `include/lv_conf.h`.
 - Saved settings (WiFi, timezone, ZIP, units, last day/night state) live in the NVS partition at `0x9000`, which the `huge_app` table keeps in the same place as the default table, so they survive a reflash. `pio run -t erase` wipes them.

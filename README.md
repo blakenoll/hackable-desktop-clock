@@ -90,6 +90,7 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 | `src/weather.cpp`, `src/weather.h` | Open-Meteo geocoding + forecast in a background task |
 | `src/provisioning.cpp`, `src/provisioning.h` | Saved settings (NVS), setup AP + captive portal + web form, BOOT long-press |
 | `src/font_weather.c` | Generated 32 px weather-icon font (12 glyphs) |
+| `src/font_manrope_*.c` | Generated Manrope text fonts (14, 20, 48 px) |
 | `include/lv_conf.h` | LVGL config: enabled fonts and widgets, memory |
 | `fix_tft.py` | Build-time patch for a TFT_eSPI/ESP32-C3 crash; see [docs/HARDWARE.md](docs/HARDWARE.md) |
 | `platformio.ini` | Board, pins, pinned library versions, partition table |
@@ -97,7 +98,7 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 
 ## Credits
 
-Weather icons: [Weather Icons](https://github.com/erikflowers/weather-icons) by Erik Flowers, font licensed under the SIL Open Font License 1.1. `src/font_weather.c` is a subset of it generated with `lv_font_conv`. Weather data: [Open-Meteo](https://open-meteo.com/) (free for non-commercial use; see their terms).
+Weather icons: [Weather Icons](https://github.com/erikflowers/weather-icons) by Erik Flowers, font licensed under the SIL Open Font License 1.1. `src/font_weather.c` is a subset of it generated with `lv_font_conv`. Text font: [Manrope](https://github.com/sharanda/manrope), SIL Open Font License 1.1; `src/font_manrope_*.c` are subsets generated with `lv_font_conv`. Weather data: [Open-Meteo](https://open-meteo.com/) (free for non-commercial use; see their terms).
 
 ## License
 
