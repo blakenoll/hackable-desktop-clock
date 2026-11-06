@@ -8,6 +8,8 @@ void ui_set_status(const char *msg);  // nullptr hides the message
 void ui_set_connecting(bool on);
 // Spinning clock + "Synchronizing" label shown while waiting for NTP time.
 void ui_set_syncing(bool on);
+// Sonar animation (expanding rings + rotating sweep) shown while scanning for WiFi networks.
+void ui_set_scanning(bool on);
 // Night mode: everything red, easy on the eyes in the dark.
 void ui_set_night(bool night);
 

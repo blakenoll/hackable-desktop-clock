@@ -75,7 +75,7 @@ In `src/provisioning.cpp`:
 | Access-point name prefix (the board's MAC suffix is added in `prov_run()`) | `AP_SSID_PREFIX` |
 | BOOT hold time to re-enter setup | `LONG_PRESS_MS` |
 | Idle time before setup reboots to retry saved WiFi | `IDLE_REBOOT_MS` |
-| Timezone dropdown | the `ZONES[]` array (label + POSIX TZ string); any other zone can be typed in the page's custom field ([POSIX TZ list](https://github.com/nayarsystems/posix_tz_db)) |
+| Timezone dropdown | the `ZONES[]` array (label + POSIX TZ string); add other zones there as POSIX TZ strings ([POSIX TZ list](https://github.com/nayarsystems/posix_tz_db)) |
 | Page styling / text | `PAGE_HEAD` and `buildForm()` |
 
 The WiFi connect timeout (20 s) is in `setup()` in `src/main.cpp`.

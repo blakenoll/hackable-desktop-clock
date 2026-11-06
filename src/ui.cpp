@@ -139,6 +139,83 @@ static void createSync(lv_obj_t *scr) {
   syncHands();
   syncPaint();
 }
+
+// ---- "Scanning" animation: sonar pings expanding from the centre + a rotating sweep ----------
+static constexpr int SONAR_RINGS = 3, SONAR_TRAIL = 3;
+static constexpr float SONAR_R = 96.0f;  // stays inside the seconds-ring ticks
+static lv_obj_t *sonarBox, *sonarRing[SONAR_RINGS], *sonarSweep[SONAR_TRAIL], *sonarDot, *sonarLabel;
+static lv_timer_t *sonarTimer;
+static float sonarPhase, sonarAngle;
+static lv_point_precise_t sweepPts[SONAR_TRAIL][2];  // must outlive the line objects
+static constexpr int SONAR_C = 100;  // centre of the 200x200 box
+
+static uint32_t sonarColor() { return night ? 0xC01515 : 0x2EE59D; }
+
+static void sonarPaint() {
+  lv_color_t c = lv_color_hex(sonarColor());
+  for (auto r : sonarRing) lv_obj_set_style_border_color(r, c, 0);
+  for (auto l : sonarSweep) lv_obj_set_style_line_color(l, c, 0);
+  lv_obj_set_style_bg_color(sonarDot, c, 0);
+  lv_obj_set_style_text_color(sonarLabel, c, 0);
+}
+
+static void sonarFrame() {
+  for (int i = 0; i < SONAR_RINGS; i++) {
+    float ph = fmodf(sonarPhase + (float)i / SONAR_RINGS, 1.0f);
+    int d = (int)(ph * SONAR_R * 2) + 4;
+    lv_obj_set_size(sonarRing[i], d, d);
+    lv_obj_center(sonarRing[i]);
+    lv_obj_set_style_border_opa(sonarRing[i], (lv_opa_t)((1.0f - ph) * 200), 0);
+  }
+  for (int k = 0; k < SONAR_TRAIL; k++) {  // head plus two dimmer trailing lines
+    float a = (sonarAngle - 14.0f * k) * (float)M_PI / 180.0f;
+    sweepPts[k][0] = {SONAR_C, SONAR_C};
+    sweepPts[k][1] = {(lv_value_precise_t)lroundf(SONAR_C + SONAR_R * sinf(a)), (lv_value_precise_t)lroundf(SONAR_C - SONAR_R * cosf(a))};
+    lv_line_set_points(sonarSweep[k], sweepPts[k], 2);
+  }
+}
+
+static void sonarTick(lv_timer_t *) {
+  sonarPhase = fmodf(sonarPhase + 0.015f, 1.0f);
+  sonarAngle = fmodf(sonarAngle + 6.0f, 360.0f);
+  sonarFrame();
+}
+
+static void createSonar(lv_obj_t *scr) {
+  sonarBox = lv_obj_create(scr);
+  lv_obj_remove_style_all(sonarBox);
+  lv_obj_set_size(sonarBox, 200, 200);
+  lv_obj_center(sonarBox);
+  for (auto &r : sonarRing) {
+    r = lv_obj_create(sonarBox);
+    lv_obj_remove_style_all(r);
+    lv_obj_set_style_radius(r, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_border_width(r, 2, 0);
+    lv_obj_set_style_border_opa(r, LV_OPA_TRANSP, 0);
+  }
+  static const lv_opa_t trailOpa[SONAR_TRAIL] = {LV_OPA_COVER, LV_OPA_50, LV_OPA_20};
+  for (int k = 0; k < SONAR_TRAIL; k++) {
+    sonarSweep[k] = lv_line_create(sonarBox);
+    lv_obj_set_pos(sonarSweep[k], 0, 0);
+    lv_obj_set_style_line_width(sonarSweep[k], k == 0 ? 3 : 2, 0);
+    lv_obj_set_style_line_opa(sonarSweep[k], trailOpa[k], 0);
+    lv_obj_set_style_line_rounded(sonarSweep[k], true, 0);
+  }
+  sonarDot = lv_obj_create(sonarBox);
+  lv_obj_remove_style_all(sonarDot);
+  lv_obj_set_size(sonarDot, 8, 8);
+  lv_obj_set_style_radius(sonarDot, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_bg_opa(sonarDot, LV_OPA_COVER, 0);
+  lv_obj_center(sonarDot);
+  lv_obj_add_flag(sonarBox, LV_OBJ_FLAG_HIDDEN);
+
+  sonarLabel = lv_label_create(scr);
+  lv_obj_set_style_text_font(sonarLabel, &manrope_20, 0);
+  lv_label_set_text(sonarLabel, "Scanning");
+  lv_obj_align(sonarLabel, LV_ALIGN_CENTER, 0, 70);
+  lv_obj_add_flag(sonarLabel, LV_OBJ_FLAG_HIDDEN);
+  sonarPaint();
+}
 static uint32_t iconDayColor = 0xFFFFFF;
 static void applyIconColor() {
   lv_obj_set_style_text_color(weatherIcon, lv_color_hex(night ? 0xC01515 : iconDayColor), 0);
@@ -282,6 +359,7 @@ void ui_init() {
   lv_obj_add_flag(status, LV_OBJ_FLAG_HIDDEN);
   createWifi(scr);
   createSync(scr);
+  createSonar(scr);
 }
 
 // Layout: seconds ring on the rim; date on top, time dead centre, weather (icon, temp, stacked high/low) below.
@@ -328,6 +406,7 @@ void ui_set_night(bool n) {
   applyIconColor();
   wifiPaint();
   syncPaint();
+  sonarPaint();
   for (auto o : skelShape) lv_obj_set_style_bg_color(o, lv_color_hex(n ? 0x4A0E0E : 0x4A4F57), 0);
   for (int i = 0; i < TICK_COUNT; i++) styleTick(i, ringSec);
 }
@@ -389,6 +468,32 @@ void ui_set_syncing(bool on) {
     if (syncTimer) { lv_timer_delete(syncTimer); syncTimer = nullptr; }
     lv_obj_add_flag(syncBox, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(syncLabel, LV_OBJ_FLAG_HIDDEN);
+  }
+}
+
+void ui_set_scanning(bool on) {
+  if (on) {
+    ui_set_status(nullptr);
+    ui_set_connecting(false);
+    ui_set_syncing(false);
+    // Long-press from the running clock: blank the face (ticks, time, weather...) so only the sonar shows.
+    // Never restored: setup mode ends in a reboot or switches to its own screen.
+    lv_obj_t *scr = lv_obj_get_parent(sonarBox);
+    for (uint32_t i = 0; i < lv_obj_get_child_count(scr); i++) {
+      lv_obj_t *c = lv_obj_get_child(scr, i);
+      if (c != sonarBox && c != sonarLabel) lv_obj_add_flag(c, LV_OBJ_FLAG_HIDDEN);
+    }
+    sonarPhase = 0;
+    sonarAngle = 0;
+    sonarFrame();
+    sonarPaint();
+    lv_obj_remove_flag(sonarBox, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_remove_flag(sonarLabel, LV_OBJ_FLAG_HIDDEN);
+    if (!sonarTimer) sonarTimer = lv_timer_create(sonarTick, 40, nullptr);
+  } else {
+    if (sonarTimer) { lv_timer_delete(sonarTimer); sonarTimer = nullptr; }
+    lv_obj_add_flag(sonarBox, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(sonarLabel, LV_OBJ_FLAG_HIDDEN);
   }
 }
 

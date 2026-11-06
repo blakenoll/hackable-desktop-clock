@@ -130,7 +130,7 @@ static String esc(const String &s) {
   return o;
 }
 
-static const char PAGE_HEAD[] = R"HTML(<!doctype html><html><head>
+static const char PAGE_HEAD[] = R"HTML(<!doctype html><html><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1"><title>Desk Clock Setup</title>
 <style>body{font:16px system-ui,sans-serif;margin:auto;padding:20px;max-width:420px;background:#111;color:#eee}
 h1{font-size:20px}label{display:block;margin:16px 0 4px;color:#aaa}
@@ -140,9 +140,20 @@ button{background:#0a84ff;border:0;margin-top:24px}small{color:#888}</style></he
 static String buildForm(const String &netOptions, const ClockConfig &cur) {
   String h = PAGE_HEAD;
   h += "<h1>Desk Clock Setup</h1><form method=post action=/save>";
+  // Dropdown of scanned networks plus "Other..." which reveals a manual text field. The text input
+  // (name=ssid) is what gets submitted; the select just fills it. Without JS the field stays visible.
+  bool known = netOptions.indexOf("value=\"" + esc(cur.ssid) + "\"") >= 0 && cur.ssid.length() > 0;
+  String opts = netOptions;
+  if (known) opts.replace("value=\"" + esc(cur.ssid) + "\"", "value=\"" + esc(cur.ssid) + "\" selected");
   h += "<label>WiFi network (2.4 GHz)</label>"
-       "<input name=ssid list=nets required autocapitalize=off autocorrect=off value=\"" + esc(cur.ssid) +
-       "\"><datalist id=nets>" + netOptions + "</datalist>";
+       "<select id=sel><option value=\"\">Choose a network...</option>" + opts +
+       "<option value=\"__other\"" + (!known && cur.ssid.length() ? " selected" : "") + ">Other (type manually)...</option></select>"
+       "<input id=ssid name=ssid required autocapitalize=off autocorrect=off placeholder=\"Network name\" value=\"" + esc(cur.ssid) + "\">"
+       "<script>var s=document.getElementById('sel'),i=document.getElementById('ssid');"
+       "function u(){var o=s.value==='__other'||s.value==='';i.style.display=o?'block':'none';"
+       "if(s.value&&!o)i.value=s.value;else if(s.value==='__other'&&i.value&&[].some.call(s.options,function(x){return x.value===i.value}))i.value='';}"
+       "s.onchange=function(){u();if(s.value==='__other')i.focus()};"
+       "if(s.value&&s.value!=='__other')i.value=s.value;u();</script>";
   h += "<label>WiFi password</label>"
        "<input name=pass type=text autocapitalize=off autocorrect=off value=\"" + esc(cur.pass) + "\">";
   h += "<label>Timezone</label><select name=tz>";
@@ -152,8 +163,10 @@ static String buildForm(const String &netOptions, const ClockConfig &cur) {
     matched |= sel;
     h += String("<option value=\"") + esc(z.posix) + "\"" + (sel ? " selected" : "") + ">" + z.label + "</option>";
   }
-  h += "</select><label>Custom timezone <small>(optional POSIX TZ, overrides the list)</small></label>"
-       "<input name=custom autocapitalize=off autocorrect=off value=\"" + (matched ? String("") : esc(cur.tz)) + "\">";
+  // A previously saved zone that isn't in the presets stays selectable instead of silently resetting.
+  if (!matched && cur.tz.length())
+    h = String(h) + "<option value=\"" + esc(cur.tz) + "\" selected>Saved: " + esc(cur.tz) + "</option>";
+  h += "</select>";
   h += "<label>ZIP code for weather <small>(optional, US 5-digit)</small></label>"
        "<input name=city inputmode=numeric pattern=\"[0-9]{5}\" maxlength=5 title=\"5-digit US ZIP code\" value=\"" + esc(cur.city) + "\">";
   h += String("<label>Temperature units</label><select name=units><option value=F") + (cur.units == 'F' ? " selected" : "") +
@@ -162,13 +175,30 @@ static String buildForm(const String &netOptions, const ClockConfig &cur) {
   return h;
 }
 
+// Async scan so the sonar animation keeps running (lv_timer_handler) while it works.
 static String scanOptions() {
+  WiFi.scanNetworks(true);
+  uint32_t t0 = millis();
+  int n;
+  while ((n = WiFi.scanComplete()) == WIFI_SCAN_RUNNING && millis() - t0 < 15000) {
+    lv_timer_handler();
+    delay(20);
+  }
+  if (n < 0) n = 0;  // failed or timed out: offer manual entry only
   String opts;
-  int n = WiFi.scanNetworks();
-  for (int i = 0; i < n; i++) {
-    String s = WiFi.SSID(i);
-    if (s.length() == 0 || opts.indexOf("\"" + esc(s) + "\"") >= 0) continue;  // hidden / duplicate
-    opts += "<option value=\"" + esc(s) + "\">";
+  bool used[64] = {false};
+  if (n > 64) n = 64;
+  // Strongest first; skip hidden and duplicate names (keeps the strongest of each).
+  for (int pass = 0; pass < n; pass++) {
+    int best = -1;
+    for (int i = 0; i < n; i++)
+      if (!used[i] && (best < 0 || WiFi.RSSI(i) > WiFi.RSSI(best))) best = i;
+    if (best < 0) break;
+    used[best] = true;
+    String ssid = WiFi.SSID(best);
+    if (ssid.length() == 0 || opts.indexOf("value=\"" + esc(ssid) + "\"") >= 0) continue;
+    bool open = WiFi.encryptionType(best) == WIFI_AUTH_OPEN;
+    opts += "<option value=\"" + esc(ssid) + "\">" + esc(ssid) + (open ? "" : " \xF0\x9F\x94\x92") + "</option>";
   }
   WiFi.scanDelete();
   return opts;
@@ -182,11 +212,12 @@ static String scanOptions() {
 
   // Scan before the AP goes up: scanning while serving would hop channels and
   // drop the client's connection.
-  ui_set_status("Scanning...");
+  ui_set_scanning(true);
   lv_timer_handler();
   WiFi.disconnect(true);
   WiFi.mode(WIFI_STA);
   String netOptions = scanOptions();
+  ui_set_scanning(false);
 
   char apPass[9];
   snprintf(apPass, sizeof(apPass), "%08lu", (unsigned long)(esp_random() % 100000000UL));
@@ -215,9 +246,7 @@ static String scanOptions() {
     n.ssid = server.arg("ssid");
     n.ssid.trim();
     n.pass = server.arg("pass");
-    String custom = server.arg("custom");
-    custom.trim();
-    n.tz = custom.length() ? custom : server.arg("tz");
+    n.tz = server.arg("tz");
     n.city = server.arg("city");
     n.city.trim();
     n.units = server.arg("units") == "C" ? 'C' : 'F';
