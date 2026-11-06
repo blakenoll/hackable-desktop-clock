@@ -3,14 +3,14 @@
 #include <string.h>
 #include "ui.h"
 
-// Scale runs 0..60 for hour, minute and second hands alike.
-static lv_obj_t *scale, *hourHand, *minHand, *secHand, *dateLabel, *status;
+static lv_obj_t *timeLabel, *ampmLabel, *dateLabel, *status;
 
-static lv_obj_t *makeHand(lv_color_t color, int width) {
-  lv_obj_t *l = lv_line_create(scale);
-  lv_obj_set_style_line_width(l, width, 0);
-  lv_obj_set_style_line_color(l, color, 0);
-  lv_obj_set_style_line_rounded(l, true, 0);
+static lv_obj_t *makeLabel(lv_obj_t *parent, const lv_font_t *font, lv_color_t color, int yOffset) {
+  lv_obj_t *l = lv_label_create(parent);
+  lv_label_set_text(l, "");
+  lv_obj_set_style_text_font(l, font, 0);
+  lv_obj_set_style_text_color(l, color, 0);
+  lv_obj_align(l, LV_ALIGN_CENTER, 0, yOffset);
   return l;
 }
 
@@ -18,35 +18,9 @@ void ui_init() {
   lv_obj_t *scr = lv_screen_active();
   lv_obj_set_style_bg_color(scr, lv_color_black(), 0);
 
-  scale = lv_scale_create(scr);
-  lv_obj_set_size(scale, 232, 232);
-  lv_obj_center(scale);
-  lv_scale_set_mode(scale, LV_SCALE_MODE_ROUND_INNER);
-  lv_scale_set_range(scale, 0, 60);
-  lv_scale_set_total_tick_count(scale, 61);
-  lv_scale_set_major_tick_every(scale, 5);
-  lv_scale_set_angle_range(scale, 360);
-  lv_scale_set_rotation(scale, 270);
-  lv_scale_set_label_show(scale, false);
-  lv_obj_set_style_bg_opa(scale, LV_OPA_TRANSP, 0);
-  lv_obj_set_style_border_width(scale, 0, 0);
-
-  lv_obj_set_style_length(scale, 6, LV_PART_ITEMS);
-  lv_obj_set_style_line_width(scale, 1, LV_PART_ITEMS);
-  lv_obj_set_style_line_color(scale, lv_color_hex(0x606060), LV_PART_ITEMS);
-  lv_obj_set_style_length(scale, 14, LV_PART_INDICATOR);
-  lv_obj_set_style_line_width(scale, 3, LV_PART_INDICATOR);
-  lv_obj_set_style_line_color(scale, lv_color_white(), LV_PART_INDICATOR);
-  lv_obj_set_style_arc_width(scale, 0, LV_PART_MAIN);
-
-  dateLabel = lv_label_create(scr);
-  lv_obj_set_style_text_font(dateLabel, &lv_font_montserrat_14, 0);
-  lv_obj_set_style_text_color(dateLabel, lv_color_hex(0xA0A0A0), 0);
-  lv_obj_align(dateLabel, LV_ALIGN_CENTER, 0, 45);
-
-  hourHand = makeHand(lv_color_white(), 6);
-  minHand = makeHand(lv_color_hex(0x00D0FF), 4);
-  secHand = makeHand(lv_color_hex(0xFF3030), 2);
+  timeLabel = makeLabel(scr, &lv_font_montserrat_48, lv_color_white(), -16);
+  ampmLabel = makeLabel(scr, &lv_font_montserrat_20, lv_color_hex(0x00D0FF), 30);
+  dateLabel = makeLabel(scr, &lv_font_montserrat_20, lv_color_hex(0xA0A0A0), 64);
 
   status = lv_label_create(scr);
   lv_obj_set_style_text_font(status, &lv_font_montserrat_20, 0);
@@ -55,14 +29,24 @@ void ui_init() {
   lv_obj_add_flag(status, LV_OBJ_FLAG_HIDDEN);
 }
 
+// 12-hour clock: "9:05" with AM/PM centred underneath; date as "Thu Nov 06".
 void ui_update(const tm &t) {
-  lv_scale_set_line_needle_value(scale, hourHand, 60, (t.tm_hour % 12) * 5 + t.tm_min / 12);
-  lv_scale_set_line_needle_value(scale, minHand, 90, t.tm_min);
-  lv_scale_set_line_needle_value(scale, secHand, 100, t.tm_sec);
-
+  static int lastMin = -1, lastDay = -1;
   char buf[24];
-  strftime(buf, sizeof(buf), "%a %b %d", &t);
-  lv_label_set_text(dateLabel, buf);
+
+  if (t.tm_min != lastMin) {  // redraw the big text only when the minute changes
+    lastMin = t.tm_min;
+    int h12 = t.tm_hour % 12 == 0 ? 12 : t.tm_hour % 12;
+    snprintf(buf, sizeof(buf), "%d:%02d", h12, t.tm_min);
+    lv_label_set_text(timeLabel, buf);
+    lv_label_set_text(ampmLabel, t.tm_hour < 12 ? "AM" : "PM");
+  }
+
+  if (t.tm_yday != lastDay) {
+    lastDay = t.tm_yday;
+    strftime(buf, sizeof(buf), "%a %b %d", &t);
+    lv_label_set_text(dateLabel, buf);
+  }
 }
 
 void ui_set_status(const char *msg) {

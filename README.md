@@ -1,6 +1,6 @@
 # desktop-clock
 
-Analog desktop clock for an ESP32-C3 Mini (Lolin C3 Mini) with a 240x240 round GC9A01 display. Time via NTP over WiFi.
+Digital desktop clock for an ESP32-C3 Mini (Lolin C3 Mini) with a 240x240 round GC9A01 display. Time via NTP over WiFi.
 
 ## Wiring
 
@@ -33,5 +33,5 @@ To change them later, **hold the BOOT button for 3 seconds** while the clock is 
 
 - `src/main.cpp`: display driver glue (TFT_eSPI → LVGL flush), boot flow (saved WiFi → NTP, else setup mode), main loop.
 - `src/provisioning.cpp`: NVS settings, setup-mode AP + captive portal + web form, BOOT long-press.
-- `src/ui.cpp`: LVGL clock face (round `lv_scale` with line needles for the hands, date label) and the setup screen (QR code).
+- `src/ui.cpp`: LVGL digital clock face (12-hour time, AM/PM, seconds, date) and the setup screen (QR code).
 - `include/lv_conf.h`: LVGL 9 config (enabled widgets, fonts, memory).

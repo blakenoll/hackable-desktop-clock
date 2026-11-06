@@ -12,11 +12,11 @@
 
 #define LV_FONT_MONTSERRAT_14 1
 #define LV_FONT_MONTSERRAT_20 1
-#define LV_FONT_MONTSERRAT_28 1
+#define LV_FONT_MONTSERRAT_48 1
 
 // Widgets used by the clock face
-#define LV_USE_SCALE 1
-#define LV_USE_LINE 1
+#define LV_USE_SCALE 0
+#define LV_USE_LINE 0
 #define LV_USE_LABEL 1
 #define LV_USE_CANVAS 1
 #define LV_USE_QRCODE 1   // WiFi-setup join code

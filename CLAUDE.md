@@ -25,5 +25,5 @@ ESP32-C3 (Lolin C3 Mini) + 240x240 GC9A01 round display, LVGL 9 analog clock, NT
 - Display pins and SPI settings are `-D` build flags in `platformio.ini`, not edits to the library's `User_Setup.h`.
 - 2.4 GHz WiFi only (C3 has no 5 GHz). Timezone is a POSIX TZ string; the portal offers presets plus a custom field.
 - The setup AP uses a random 8-digit WPA2 password per session (shown on screen + in the QR code, and printed to serial). The scan runs *before* the AP starts, since scanning while serving drops clients.
-- Flash use is ~86% of the default 1.3 MB app partition; check headroom before adding large features.
+- Flash use is ~93% of the default 1.3 MB app partition (~97 KB free; the 48 pt Montserrat font is the big item). Check headroom before adding fonts or features; a custom partition table (`board_build.partitions`) would free more.
 - Flashing hardware and installing system software are user-confirmed actions. Ask before doing either unless they've just asked for it.
