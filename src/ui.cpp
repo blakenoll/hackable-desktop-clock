@@ -9,7 +9,8 @@ LV_FONT_DECLARE(manrope_14);
 LV_FONT_DECLARE(manrope_20);
 LV_FONT_DECLARE(manrope_48);
 
-static lv_obj_t *spinner, *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *timeLabel, *dayLabel, *dateLabel, *status;
+static lv_obj_t *skeleton, *skelShape[4], *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *timeLabel, *dayLabel, *dateLabel, *status;
+
 
 // ---- Seconds ring: 60 ticks around the rim --------------------------------------
 // Elapsed seconds are softly lit, the current second is bright red, upcoming ones are dim.
@@ -20,6 +21,54 @@ static constexpr float TICK_MINOR_LEN = 7.0f;
 static constexpr float TICK_MAJOR_LEN = 12.0f; // every 5th second
 static lv_obj_t *ticks[TICK_COUNT];
 static bool night = false;
+
+// ---- "Connecting" animation: WiFi glyph whose arcs light up in sequence ----------------
+static lv_obj_t *wifiBox, *wifiDot, *wifiArc[3];
+static lv_timer_t *wifiTimer;
+static int wifiStep;
+
+static void wifiPaint() {
+  uint32_t on = night ? 0xC01515 : 0xFFFFFF, off = night ? 0x2A0707 : 0x303030;
+  // wifiStep 0..3: dot only, +inner arc, +middle arc, +outer arc (then loops)
+  lv_obj_set_style_bg_color(wifiDot, lv_color_hex(on), 0);
+  for (int i = 0; i < 3; i++)
+    lv_obj_set_style_arc_color(wifiArc[i], lv_color_hex(i < wifiStep ? on : off), LV_PART_MAIN);
+}
+
+static void wifiTick(lv_timer_t *) {
+  wifiStep = (wifiStep + 1) % 4;
+  wifiPaint();
+}
+
+static void createWifi(lv_obj_t *scr) {
+  wifiBox = lv_obj_create(scr);
+  lv_obj_remove_style_all(wifiBox);
+  lv_obj_set_size(wifiBox, 84, 84);
+  lv_obj_align(wifiBox, LV_ALIGN_CENTER, 0, 18);  // fan grows upward from its centre; shift down to look centred
+  wifiDot = lv_obj_create(wifiBox);
+  lv_obj_remove_style_all(wifiDot);
+  lv_obj_set_size(wifiDot, 10, 10);
+  lv_obj_set_style_radius(wifiDot, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_bg_opa(wifiDot, LV_OPA_COVER, 0);
+  lv_obj_center(wifiDot);
+  static const int diam[3] = {38, 62, 86};
+  for (int i = 0; i < 3; i++) {
+    lv_obj_t *a = lv_arc_create(wifiBox);
+    wifiArc[i] = a;
+    lv_obj_remove_flag(a, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_size(a, diam[i], diam[i]);
+    lv_arc_set_rotation(a, 0);
+    lv_arc_set_bg_angles(a, 225, 315);  // 90 degree fan pointing up
+    lv_obj_set_style_arc_width(a, 7, LV_PART_MAIN);
+    lv_obj_set_style_arc_rounded(a, true, LV_PART_MAIN);
+    lv_obj_set_style_arc_opa(a, LV_OPA_TRANSP, LV_PART_INDICATOR);
+    lv_obj_set_style_opa(a, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_opa(a, LV_OPA_TRANSP, LV_PART_KNOB);
+    lv_obj_set_style_pad_all(a, 0, LV_PART_KNOB);
+    lv_obj_center(a);
+  }
+  lv_obj_add_flag(wifiBox, LV_OBJ_FLAG_HIDDEN);
+}
 static uint32_t iconDayColor = 0xFFFFFF;
 static void applyIconColor() {
   lv_obj_set_style_text_color(weatherIcon, lv_color_hex(night ? 0xC01515 : iconDayColor), 0);
@@ -79,14 +128,43 @@ void ui_init() {
   lv_obj_set_flex_flow(weatherRow, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(weatherRow, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_set_style_pad_column(weatherRow, 8, 0);
-  spinner = lv_spinner_create(weatherRow);
-  lv_obj_set_size(spinner, 30, 30);
-  lv_spinner_set_anim_params(spinner, 1000, 90);
-  lv_obj_set_style_arc_width(spinner, 4, LV_PART_MAIN);
-  lv_obj_set_style_arc_width(spinner, 4, LV_PART_INDICATOR);
-  lv_obj_set_style_arc_opa(spinner, LV_OPA_TRANSP, LV_PART_MAIN);  // no track, just the moving arc
-  lv_obj_set_style_arc_color(spinner, lv_color_hex(0x8AB4F8), LV_PART_INDICATOR);
-  lv_obj_add_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+  // Skeleton placeholder (icon circle, temperature bar, stacked hi/lo bars) shown while the first
+  // fetch is in flight; roughly the size of the real content so nothing shifts when it arrives.
+  skeleton = lv_obj_create(weatherRow);
+  lv_obj_remove_style_all(skeleton);
+  lv_obj_set_size(skeleton, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+  lv_obj_set_flex_flow(skeleton, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(skeleton, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(skeleton, 8, 0);
+  auto shape = [&](lv_obj_t *parent, int w, int h, int radius) {
+    lv_obj_t *o = lv_obj_create(parent);
+    lv_obj_remove_style_all(o);
+    lv_obj_set_size(o, w, h);
+    lv_obj_set_style_radius(o, radius, 0);
+    lv_obj_set_style_bg_opa(o, LV_OPA_COVER, 0);
+    return o;
+  };
+  skelShape[0] = shape(skeleton, 24, 24, LV_RADIUS_CIRCLE);
+  skelShape[1] = shape(skeleton, 56, 16, 8);
+  lv_obj_t *skelHilo = lv_obj_create(skeleton);
+  lv_obj_remove_style_all(skelHilo);
+  lv_obj_set_size(skelHilo, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+  lv_obj_set_flex_flow(skelHilo, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_style_pad_row(skelHilo, 4, 0);
+  lv_obj_set_style_pad_left(skelHilo, 4, 0);
+  skelShape[2] = shape(skelHilo, 24, 8, 4);
+  skelShape[3] = shape(skelHilo, 24, 8, 4);
+  lv_anim_t pulse;
+  lv_anim_init(&pulse);
+  lv_anim_set_var(&pulse, skeleton);
+  lv_anim_set_exec_cb(&pulse, [](void *o, int32_t v) { lv_obj_set_style_opa((lv_obj_t *)o, (lv_opa_t)v, 0); });
+  lv_anim_set_values(&pulse, 70, 255);
+  lv_anim_set_duration(&pulse, 900);
+  lv_anim_set_reverse_duration(&pulse, 900);
+  lv_anim_set_repeat_count(&pulse, LV_ANIM_REPEAT_INFINITE);
+  lv_anim_set_path_cb(&pulse, lv_anim_path_ease_in_out);
+  lv_anim_start(&pulse);
+  lv_obj_add_flag(skeleton, LV_OBJ_FLAG_HIDDEN);
   weatherIcon = lv_label_create(weatherRow);
   lv_obj_set_style_text_font(weatherIcon, &weather_icons, 0);
   lv_label_set_text(weatherIcon, "");
@@ -132,6 +210,7 @@ void ui_init() {
   lv_obj_set_style_text_color(status, lv_color_white(), 0);
   lv_obj_center(status);
   lv_obj_add_flag(status, LV_OBJ_FLAG_HIDDEN);
+  createWifi(scr);
 }
 
 // Layout: seconds ring on the rim; date on top, time dead centre, weather (icon, temp, stacked high/low) below.
@@ -176,7 +255,8 @@ void ui_set_night(bool n) {
   lv_obj_set_style_text_color(loLabel, lv_color_hex(n ? 0x801010 : 0x6FB6FF), 0);  // dimmer than the high
   lv_obj_set_style_text_color(status, lv_color_hex(n ? 0xC01515 : 0xFFFFFF), 0);
   applyIconColor();
-  lv_obj_set_style_arc_color(spinner, lv_color_hex(n ? 0xC01515 : 0x8AB4F8), LV_PART_INDICATOR);
+  wifiPaint();
+  for (auto o : skelShape) lv_obj_set_style_bg_color(o, lv_color_hex(n ? 0x4A0E0E : 0x4A4F57), 0);
   for (int i = 0; i < TICK_COUNT; i++) styleTick(i, ringSec);
 }
 
@@ -185,15 +265,15 @@ void ui_set_weather_loading(bool loading) {
     lv_obj_add_flag(weatherIcon, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(weatherLabel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(hiloBox, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_remove_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_remove_flag(skeleton, LV_OBJ_FLAG_HIDDEN);
   } else {
-    lv_obj_add_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(skeleton, LV_OBJ_FLAG_HIDDEN);
   }
 }
 
 void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, const char *hi, const char *lo) {
   lv_label_set_text(weatherLabel, text ? text : "");
-  lv_obj_remove_flag(weatherLabel, LV_OBJ_FLAG_HIDDEN);  // may have been hidden by the spinner
+  lv_obj_remove_flag(weatherLabel, LV_OBJ_FLAG_HIDDEN);  // may have been hidden by the skeleton
   if (hi && lo) {
     lv_label_set_text(hiLabel, hi);
     lv_label_set_text(loLabel, lo);
@@ -208,6 +288,19 @@ void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, cons
     lv_obj_remove_flag(weatherIcon, LV_OBJ_FLAG_HIDDEN);
   } else {
     lv_obj_add_flag(weatherIcon, LV_OBJ_FLAG_HIDDEN);
+  }
+}
+
+void ui_set_connecting(bool on) {
+  if (on) {
+    ui_set_status(nullptr);
+    wifiStep = 0;
+    wifiPaint();
+    lv_obj_remove_flag(wifiBox, LV_OBJ_FLAG_HIDDEN);
+    if (!wifiTimer) wifiTimer = lv_timer_create(wifiTick, 350, nullptr);
+  } else {
+    if (wifiTimer) { lv_timer_delete(wifiTimer); wifiTimer = nullptr; }
+    lv_obj_add_flag(wifiBox, LV_OBJ_FLAG_HIDDEN);
   }
 }
 

@@ -4,6 +4,8 @@
 void ui_init();
 void ui_update(const tm &t);
 void ui_set_status(const char *msg);  // nullptr hides the message
+// Animated WiFi glyph (arcs light up in sequence) shown while connecting; replaces the status text.
+void ui_set_connecting(bool on);
 // Night mode: everything red, easy on the eyes in the dark.
 void ui_set_night(bool night);
 

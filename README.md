@@ -60,7 +60,7 @@ Settings are stored in flash and survive reboots and reflashing. To change them 
 
 ## Using it
 
-- **Date / time / weather:** date on top, time in the middle, weather icon + temperature + stacked ▲ high / ▼ low below. A spinner shows in the weather spot during the first fetch.
+- **Date / time / weather:** date on top, time in the middle, weather icon + temperature + stacked ▲ high / ▼ low below. A pulsing skeleton placeholder shows in the weather spot during the first fetch.
 - **Seconds ring:** elapsed seconds are lit, the current second is bright, upcoming ones are dim.
 - **Night mode:** when Open-Meteo says it's dark (`is_day = 0`) everything switches to red tones. It needs a ZIP code, since the flag comes from the weather fetch. The last state is remembered across reboots.
 - **No ZIP entered:** weather and night mode are simply off.

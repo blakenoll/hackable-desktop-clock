@@ -43,7 +43,7 @@ Change the `-DTFT_*` pin flags and rewire to match. On the C3, avoid GPIO 2, 8 a
 
 - The 6.10.0 platform uses Arduino core 2.x and an x86_64-only `toolchain-riscv32-esp@8.4.0`. On Apple Silicon that needs **Rosetta 2**. Newer toolchains (13.2+) have native arm64 builds but come with Arduino core 3.x (for example via the community *pioarduino* platform). **Switching to them has not been tried**; TFT_eSPI's support for core 3.x is the likely trouble spot.
 - **`fix_tft.py` exists because of core 2.x.** TFT_eSPI's C3 header defines `SPI_PORT` as `SPI2_HOST` (enum value 1), but this core's `REG_SPI_BASE(i)` only maps `i == 2` to the SPI2 register base. The result is a null base address and a store-access fault in `tft.init()` — a boot loop. The script rewrites the define to `2` before each build. If you move to a newer core, remove the script only after checking the display still initializes.
-- Bumping LVGL: the UI uses 9.x APIs (`lv_spinner_create(parent)`, `lv_obj_remove_flag`, `lv_line` with `lv_point_precise_t`). Rebuild and check every screen after a bump.
+- Bumping LVGL: the UI uses 9.x APIs (`lv_obj_remove_flag`, `lv_line` with `lv_point_precise_t`). Rebuild and check every screen after a bump.
 
 ## Flash and memory
 

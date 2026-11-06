@@ -179,7 +179,7 @@ static void weatherTask(void *) {
 void weather_begin(const ClockConfig &cfg) {
   if (cfg.city.length() == 0) return;
   g_mu = xSemaphoreCreateMutex();
-  g_data.loading = true;  // show the spinner until the first fetch resolves
+  g_data.loading = true;  // show the skeleton until the first fetch resolves
   g_data.version = 1;     // differs from the UI's initial 0, so it redraws right away
   xTaskCreate(weatherTask, "weather", 10240, nullptr, 1, nullptr);
 }

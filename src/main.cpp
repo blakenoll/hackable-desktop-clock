@@ -46,7 +46,7 @@ void setup() {
   g_night = prov_load_night();
 #endif
   ui_set_night(g_night);
-  ui_set_status("Connecting...");
+  ui_set_connecting(true);
 
   ClockConfig cfg;
   if (!prov_load(cfg)) prov_run(false);  // first boot: no WiFi saved yet
@@ -60,6 +60,7 @@ void setup() {
     lv_timer_handler();
     delay(50);
   }
+  ui_set_connecting(false);
   ui_set_status("Syncing time...");
   configTzTime(cfg.tz.c_str(), "pool.ntp.org", "time.nist.gov");
   tm t;
@@ -86,7 +87,7 @@ void loop() {
       char buf[32];
       ui_set_weather_loading(w.loading);
       if (w.loading) {
-        // spinner only; wait for the first result
+        // skeleton only; wait for the first result
       } else if (w.valid) {
 #ifndef FORCE_NIGHT
         if (w.isDay == g_night) {  // is_day flipped

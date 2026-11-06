@@ -58,7 +58,7 @@
 
 **`No weather`.** The weather request failed and there's nothing cached yet (WiFi/internet problem, or Open-Meteo unreachable). It retries every 60 seconds. After the first success, a later failure keeps showing the last reading.
 
-**The spinner spins forever.** WiFi dropped before the first fetch finished, or the request is hanging. It resolves to data or an error message once a request completes.
+**The weather skeleton pulses forever.** WiFi dropped before the first fetch finished, or the request is hanging. It resolves to data or an error message once a request completes.
 
 **Weather is blank and there's no night mode.** No ZIP code was entered. Re-open setup and add one. Night mode depends on the weather fetch.
 
