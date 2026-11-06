@@ -50,9 +50,9 @@ If the upload can't connect, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.
 
 ## First-time setup
 
-On first boot (or whenever the saved network can't be joined for 20 s) the clock starts its own WiFi access point, **DeskClock-Setup**.
+On first boot (or whenever the saved network can't be joined for 20 s) the clock starts its own WiFi access point, **DeskClock-Setup-XXXX**. The `XXXX` is the last four hex digits of that board's MAC address, so several clocks being set up at the same time each show a different name (and it stays the same for a given clock).
 
-1. The screen shows a QR code and a one-time password. Scan the code with your phone camera, or join `DeskClock-Setup` manually.
+1. The screen shows a QR code and a one-time password. Scan the code with your phone camera, or join the `DeskClock-Setup-XXXX` network shown on the screen manually.
 2. The setup page should pop up. If it doesn't, open `http://192.168.4.1`.
 3. Pick your WiFi network (2.4 GHz only) and enter its password, choose a timezone, optionally enter a **US 5-digit ZIP code** for weather, choose °F or °C, and tap **Save & restart**.
 
