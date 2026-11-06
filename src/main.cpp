@@ -61,14 +61,14 @@ void setup() {
     delay(50);
   }
   ui_set_connecting(false);
-  ui_set_status("Syncing time...");
+  ui_set_syncing(true);
   configTzTime(cfg.tz.c_str(), "pool.ntp.org", "time.nist.gov");
   tm t;
   while (!getLocalTime(&t, 100)) {
     if (prov_button_long_press()) prov_run(true);
     lv_timer_handler();
   }
-  ui_set_status(nullptr);
+  ui_set_syncing(false);
   weather_begin(cfg);
 }
 

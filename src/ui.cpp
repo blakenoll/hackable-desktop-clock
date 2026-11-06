@@ -69,6 +69,76 @@ static void createWifi(lv_obj_t *scr) {
   }
   lv_obj_add_flag(wifiBox, LV_OBJ_FLAG_HIDDEN);
 }
+
+// ---- "Synchronizing" animation: clock face whose hands spin (minute hand 12x the hour hand) ----
+static lv_obj_t *syncBox, *syncFace, *syncMin, *syncHour, *syncDot, *syncLabel;
+static lv_timer_t *syncTimer;
+static float syncAngle;  // minute-hand angle in degrees, clockwise from 12
+static lv_point_precise_t minPts[2], hourPts[2];  // must outlive the line objects
+static constexpr int SYNC_C = 42;  // centre of the 84x84 box
+
+static void syncPaint() {
+  uint32_t on = night ? 0xC01515 : 0xFFFFFF, dim = night ? 0x801010 : 0xFF4D4D;
+  lv_obj_set_style_border_color(syncFace, lv_color_hex(on), 0);
+  lv_obj_set_style_line_color(syncMin, lv_color_hex(on), 0);
+  lv_obj_set_style_line_color(syncHour, lv_color_hex(dim), 0);
+  lv_obj_set_style_bg_color(syncDot, lv_color_hex(on), 0);
+  lv_obj_set_style_text_color(syncLabel, lv_color_hex(on), 0);
+}
+
+static void syncHands() {
+  float m = syncAngle * (float)M_PI / 180.0f, h = (syncAngle / 12.0f) * (float)M_PI / 180.0f;
+  minPts[0] = {SYNC_C, SYNC_C};
+  minPts[1] = {(lv_value_precise_t)lroundf(SYNC_C + 30 * sinf(m)), (lv_value_precise_t)lroundf(SYNC_C - 30 * cosf(m))};
+  hourPts[0] = {SYNC_C, SYNC_C};
+  hourPts[1] = {(lv_value_precise_t)lroundf(SYNC_C + 20 * sinf(h)), (lv_value_precise_t)lroundf(SYNC_C - 20 * cosf(h))};
+  lv_line_set_points(syncMin, minPts, 2);
+  lv_line_set_points(syncHour, hourPts, 2);
+}
+
+static void syncTick(lv_timer_t *) {
+  syncAngle = fmodf(syncAngle + 9.0f, 360.0f);
+  syncHands();
+}
+
+static lv_obj_t *makeHand(lv_obj_t *parent, int w) {
+  lv_obj_t *l = lv_line_create(parent);
+  lv_obj_set_pos(l, 0, 0);
+  lv_obj_set_style_line_width(l, w, 0);
+  lv_obj_set_style_line_rounded(l, true, 0);
+  return l;
+}
+
+static void createSync(lv_obj_t *scr) {
+  syncBox = lv_obj_create(scr);
+  lv_obj_remove_style_all(syncBox);
+  lv_obj_set_size(syncBox, 84, 84);
+  lv_obj_align(syncBox, LV_ALIGN_CENTER, 0, -14);
+  syncFace = lv_obj_create(syncBox);
+  lv_obj_remove_style_all(syncFace);
+  lv_obj_set_size(syncFace, 84, 84);
+  lv_obj_set_style_radius(syncFace, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_border_width(syncFace, 5, 0);
+  lv_obj_set_style_border_opa(syncFace, LV_OPA_COVER, 0);
+  syncHour = makeHand(syncBox, 5);
+  syncMin = makeHand(syncBox, 4);
+  syncDot = lv_obj_create(syncBox);
+  lv_obj_remove_style_all(syncDot);
+  lv_obj_set_size(syncDot, 10, 10);
+  lv_obj_set_style_radius(syncDot, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_bg_opa(syncDot, LV_OPA_COVER, 0);
+  lv_obj_center(syncDot);
+  lv_obj_add_flag(syncBox, LV_OBJ_FLAG_HIDDEN);
+
+  syncLabel = lv_label_create(scr);
+  lv_obj_set_style_text_font(syncLabel, &manrope_20, 0);
+  lv_label_set_text(syncLabel, "Synchronizing");
+  lv_obj_align(syncLabel, LV_ALIGN_CENTER, 0, 52);
+  lv_obj_add_flag(syncLabel, LV_OBJ_FLAG_HIDDEN);
+  syncAngle = 0;
+  syncHands();
+  syncPaint();
+}
 static uint32_t iconDayColor = 0xFFFFFF;
 static void applyIconColor() {
   lv_obj_set_style_text_color(weatherIcon, lv_color_hex(night ? 0xC01515 : iconDayColor), 0);
@@ -211,6 +281,7 @@ void ui_init() {
   lv_obj_center(status);
   lv_obj_add_flag(status, LV_OBJ_FLAG_HIDDEN);
   createWifi(scr);
+  createSync(scr);
 }
 
 // Layout: seconds ring on the rim; date on top, time dead centre, weather (icon, temp, stacked high/low) below.
@@ -256,6 +327,7 @@ void ui_set_night(bool n) {
   lv_obj_set_style_text_color(status, lv_color_hex(n ? 0xC01515 : 0xFFFFFF), 0);
   applyIconColor();
   wifiPaint();
+  syncPaint();
   for (auto o : skelShape) lv_obj_set_style_bg_color(o, lv_color_hex(n ? 0x4A0E0E : 0x4A4F57), 0);
   for (int i = 0; i < TICK_COUNT; i++) styleTick(i, ringSec);
 }
@@ -301,6 +373,22 @@ void ui_set_connecting(bool on) {
   } else {
     if (wifiTimer) { lv_timer_delete(wifiTimer); wifiTimer = nullptr; }
     lv_obj_add_flag(wifiBox, LV_OBJ_FLAG_HIDDEN);
+  }
+}
+
+void ui_set_syncing(bool on) {
+  if (on) {
+    ui_set_status(nullptr);
+    syncAngle = 0;
+    syncHands();
+    syncPaint();
+    lv_obj_remove_flag(syncBox, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_remove_flag(syncLabel, LV_OBJ_FLAG_HIDDEN);
+    if (!syncTimer) syncTimer = lv_timer_create(syncTick, 50, nullptr);
+  } else {
+    if (syncTimer) { lv_timer_delete(syncTimer); syncTimer = nullptr; }
+    lv_obj_add_flag(syncBox, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(syncLabel, LV_OBJ_FLAG_HIDDEN);
   }
 }
 
