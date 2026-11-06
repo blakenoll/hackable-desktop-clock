@@ -6,7 +6,7 @@
 
 LV_FONT_DECLARE(weather_icons);
 
-static lv_obj_t *spinner, *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *timeLabel, *dateLabel, *status;
+static lv_obj_t *spinner, *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *timeLabel, *dayLabel, *dateLabel, *status;
 
 // ---- Seconds ring: 60 ticks around the rim --------------------------------------
 // Elapsed seconds are softly lit, the current second is bright red, upcoming ones are dim.
@@ -107,7 +107,22 @@ void ui_init() {
   lv_obj_set_style_text_color(loLabel, lv_color_hex(0x6FB6FF), 0);
   lv_obj_add_flag(hiloBox, LV_OBJ_FLAG_HIDDEN);
   timeLabel = makeLabel(scr, &lv_font_montserrat_48, lv_color_white(), 0);  // dead centre
-  dateLabel = makeLabel(scr, &lv_font_montserrat_20, lv_color_hex(0xA0A0A0), -58);
+  // Date row: weekday in red, then "Nov 6" in gray, centred together.
+  lv_obj_t *dateRow = lv_obj_create(scr);
+  lv_obj_remove_style_all(dateRow);
+  lv_obj_set_size(dateRow, 190, LV_SIZE_CONTENT);
+  lv_obj_align(dateRow, LV_ALIGN_CENTER, 0, -58);
+  lv_obj_set_flex_flow(dateRow, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(dateRow, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(dateRow, 6, 0);
+  dayLabel = lv_label_create(dateRow);
+  lv_obj_set_style_text_font(dayLabel, &lv_font_montserrat_20, 0);
+  lv_obj_set_style_text_color(dayLabel, lv_color_hex(0xFF4D4D), 0);
+  lv_label_set_text(dayLabel, "");
+  dateLabel = lv_label_create(dateRow);
+  lv_obj_set_style_text_font(dateLabel, &lv_font_montserrat_20, 0);
+  lv_obj_set_style_text_color(dateLabel, lv_color_hex(0xA0A0A0), 0);
+  lv_label_set_text(dateLabel, "");
 
   status = lv_label_create(scr);
   lv_obj_set_style_text_font(status, &lv_font_montserrat_20, 0);
@@ -139,7 +154,11 @@ void ui_update(const tm &t) {
 
   if (t.tm_yday != lastDay) {
     lastDay = t.tm_yday;
-    strftime(buf, sizeof(buf), "%a %b %d", &t);
+    char wday[8], mon[8];
+    strftime(wday, sizeof(wday), "%a", &t);
+    strftime(mon, sizeof(mon), "%b", &t);
+    lv_label_set_text(dayLabel, wday);
+    snprintf(buf, sizeof(buf), "%s %d", mon, t.tm_mday);  // %d would zero-pad single digits
     lv_label_set_text(dateLabel, buf);
   }
 }
@@ -147,6 +166,7 @@ void ui_update(const tm &t) {
 void ui_set_night(bool n) {
   night = n;
   lv_obj_set_style_text_color(timeLabel, lv_color_hex(n ? 0xD01818 : 0xFFFFFF), 0);
+  lv_obj_set_style_text_color(dayLabel, lv_color_hex(n ? 0xD01818 : 0xFF4D4D), 0);   // weekday: brighter
   lv_obj_set_style_text_color(dateLabel, lv_color_hex(n ? 0x901010 : 0xA0A0A0), 0);
   lv_obj_set_style_text_color(weatherLabel, lv_color_hex(n ? 0xC01515 : 0xD0D8E0), 0);
   lv_obj_set_style_text_color(hiLabel, lv_color_hex(n ? 0xC01515 : 0xFF8A65), 0);

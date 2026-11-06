@@ -28,7 +28,7 @@ snprintf(buf, sizeof(buf), "%d:%02d", t.tm_hour, t.tm_min);   // 13:05
 // or zero-padded: "%02d:%02d"
 ```
 
-**Date format** — the `strftime` string (`"%a %b %d"` → `Thu Nov 06`). Examples: `"%d %b"` (06 Nov), `"%a %d/%m"` (Thu 06/11). The date uses a 20 pt font; keep it under about 14 characters so it fits inside the ring.
+**Date format** — the date is two labels side by side: the weekday in red (`dayLabel`, from `strftime("%a")`) and `Nov 6` in gray (`dateLabel`, built from `strftime("%b")` and `t.tm_mday`; the day is printed with `%d` through `snprintf` rather than `strftime` so single digits have no leading zero). For a different order or wording, change those lines in `ui_update()`; to show the weekday in the same color as the rest, give both labels the same color. The date uses a 20 pt font; keep it under about 14 characters so it fits inside the ring.
 
 **Show seconds as digits instead of (or as well as) the ring** — add a label and set it from `t.tm_sec` each second; remove the ring as described below.
 
@@ -39,7 +39,8 @@ Day colors are set where each label is created in `ui_init()`. Night colors are 
 | Element | Day | Night |
 |---------|-----|-------|
 | Time | `0xFFFFFF` | `0xD01818` |
-| Date | `0xA0A0A0` | `0x901010` |
+| Weekday | `0xFF4D4D` | `0xD01818` |
+| Month and day | `0xA0A0A0` | `0x901010` |
 | Temperature | `0xD0D8E0` | `0xC01515` |
 | High / Low | `0xFF8A65` / `0x6FB6FF` | `0xC01515` / `0x801010` |
 | Weather icon | per condition, in `weather_icon()` (`src/weather.cpp`) | `0xC01515` |
