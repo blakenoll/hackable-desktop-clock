@@ -41,12 +41,32 @@ static const Zone ZONES[] = {
 
 // ---- Persistence ------------------------------------------------------------
 
+bool prov_load_night() {
+  Preferences p;
+  p.begin("clock", false);
+  bool n = p.getBool("night", false);
+  p.end();
+  return n;
+}
+
+void prov_save_night(bool night) {
+  Preferences p;
+  p.begin("clock", false);
+  p.putBool("night", night);
+  p.end();
+}
+
 bool prov_load(ClockConfig &cfg) {
   Preferences p;
   p.begin("clock", false);
   cfg.ssid = p.getString("ssid", "");
   cfg.pass = p.getString("pass", "");
   cfg.tz = p.getString("tz", DEFAULT_TZ);
+  cfg.city = p.getString("city", "");
+  cfg.units = p.getString("units", "F")[0] == 'C' ? 'C' : 'F';
+  cfg.geocity = p.getString("geocity", "");
+  cfg.lat = p.getFloat("lat", 0);
+  cfg.lon = p.getFloat("lon", 0);
   p.end();
   return cfg.ssid.length() > 0;
 }
@@ -57,6 +77,17 @@ static void saveConfig(const ClockConfig &cfg) {
   p.putString("ssid", cfg.ssid);
   p.putString("pass", cfg.pass);
   p.putString("tz", cfg.tz);
+  p.putString("city", cfg.city);
+  p.putString("units", String(cfg.units));
+  p.end();
+}
+
+void prov_save_geo(const String &city, float lat, float lon) {
+  Preferences p;
+  p.begin("clock", false);
+  p.putString("geocity", city);
+  p.putFloat("lat", lat);
+  p.putFloat("lon", lon);
   p.end();
 }
 
@@ -123,6 +154,10 @@ static String buildForm(const String &netOptions, const ClockConfig &cur) {
   }
   h += "</select><label>Custom timezone <small>(optional POSIX TZ, overrides the list)</small></label>"
        "<input name=custom autocapitalize=off autocorrect=off value=\"" + (matched ? String("") : esc(cur.tz)) + "\">";
+  h += "<label>ZIP code for weather <small>(optional, US 5-digit)</small></label>"
+       "<input name=city inputmode=numeric pattern=\"[0-9]{5}\" maxlength=5 title=\"5-digit US ZIP code\" value=\"" + esc(cur.city) + "\">";
+  h += String("<label>Temperature units</label><select name=units><option value=F") + (cur.units == 'F' ? " selected" : "") +
+       ">Fahrenheit</option><option value=C" + (cur.units == 'C' ? " selected" : "") + ">Celsius</option></select>";
   h += "<button type=submit>Save &amp; restart</button></form></body></html>";
   return h;
 }
@@ -177,6 +212,9 @@ static String scanOptions() {
     String custom = server.arg("custom");
     custom.trim();
     n.tz = custom.length() ? custom : server.arg("tz");
+    n.city = server.arg("city");
+    n.city.trim();
+    n.units = server.arg("units") == "C" ? 'C' : 'F';
     if (n.ssid.length() == 0) {
       server.send(400, "text/plain", "WiFi network name is required.");
       return;

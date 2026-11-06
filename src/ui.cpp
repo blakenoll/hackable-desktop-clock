@@ -1,9 +1,58 @@
 #include <lvgl.h>
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include "ui.h"
 
-static lv_obj_t *timeLabel, *ampmLabel, *dateLabel, *status;
+LV_FONT_DECLARE(weather_icons);
+
+static lv_obj_t *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *timeLabel, *dateLabel, *status;
+
+// ---- Seconds ring: 60 ticks around the rim --------------------------------------
+// Elapsed seconds are softly lit, the current second is bright red, upcoming ones are dim.
+static constexpr int TICK_COUNT = 60;
+static constexpr float RING_CENTER = 119.5f;   // display is 240x240
+static constexpr float TICK_OUTER = 117.0f;    // stay just inside the round bezel
+static constexpr float TICK_MINOR_LEN = 7.0f;
+static constexpr float TICK_MAJOR_LEN = 12.0f; // every 5th second
+static lv_obj_t *ticks[TICK_COUNT];
+static bool night = false;
+static uint32_t iconDayColor = 0xFFFFFF;
+static void applyIconColor() {
+  lv_obj_set_style_text_color(weatherIcon, lv_color_hex(night ? 0xC01515 : iconDayColor), 0);
+}
+static int ringSec = -1;  // last second drawn on the ring (-1 = not drawn yet)
+static lv_point_precise_t tickPts[TICK_COUNT][2];  // must outlive the line objects
+
+static void styleTick(int i, int sec) {
+  bool major = i % 5 == 0;
+  uint32_t color = night ? (i == sec ? 0xFF2020 : (i < sec ? 0x8A1414 : 0x420C0C))
+                         : (i == sec ? 0xFF3030 : (i < sec ? 0x8A95A3 : 0x2A3138));
+  lv_obj_set_style_line_color(ticks[i], lv_color_hex(color), 0);
+  lv_obj_set_style_line_width(ticks[i], (major || i == sec) ? 3 : 2, 0);
+}
+
+static void createTicks(lv_obj_t *scr) {
+  lv_obj_set_style_pad_all(scr, 0, 0);
+  lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
+  for (int i = 0; i < TICK_COUNT; i++) {
+    float a = i * (2.0f * (float)M_PI / TICK_COUNT);  // clockwise from 12 o'clock
+    float sn = sinf(a), cs = cosf(a);
+    float rIn = TICK_OUTER - (i % 5 == 0 ? TICK_MAJOR_LEN : TICK_MINOR_LEN);
+    float x1 = RING_CENTER + rIn * sn, y1 = RING_CENTER - rIn * cs;
+    float x2 = RING_CENTER + TICK_OUTER * sn, y2 = RING_CENTER - TICK_OUTER * cs;
+    // lv_line points are relative to the object, which sits at the segment's bounding-box corner.
+    float minx = fminf(x1, x2), miny = fminf(y1, y2);
+    tickPts[i][0] = {(lv_value_precise_t)lroundf(x1 - minx), (lv_value_precise_t)lroundf(y1 - miny)};
+    tickPts[i][1] = {(lv_value_precise_t)lroundf(x2 - minx), (lv_value_precise_t)lroundf(y2 - miny)};
+    ticks[i] = lv_line_create(scr);
+    lv_obj_remove_style_all(ticks[i]);
+    lv_line_set_points(ticks[i], tickPts[i], 2);
+    lv_obj_set_pos(ticks[i], (int32_t)lroundf(minx), (int32_t)lroundf(miny));
+    lv_obj_set_style_line_rounded(ticks[i], true, 0);
+    styleTick(i, -1);
+  }
+}
 
 static lv_obj_t *makeLabel(lv_obj_t *parent, const lv_font_t *font, lv_color_t color, int yOffset) {
   lv_obj_t *l = lv_label_create(parent);
@@ -17,10 +66,40 @@ static lv_obj_t *makeLabel(lv_obj_t *parent, const lv_font_t *font, lv_color_t c
 void ui_init() {
   lv_obj_t *scr = lv_screen_active();
   lv_obj_set_style_bg_color(scr, lv_color_black(), 0);
+  createTicks(scr);
 
-  timeLabel = makeLabel(scr, &lv_font_montserrat_48, lv_color_white(), -16);
-  ampmLabel = makeLabel(scr, &lv_font_montserrat_20, lv_color_hex(0x00D0FF), 30);
-  dateLabel = makeLabel(scr, &lv_font_montserrat_20, lv_color_hex(0xA0A0A0), 64);
+  // Weather row: [icon] 72F, centred below the time (kept inside the round bezel).
+  weatherRow = lv_obj_create(scr);
+  lv_obj_remove_style_all(weatherRow);
+  lv_obj_set_size(weatherRow, 190, 36);
+  lv_obj_align(weatherRow, LV_ALIGN_CENTER, 0, 58);
+  lv_obj_set_flex_flow(weatherRow, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(weatherRow, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(weatherRow, 8, 0);
+  weatherIcon = lv_label_create(weatherRow);
+  lv_obj_set_style_text_font(weatherIcon, &weather_icons, 0);
+  lv_label_set_text(weatherIcon, "");
+  weatherLabel = lv_label_create(weatherRow);
+  lv_obj_set_style_text_font(weatherLabel, &lv_font_montserrat_20, 0);
+  lv_obj_set_style_text_color(weatherLabel, lv_color_hex(0xD0D8E0), 0);
+  lv_label_set_text(weatherLabel, "");
+
+  // Small stacked high (top) / low (bottom) to the right of the temperature.
+  hiloBox = lv_obj_create(weatherRow);
+  lv_obj_remove_style_all(hiloBox);
+  lv_obj_set_size(hiloBox, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+  lv_obj_set_flex_flow(hiloBox, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_style_pad_row(hiloBox, 0, 0);
+  lv_obj_set_style_pad_left(hiloBox, 4, 0);
+  hiLabel = lv_label_create(hiloBox);
+  lv_obj_set_style_text_font(hiLabel, &lv_font_montserrat_14, 0);
+  lv_obj_set_style_text_color(hiLabel, lv_color_hex(0xFF8A65), 0);
+  loLabel = lv_label_create(hiloBox);
+  lv_obj_set_style_text_font(loLabel, &lv_font_montserrat_14, 0);
+  lv_obj_set_style_text_color(loLabel, lv_color_hex(0x6FB6FF), 0);
+  lv_obj_add_flag(hiloBox, LV_OBJ_FLAG_HIDDEN);
+  timeLabel = makeLabel(scr, &lv_font_montserrat_48, lv_color_white(), 0);  // dead centre
+  dateLabel = makeLabel(scr, &lv_font_montserrat_20, lv_color_hex(0xA0A0A0), -58);
 
   status = lv_label_create(scr);
   lv_obj_set_style_text_font(status, &lv_font_montserrat_20, 0);
@@ -29,23 +108,62 @@ void ui_init() {
   lv_obj_add_flag(status, LV_OBJ_FLAG_HIDDEN);
 }
 
-// 12-hour clock: "9:05" with AM/PM centred underneath; date as "Thu Nov 06".
+// Layout: seconds ring on the rim; date on top, time dead centre, weather (icon, temp, stacked high/low) below.
 void ui_update(const tm &t) {
   static int lastMin = -1, lastDay = -1;
   char buf[24];
+
+  if (t.tm_sec != ringSec) {  // seconds ring
+    if (ringSec < 0 || t.tm_sec < ringSec) {  // first draw or new minute: restyle everything
+      for (int i = 0; i < TICK_COUNT; i++) styleTick(i, t.tm_sec);
+    } else {
+      for (int i = ringSec; i <= t.tm_sec; i++) styleTick(i, t.tm_sec);  // covers skipped seconds too
+    }
+    ringSec = t.tm_sec;
+  }
 
   if (t.tm_min != lastMin) {  // redraw the big text only when the minute changes
     lastMin = t.tm_min;
     int h12 = t.tm_hour % 12 == 0 ? 12 : t.tm_hour % 12;
     snprintf(buf, sizeof(buf), "%d:%02d", h12, t.tm_min);
     lv_label_set_text(timeLabel, buf);
-    lv_label_set_text(ampmLabel, t.tm_hour < 12 ? "AM" : "PM");
   }
 
   if (t.tm_yday != lastDay) {
     lastDay = t.tm_yday;
     strftime(buf, sizeof(buf), "%a %b %d", &t);
     lv_label_set_text(dateLabel, buf);
+  }
+}
+
+void ui_set_night(bool n) {
+  night = n;
+  lv_obj_set_style_text_color(timeLabel, lv_color_hex(n ? 0xD01818 : 0xFFFFFF), 0);
+  lv_obj_set_style_text_color(dateLabel, lv_color_hex(n ? 0x901010 : 0xA0A0A0), 0);
+  lv_obj_set_style_text_color(weatherLabel, lv_color_hex(n ? 0xC01515 : 0xD0D8E0), 0);
+  lv_obj_set_style_text_color(hiLabel, lv_color_hex(n ? 0xC01515 : 0xFF8A65), 0);
+  lv_obj_set_style_text_color(loLabel, lv_color_hex(n ? 0x801010 : 0x6FB6FF), 0);  // dimmer than the high
+  lv_obj_set_style_text_color(status, lv_color_hex(n ? 0xC01515 : 0xFFFFFF), 0);
+  applyIconColor();
+  for (int i = 0; i < TICK_COUNT; i++) styleTick(i, ringSec);
+}
+
+void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, const char *hi, const char *lo) {
+  lv_label_set_text(weatherLabel, text ? text : "");
+  if (hi && lo) {
+    lv_label_set_text(hiLabel, hi);
+    lv_label_set_text(loLabel, lo);
+    lv_obj_remove_flag(hiloBox, LV_OBJ_FLAG_HIDDEN);
+  } else {
+    lv_obj_add_flag(hiloBox, LV_OBJ_FLAG_HIDDEN);
+  }
+  if (icon) {
+    lv_label_set_text(weatherIcon, icon);
+    iconDayColor = iconColor;
+    applyIconColor();
+    lv_obj_remove_flag(weatherIcon, LV_OBJ_FLAG_HIDDEN);
+  } else {
+    lv_obj_add_flag(weatherIcon, LV_OBJ_FLAG_HIDDEN);
   }
 }
 
