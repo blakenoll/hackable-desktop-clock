@@ -39,8 +39,8 @@ BLK is optional: many modules have no such pin (the backlight is always on). If 
    - **Apple Silicon Macs:** install Rosetta 2 (`softwareupdate --install-rosetta --agree-to-license`). The pinned toolchain only ships x86_64 binaries. Without it the build fails with `Bad CPU type in executable`.
 2. **Clone and flash:**
    ```
-   git clone https://github.com/blakenoll/desktop-clock.git
-   cd desktop-clock
+   git clone https://github.com/blakenoll/hackable-desktop-clock.git
+   cd hackable-desktop-clock
    pio run -t upload
    ```
    The first build downloads the toolchain and libraries (a few minutes).
