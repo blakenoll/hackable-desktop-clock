@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-ESP32-C3 (Lolin C3 Mini) + 240x240 GC9A01 round display, LVGL 9 analog clock, NTP time. See `README.md` for wiring and code layout.
+ESP32-C3 (Lolin C3 Mini) + 240x240 GC9A01 round display, LVGL 9 digital clock with NTP time, weather and night mode. See `README.md` for wiring and code layout.
+
+Docs for people and agents: `docs/CUSTOMIZING.md` (where to change what), `docs/HARDWARE.md` (pins, displays, boards, why versions are pinned), `docs/TROUBLESHOOTING.md`. Project skills in `.claude/skills/`: `flash-clock`, `customize-clock`, `change-hardware`.
 
 ## Commands
 
@@ -10,7 +12,7 @@ ESP32-C3 (Lolin C3 Mini) + 240x240 GC9A01 round display, LVGL 9 analog clock, NT
 
 ## Gotchas (all hit during first bring-up)
 
-- **Apple Silicon needs Rosetta 2.** The pinned `espressif32` platform (6.10.0, Arduino core 2.x) uses an x86_64-only `toolchain-riscv32-esp@8.4.0`. Without Rosetta the build fails with `Bad CPU type in executable`. Install: `softwareupdate --install-rosetta --agree-to-license` (user must run it).
+- **Apple Silicon needs Rosetta 2.** The pinned `espressif32@6.10.0` platform (Arduino core 2.x; `platformio.ini` pins platform and libraries on purpose) uses an x86_64-only `toolchain-riscv32-esp@8.4.0`. Without Rosetta the build fails with `Bad CPU type in executable`. Install: `softwareupdate --install-rosetta --agree-to-license` (user must run it).
 - **WiFi/timezone are runtime settings, not build-time.** They're stored in NVS (`Preferences`, namespace `clock`: `ssid`, `pass`, `tz`) and set through the captive portal in `src/provisioning.cpp`. `include/secrets.h` is obsolete (still gitignored in case an old copy exists). Never print or commit stored credentials. To force setup mode on a flashed board: hold BOOT 3 s while running (holding it *during reset* enters the ROM bootloader instead).
 - **`fix_tft.py` is load-bearing.** It is a PlatformIO pre-build script (`extra_scripts` in `platformio.ini`) that patches the downloaded TFT_eSPI. The library sets `SPI_PORT` to `SPI2_HOST` (=1), but this core's `REG_SPI_BASE(i)` only maps `i==2` to the SPI2 base, so the base is 0. The result is a store-access fault (`MTVAL 0x10`) in `tft.init()` and a boot loop. The script rewrites it to `2`. Don't remove it unless the platform or core is upgraded and verified.
 - **Don't use `pio device monitor` from an agent shell.** It needs an interactive TTY. To read serial output, use pyserial from the PlatformIO venv at `~/.platformio/penv/bin/python` on `/dev/cu.usbmodem*` at 115200. Toggle RTS to reset the board and catch boot logs. Have the user run the monitor in their own terminal if they want it live.

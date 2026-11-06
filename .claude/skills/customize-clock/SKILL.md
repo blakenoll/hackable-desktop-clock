@@ -1,0 +1,27 @@
+---
+name: customize-clock
+description: Change how the ESP32 desktop clock looks or behaves - time/date format, colors, layout, fonts, seconds ring, night mode, weather fields or icons, timezone list, setup-page settings. Use when the user wants to tweak, restyle or extend the clock firmware.
+---
+
+# Customizing the clock
+
+Start from `docs/CUSTOMIZING.md`: it lists the exact file and function for each common change (12/24-hour, date format, colors table, layout offsets, ring constants, timezone presets, weather refresh and fields, adding a setup-page setting, regenerating the icon font). `docs/HARDWARE.md` covers pins/displays and `CLAUDE.md` has project facts.
+
+## Workflow
+
+1. Make the change in the file named in the doc. Keep it small and in the existing style (the UI is `src/ui.cpp`; weather is `src/weather.cpp`; saved settings and the setup page are `src/provisioning.cpp`).
+2. `pio run` (see the `flash-clock` skill for PATH and Rosetta notes). Report the flash-usage line.
+3. Ask before flashing; use the `flash-clock` skill to do it.
+4. **You can't see the screen.** Tell the user what to check and ask how it looks; expect a round or two of nudging offsets/sizes.
+5. Update `README.md` / `docs/` if behavior or settings changed.
+
+## Constraints to respect
+
+- **Round bezel.** Content near the corners is clipped. Usable width at vertical offset `y` from center is about `2*sqrt(120^2 - y^2)` px; the seconds ring occupies the outer ~12 px.
+- **Only the main loop calls LVGL.** The weather task communicates through `weather_get()` (mutex-protected struct). Never call `lv_*` from another task.
+- **Night mode parity.** Every day color needs a red-tone night counterpart in `ui_set_night()` / `styleTick()`; avoid blue/green at night. The QR setup screen is intentionally excluded (it needs black on white to scan).
+- **Fonts cost flash.** A new Montserrat size must be enabled in `include/lv_conf.h`; the 48 pt font alone is ~92 KB. The built-in fonts have no `°` glyph. Budget: firmware ~1.39 MB of a 3 MB partition.
+- **Icon font changes** need the `lv_font_conv` procedure in `docs/CUSTOMIZING.md`. Download the source font into a new empty folder outside the repo, run tools from elsewhere, and keep the SIL OFL credit in the README.
+- **Settings added to the setup page** touch four places in `src/provisioning.*` (struct, load, save, form + `/save` handler); see the doc.
+- **Don't remove `fix_tft.py`** or bump the pinned platform/library versions in `platformio.ini` without verifying the display initializes (see `docs/HARDWARE.md`).
+- Never commit or print saved credentials; they live in the board's flash, not in the repo.
