@@ -8,7 +8,8 @@ Docs for people and agents: `docs/CUSTOMIZING.md` (where to change what), `docs/
 
 - Build: `pio run`
 - Flash: `pio run -t upload`
-- `pio` lives in `~/.platformio/penv/bin`. It may not be on PATH in agent shells, so use `export PATH="$PATH:$HOME/.platformio/penv/bin"` or the full path.
+- With [mise](https://mise.jdx.dev): `mise install` (PlatformIO via uv/pipx, plus Node for font regeneration), then `mise run build|upload|clean` (`mise.toml`). Rosetta and the other gotchas below still apply.
+- Otherwise `pio` lives in `~/.platformio/penv/bin`. It may not be on PATH in agent shells, so use `export PATH="$PATH:$HOME/.platformio/penv/bin"` or the full path.
 
 ## Gotchas (all hit during first bring-up)
 

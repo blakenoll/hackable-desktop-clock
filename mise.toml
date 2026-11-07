@@ -1,0 +1,18 @@
+[tools]
+uv = "latest"
+# PlatformIO CLI; it manages its own toolchains/penv under ~/.platformio
+"pipx:platformio" = "6.1.18"
+# Only needed for regenerating fonts with `npx lv_font_conv` (see CLAUDE.md)
+node = "lts"
+
+[tasks.build]
+description = "Build the firmware"
+run = "pio run"
+
+[tasks.upload]
+description = "Build and flash the board"
+run = "pio run -t upload"
+
+[tasks.clean]
+description = "Clean build output"
+run = "pio run -t clean"
