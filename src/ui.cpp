@@ -11,7 +11,7 @@ LV_FONT_DECLARE(manrope_14);
 LV_FONT_DECLARE(manrope_20);
 LV_FONT_DECLARE(manrope_56);
 
-static lv_obj_t *skeleton, *skelShape[4], *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *rangeTrack, *rangeDot, *timeH, *timeC, *timeM, *ampmLabel, *dayLabel, *dateLabel, *status;
+static lv_obj_t *skeleton, *skelShape[5], *skelHilo, *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *rangeTrack, *rangeDot, *timeH, *timeC, *timeM, *ampmLabel, *dayLabel, *dateLabel, *status;
 
 
 // ---- Seconds ring: 60 ticks around the rim --------------------------------------
@@ -256,7 +256,7 @@ static constexpr int TAIL_LEN = 12;
 
 static void styleTick(int i, int sec) {
   bool major = i % 5 == 0;
-  lv_color_t base = mixDN(0x56606D, 0x5A1010), bright = mixDN(0x8E9EB3, 0xA01C1C), dim = mixDN(0x2A3138, 0x420C0C);
+  lv_color_t base = mixDN(0x56606D, 0x000000), bright = mixDN(0x8E9EB3, 0x000000), dim = mixDN(0x2A3138, 0x000000);
   // Tail colour for a tick `behind` seconds behind the head: bright just behind it, fading to base.
   auto tail = [&](int behind) {
     int f = 255 * (TAIL_LEN - behind + 1) / (TAIL_LEN + 1);  // 255 near the head -> ~0 at the tail end
@@ -265,7 +265,7 @@ static void styleTick(int i, int sec) {
   lv_color_t color;
   int width = major ? 3 : 2;
   if (i == sec) {
-    color = mixDN(ACCENTS[accentIdx].tick, 0xFF2020);
+    color = mixDN(ACCENTS[accentIdx].tick, 0x000000);
     width = 3;
   } else if (i < sec) {
     int behind = sec - i;  // 1 = tick right before the current one
@@ -337,14 +337,22 @@ void ui_init() {
   };
   skelShape[0] = shape(skeleton, 24, 24, LV_RADIUS_CIRCLE);
   skelShape[1] = shape(skeleton, 56, 16, 8);
-  lv_obj_t *skelHilo = lv_obj_create(skeleton);
+  // Mirrors the range bar: a thin vertical bar with a number bar at its top and bottom.
+  skelHilo = lv_obj_create(skeleton);
   lv_obj_remove_style_all(skelHilo);
   lv_obj_set_size(skelHilo, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-  lv_obj_set_flex_flow(skelHilo, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_style_pad_row(skelHilo, 4, 0);
+  lv_obj_set_flex_flow(skelHilo, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(skelHilo, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(skelHilo, 5, 0);
   lv_obj_set_style_pad_left(skelHilo, 4, 0);
-  skelShape[2] = shape(skelHilo, 24, 8, 4);
-  skelShape[3] = shape(skelHilo, 24, 8, 4);
+  skelShape[2] = shape(skelHilo, RANGE_W, RANGE_H, RANGE_W / 2);
+  lv_obj_t *skelNums = lv_obj_create(skelHilo);
+  lv_obj_remove_style_all(skelNums);
+  lv_obj_set_size(skelNums, 20, RANGE_H);
+  skelShape[3] = shape(skelNums, 20, 8, 4);
+  lv_obj_align(skelShape[3], LV_ALIGN_TOP_LEFT, 0, -1);
+  skelShape[4] = shape(skelNums, 20, 8, 4);
+  lv_obj_align(skelShape[4], LV_ALIGN_BOTTOM_LEFT, 0, 1);
   lv_anim_t pulse;
   lv_anim_init(&pulse);
   lv_anim_set_var(&pulse, skeleton);
@@ -544,8 +552,10 @@ static void swapText(int idx, lv_obj_t *label, const char *text) {
 void ui_update(const tm &t) {
   char buf[24];
 
-  if (t.tm_sec != ringSec) {  // seconds ring
-    if (ringSec < 0 || t.tm_sec <= TAIL_LEN || t.tm_sec < ringSec) {  // first draw, new minute, or last minute's ticks still dissolving: restyle everything
+  if (t.tm_sec != ringSec) {  // seconds ring (not drawn at all once night is fully faded in)
+    if (nightMix == 255) {
+      // hidden: nothing to restyle
+    } else if (ringSec < 0 || t.tm_sec <= TAIL_LEN || t.tm_sec < ringSec) {  // first draw, new minute, or last minute's ticks still dissolving: restyle everything
       for (int i = 0; i < TICK_COUNT; i++) styleTick(i, t.tm_sec);
     } else {
       for (int i = ringSec > TAIL_LEN ? ringSec - TAIL_LEN : 0; i <= t.tm_sec; i++) styleTick(i, t.tm_sec);  // tail + skipped seconds
@@ -584,6 +594,18 @@ void ui_update(const tm &t) {
   }
 }
 
+static bool rangeWanted = false;  // weather supplied a range
+// At night the range bar is invisible but keeps its layout slot, and the row slides sideways in step
+// with the fade so the icon + temperature end up centred (no jump when the bar disappears).
+static void rangeNightSync() {
+  static int slot = 0;
+  if (rangeWanted && !lv_obj_has_flag(hiloBox, LV_OBJ_FLAG_HIDDEN) && slot == 0) {
+    lv_obj_update_layout(weatherRow);
+    slot = lv_obj_get_width(hiloBox) + 5;  // + the row's column gap
+  }
+  lv_obj_set_style_translate_x(weatherRow, rangeWanted ? slot * nightMix / 510 : 0, 0);
+}
+
 // Recolours everything for the current nightMix (and accent).
 static void applyTheme() {
   for (auto l : {timeH, timeC, timeM}) lv_obj_set_style_text_color(l, mixDN(0xFFFFFF, 0xD01818), 0);
@@ -591,18 +613,32 @@ static void applyTheme() {
   lv_obj_set_style_text_color(dayLabel, mixDN(ACCENTS[accentIdx].text, 0xD01818), 0);  // weekday: brighter
   lv_obj_set_style_text_color(dateLabel, mixDN(0xA0A0A0, 0x901010), 0);
   lv_obj_set_style_text_color(weatherLabel, mixDN(0xD0D8E0, 0xC01515), 0);
-  lv_obj_set_style_text_color(hiLabel, mixDN(0xFF8A65, 0xC01515), 0);
-  lv_obj_set_style_text_color(loLabel, mixDN(0x6FB6FF, 0x801010), 0);  // dimmer than the high
-  lv_obj_set_style_bg_color(rangeTrack, mixDN(0xFF8A65, 0xC01515), 0);       // top = high
-  lv_obj_set_style_bg_grad_color(rangeTrack, mixDN(0x6FB6FF, 0x801010), 0);  // bottom = low
-  lv_obj_set_style_bg_color(rangeDot, mixDN(0xFFFFFF, 0xFF4040), 0);
+  // Quiet night face: the range bar and high/low fade to black (the layout slot is freed once fully faded).
+  lv_obj_set_style_text_color(hiLabel, mixDN(0xFF8A65, 0x000000), 0);
+  lv_obj_set_style_text_color(loLabel, mixDN(0x6FB6FF, 0x000000), 0);
+  lv_obj_set_style_bg_color(rangeTrack, mixDN(0xFF8A65, 0x000000), 0);       // top = high
+  lv_obj_set_style_bg_grad_color(rangeTrack, mixDN(0x6FB6FF, 0x000000), 0);  // bottom = low
+  lv_obj_set_style_bg_color(rangeDot, mixDN(0xFFFFFF, 0x000000), 0);
+  lv_obj_set_style_border_color(rangeDot, lv_color_black(), 0);
+  rangeNightSync();
   lv_obj_set_style_text_color(status, mixDN(0xFFFFFF, 0xC01515), 0);
   applyIconColor();
   wifiPaint();    // these three only show during boot/setup and follow the target mode
   syncPaint();
   sonarPaint();
-  for (auto o : skelShape) lv_obj_set_style_bg_color(o, mixDN(0x4A4F57, 0x4A0E0E), 0);
-  for (int i = 0; i < TICK_COUNT; i++) styleTick(i, ringSec);
+  // Night: the range-bar part of the skeleton fades to black like the real bar, and the row slides to stay centred.
+  for (int k = 0; k < 5; k++) lv_obj_set_style_bg_color(skelShape[k], mixDN(0x4A4F57, k >= 2 ? 0x000000 : 0x4A0E0E), 0);
+  constexpr int skelSlot = 4 + RANGE_W + 5 + 20 + 8;  // pad + bar + gap + number bars + the row's gap
+  lv_obj_set_style_translate_x(skeleton, skelSlot * nightMix / 510, 0);
+  // Quiet night: the ring fades to black along with everything else, then is hidden (no motion at all).
+  for (int i = 0; i < TICK_COUNT; i++) {
+    if (nightMix == 255) {
+      lv_obj_add_flag(ticks[i], LV_OBJ_FLAG_HIDDEN);
+    } else {
+      lv_obj_remove_flag(ticks[i], LV_OBJ_FLAG_HIDDEN);
+      styleTick(i, ringSec);
+    }
+  }
 }
 
 static uint8_t appliedMix = 0;
@@ -649,6 +685,7 @@ void ui_set_options(bool use24, int dateOrder, int accent) {
 
 // A comet (head + fading tail) runs once around the ring, leaving no trace.
 void ui_boot_splash() {
+  if (nightMix == 255) return;  // no ring at night
   for (int step = 0; step < TICK_COUNT + TAIL_LEN + 2; step++) {
     int lo = step - TAIL_LEN - 1 < 0 ? 0 : step - TAIL_LEN - 1;
     int hi = step < TICK_COUNT - 1 ? step : TICK_COUNT - 1;
@@ -676,6 +713,7 @@ void ui_set_weather_loading(bool loading) {
 // The range dot glides to its new position.
 void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool hasRange, int lo, int hi, float cur) {
   swapText(SW_TEMP, weatherLabel, text ? text : "");
+  rangeWanted = hasRange;
   if (hasRange) {
     char h[12], l[12];
     snprintf(h, sizeof(h), "%d", hi);
@@ -690,6 +728,7 @@ void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool
       rangePlace();
       lv_obj_remove_flag(hiloBox, LV_OBJ_FLAG_HIDDEN);
       fadeIn(hiloBox);
+      rangeNightSync();
     } else {
       swapText(SW_HI, hiLabel, h);
       swapText(SW_LO, loLabel, l);
@@ -707,6 +746,7 @@ void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool
   } else {
     lv_anim_delete(hiloBox, nullptr);
     lv_obj_add_flag(hiloBox, LV_OBJ_FLAG_HIDDEN);
+    rangeNightSync();
   }
   if (icon) {
     pendingIconColor = iconColor;

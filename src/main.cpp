@@ -82,6 +82,14 @@ void loop() {
   if (getLocalTime(&t, 0) && t.tm_sec != lastSec) {
     lastSec = t.tm_sec;
     ui_update(t);
+#ifdef CYCLE_NIGHT  // dev preview (-DCYCLE_NIGHT=1): flip day/night every 75 s to watch the transition; persists nothing
+    static uint32_t lastFlip = millis();
+    if (millis() - lastFlip > 75000) {
+      lastFlip = millis();
+      g_night = !g_night;
+      ui_set_night(g_night);
+    }
+#endif
 
     static uint32_t shownWx = 0;
     WeatherData w = weather_get();
@@ -92,7 +100,7 @@ void loop() {
       if (w.loading) {
         // skeleton only; wait for the first result
       } else if (w.valid) {
-#ifndef FORCE_NIGHT
+#if !defined(FORCE_NIGHT) && !defined(CYCLE_NIGHT)
         if (w.isDay == g_night) {  // is_day flipped
           g_night = !w.isDay;
           ui_set_night(g_night);
