@@ -2,7 +2,7 @@
 
 ESP32-C3 (Lolin C3 Mini) + 240x240 GC9A01 round display, LVGL 9 digital clock with NTP time, weather and night mode. See `README.md` for wiring and code layout.
 
-Docs for people and agents: `docs/CUSTOMIZING.md` (where to change what), `docs/HARDWARE.md` (pins, displays, boards, why versions are pinned), `docs/TROUBLESHOOTING.md`. Project skills in `.claude/skills/`: `flash-clock`, `customize-clock`, `change-hardware`.
+Docs for people and agents: `docs/CUSTOMIZING.md` (where to change what), `docs/HARDWARE.md` (pins, displays, boards, why versions are pinned), `docs/TROUBLESHOOTING.md`. Project skills in `.claude/skills/`: `flash-clock`, `customize-clock`, `change-hardware`. `.agents/skills` is a symlink to `.claude/skills`, and `AGENTS.md` is a symlink to this file, so other agents see the same content; edit the real files.
 
 ## Commands
 
