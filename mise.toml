@@ -1,7 +1,7 @@
 [tools]
 uv = "latest"
 # PlatformIO CLI; it manages its own toolchains/penv under ~/.platformio
-"pipx:platformio" = "6.1.18"
+"pipx:platformio" = "6.2.0"
 # Only needed for regenerating fonts with `npx lv_font_conv` (see CLAUDE.md)
 node = "lts"
 
