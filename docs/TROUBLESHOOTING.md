@@ -4,7 +4,7 @@
 
 **`Bad CPU type in executable` (Apple Silicon Mac).** The pinned toolchain is x86_64-only. Install Rosetta 2: `softwareupdate --install-rosetta --agree-to-license`, then rebuild.
 
-**`pio: command not found`.** PlatformIO's CLI lives in `~/.platformio/penv/bin`. Add it to your PATH (`export PATH="$PATH:$HOME/.platformio/penv/bin"` in your shell profile) or use the full path.
+**`pio: command not found`.** If you use [mise](https://mise.jdx.dev), run `mise install` and then `mise run build` (or prefix commands with `mise exec --`). Otherwise PlatformIO's CLI lives in `~/.platformio/penv/bin`. Add it to your PATH (`export PATH="$PATH:$HOME/.platformio/penv/bin"` in your shell profile) or use the full path.
 
 **The first build takes minutes.** It downloads the toolchain, Arduino core and libraries. Later builds take seconds to a minute.
 

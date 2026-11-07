@@ -16,6 +16,12 @@ Read `CLAUDE.md` and `docs/TROUBLESHOOTING.md` for background. The short version
 ## Build
 
 ```
+mise run build   # if mise.toml exists: mise provides pio (also `mise run upload`)
+```
+
+Without mise:
+
+```
 export PATH="$PATH:$HOME/.platformio/penv/bin"   # pio may not be on PATH
 pio run
 ```

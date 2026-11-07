@@ -35,7 +35,7 @@ BLK is optional: many modules have no such pin (the backlight is always on). If 
 
 ## Quick start
 
-1. **Install PlatformIO Core** ([instructions](https://docs.platformio.org/en/latest/core/installation/index.html)) or the PlatformIO IDE extension for VS Code.
+1. **Install PlatformIO Core** ([instructions](https://docs.platformio.org/en/latest/core/installation/index.html)) or the PlatformIO IDE extension for VS Code. With [mise](https://mise.jdx.dev), `mise install` sets up PlatformIO and `mise run upload` builds and flashes.
    - **Apple Silicon Macs:** install Rosetta 2 (`softwareupdate --install-rosetta --agree-to-license`). The pinned toolchain only ships x86_64 binaries. Without it the build fails with `Bad CPU type in executable`.
 2. **Clone and flash:**
    ```
