@@ -1,6 +1,6 @@
 # Hardware notes
 
-Tested on: **Lolin (Wemos) C3 Mini** (ESP32-C3, 4 MB flash) + a **1.28" GC9A01 240x240 round SPI display**, on macOS (Apple Silicon). Everything below that goes beyond that combination is guidance, not something that has been tried.
+Tested on: **ESP32-C3 SuperMini** (4 MB flash) + a **1.28" GC9A01 240x240 round SPI display**, on macOS (Apple Silicon). Everything below that goes beyond that combination is guidance, not something that has been tried.
 
 ## Where the hardware is configured
 

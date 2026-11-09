@@ -12,7 +12,7 @@ A digital desk clock for an ESP32-C3 and a 240x240 round GC9A01 display, built w
 
 | Part | Notes |
 |------|-------|
-| ESP32-C3 board | Developed on a Lolin (Wemos) C3 Mini, 4 MB flash. Other ESP32-C3 boards should work with the same pins. |
+| ESP32-C3 board | Developed on an ESP32-C3 SuperMini, 4 MB flash. Other ESP32-C3 boards should work with the same pins. |
 | GC9A01 round display, 240x240, SPI | The common 1.28" module. The backlight (BLK) pin is optional. |
 | USB cable | For flashing; the C3 uses its built-in USB. |
 
@@ -20,9 +20,9 @@ Other boards and displays are possible; see [docs/HARDWARE.md](docs/HARDWARE.md)
 
 ## Wiring
 
-![Wiring diagram: C3 Mini to GC9A01](docs/wiring.svg)
+![Wiring diagram: ESP32-C3 SuperMini to GC9A01](docs/wiring.svg)
 
-| GC9A01 | C3 Mini GPIO |
+| GC9A01 | ESP32-C3 SuperMini GPIO |
 |--------|--------------|
 | VCC    | 3V3          |
 | GND    | GND          |
