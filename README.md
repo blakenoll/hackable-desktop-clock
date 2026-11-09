@@ -20,6 +20,8 @@ Other boards and displays are possible; see [docs/HARDWARE.md](docs/HARDWARE.md)
 
 ## Wiring
 
+![Wiring diagram: C3 Mini to GC9A01](docs/wiring.svg)
+
 | GC9A01 | C3 Mini GPIO |
 |--------|--------------|
 | VCC    | 3V3          |

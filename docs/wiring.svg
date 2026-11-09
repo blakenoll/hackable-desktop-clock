@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400" font-family="-apple-system, Helvetica, Arial, sans-serif">
+  <title>Wiring: Lolin C3 Mini to GC9A01 round display</title>
+  <rect width="640" height="400" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="320" y="30" text-anchor="middle" font-size="16" font-weight="600" fill="#1f2328">Wiring: Lolin C3 Mini → GC9A01 round display (SPI)</text>
+
+  <!-- C3 Mini board -->
+  <rect x="40" y="55" width="150" height="300" rx="10" fill="#2b2f36"/>
+  <text x="115" y="85" text-anchor="middle" font-size="13" font-weight="600" fill="#fff">Lolin C3 Mini</text>
+  <text x="115" y="102" text-anchor="middle" font-size="10" fill="#9aa4b2">ESP32-C3</text>
+  <rect x="85" y="320" width="60" height="26" rx="4" fill="#9aa4b2"/>
+  <text x="115" y="337" text-anchor="middle" font-size="10" fill="#1f2328">USB-C</text>
+
+  <!-- Display -->
+  <rect x="450" y="55" width="150" height="300" rx="10" fill="#2b2f36"/>
+  <circle cx="525" cy="318" r="30" fill="#0b0d10" stroke="#5b6573" stroke-width="3"/>
+  <text x="525" y="322" text-anchor="middle" font-size="9" fill="#9aa4b2">240×240</text>
+  <text x="525" y="85" text-anchor="middle" font-size="13" font-weight="600" fill="#fff">GC9A01</text>
+  <text x="525" y="102" text-anchor="middle" font-size="10" fill="#9aa4b2">1.28" round</text>
+
+  <!-- Wires: y positions -->
+  <g stroke-width="3" fill="none" stroke-linecap="round">
+    <line x1="190" y1="125" x2="450" y2="125" stroke="#d62828"/>
+    <line x1="190" y1="150" x2="450" y2="150" stroke="#222"/>
+    <line x1="190" y1="175" x2="450" y2="175" stroke="#e9a100"/>
+    <line x1="190" y1="200" x2="450" y2="200" stroke="#2a7de1"/>
+    <line x1="190" y1="225" x2="450" y2="225" stroke="#2e9e4f"/>
+    <line x1="190" y1="250" x2="450" y2="250" stroke="#8e44ad"/>
+    <line x1="190" y1="275" x2="450" y2="275" stroke="#e67e22"/>
+
+  </g>
+  <g fill="#fff" stroke="#5b6573">
+    <circle cx="190" cy="125" r="4"/><circle cx="190" cy="150" r="4"/><circle cx="190" cy="175" r="4"/>
+    <circle cx="190" cy="200" r="4"/><circle cx="190" cy="225" r="4"/><circle cx="190" cy="250" r="4"/><circle cx="190" cy="275" r="4"/>
+    <circle cx="450" cy="125" r="4"/><circle cx="450" cy="150" r="4"/><circle cx="450" cy="175" r="4"/>
+    <circle cx="450" cy="200" r="4"/><circle cx="450" cy="225" r="4"/><circle cx="450" cy="250" r="4"/><circle cx="450" cy="275" r="4"/>
+  </g>
+
+  <!-- Board-side labels (inside board) -->
+  <g font-size="12" fill="#fff" text-anchor="start">
+    <text x="55" y="129">3V3</text>
+    <text x="55" y="154">GND</text>
+    <text x="55" y="179">GPIO 10</text>
+    <text x="55" y="204">GPIO 4</text>
+    <text x="55" y="229">GPIO 5</text>
+    <text x="55" y="254">GPIO 1</text>
+    <text x="55" y="279">GPIO 0</text>
+  </g>
+  <!-- Display-side labels -->
+  <g font-size="12" fill="#fff" text-anchor="end">
+    <text x="585" y="129">VCC</text>
+    <text x="585" y="154">GND</text>
+    <text x="585" y="179">SCL</text>
+    <text x="585" y="204">SDA</text>
+    <text x="585" y="229">CS</text>
+    <text x="585" y="254">DC</text>
+    <text x="585" y="279">RST</text>
+  </g>
+  <!-- Signal names mid-wire -->
+  <g font-size="10" fill="#57606a" text-anchor="middle">
+    <text x="320" y="119">power</text>
+    <text x="320" y="144">ground</text>
+    <text x="320" y="169">SPI clock</text>
+    <text x="320" y="194">SPI data (MOSI)</text>
+    <text x="320" y="219">chip select</text>
+    <text x="320" y="244">data / command</text>
+    <text x="320" y="269">reset</text>
+  </g>
+
+  <text x="320" y="382" text-anchor="middle" font-size="11" fill="#57606a">BLK (backlight) is optional: if your module has it, wire to GPIO 3 and enable -DTFT_BL=3 in platformio.ini.</text>
+</svg>
