@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/cover.svg" alt="hackable-desktop-clock: an ESP32-C3 round desk clock with weather, seconds ring and night mode" width="100%"></p>
+
 # hackable-desktop-clock
 
 A digital desk clock for an ESP32-C3 and a 240x240 round GC9A01 display, built with PlatformIO, Arduino and LVGL 9.
