@@ -17,7 +17,7 @@
 #define LV_USE_LINE 1   // seconds-ring ticks
 #define LV_USE_LABEL 1
 #define LV_USE_CANVAS 1
-#define LV_USE_QRCODE 1   // WiFi-setup join code
+#define LV_USE_QRCODE 0
 
 #endif
 #endif

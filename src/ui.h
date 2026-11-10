@@ -30,5 +30,5 @@ void ui_set_weather_loading(bool loading);
 // text nullptr/"" clears the temperature.
 void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool hasRange, int lo, int hi, float cur);
 
-// Replaces the clock face with the WiFi-setup screen (join QR + credentials).
-void ui_show_setup(const char *apSsid, const char *apPass, const char *qrPayload, const char *ip);
+// Replaces the clock face with the WiFi-setup screen (AP name + password).
+void ui_show_setup(const char *apSsid, const char *apPass, const char *ip);

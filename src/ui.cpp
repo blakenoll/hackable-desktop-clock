@@ -826,32 +826,25 @@ void ui_set_status(const char *msg) {
   }
 }
 
-void ui_show_setup(const char *apSsid, const char *apPass, const char *qrPayload, const char *ip) {
+void ui_show_setup(const char *apSsid, const char *apPass, const char *ip) {
   lv_obj_t *scr = lv_obj_create(nullptr);
   lv_obj_set_style_bg_color(scr, lv_color_black(), 0);
 
-  lv_obj_t *qr = lv_qrcode_create(scr);
-  lv_qrcode_set_size(qr, 104);
-  lv_qrcode_set_dark_color(qr, lv_color_black());
-  lv_qrcode_set_light_color(qr, lv_color_white());
-  lv_qrcode_update(qr, qrPayload, strlen(qrPayload));
-  lv_obj_set_style_border_color(qr, lv_color_white(), 0);  // quiet zone around the code
-  lv_obj_set_style_border_width(qr, 5, 0);
-  lv_obj_align(qr, LV_ALIGN_CENTER, 0, -38);
-
-  char buf[48];
-  auto addLabel = [&](const char *text, lv_color_t color, int y) {
+  const lv_color_t dim = lv_color_hex(0x808080);
+  auto addLabel = [&](const char *text, const lv_font_t *font, lv_color_t color, int y) {
     lv_obj_t *l = lv_label_create(scr);
     lv_label_set_text(l, text);
-    lv_obj_set_style_text_font(l, &manrope_14, 0);
+    lv_obj_set_style_text_font(l, font, 0);
     lv_obj_set_style_text_color(l, color, 0);
     lv_obj_align(l, LV_ALIGN_CENTER, 0, y);
   };
-  addLabel(apSsid, lv_color_white(), 32);
-  snprintf(buf, sizeof(buf), "Password: %s", apPass);
-  addLabel(buf, lv_color_white(), 52);
+  char buf[48];
+  addLabel("Join this WiFi", &manrope_14, dim, -54);
+  addLabel(apSsid, &manrope_20, lv_color_white(), -28);
+  addLabel("Password", &manrope_14, dim, 8);
+  addLabel(apPass, &manrope_20, lv_color_white(), 34);
   snprintf(buf, sizeof(buf), "then open %s", ip);
-  addLabel(buf, lv_color_hex(0x808080), 74);
+  addLabel(buf, &manrope_14, dim, 72);
 
   lv_screen_load(scr);
 }

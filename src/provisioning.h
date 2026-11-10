@@ -29,8 +29,8 @@ bool prov_load(ClockConfig &cfg);
 // press has to happen while the firmware is running.)
 bool prov_button_long_press();
 
-// Starts a WPA2 access point with a random password, shows a join QR code on
-// the display, and serves a captive-portal page for WiFi + timezone. Saves to
+// Starts a WPA2 access point with a random password, shows the network name and
+// password on the display, and serves a captive-portal page for WiFi + timezone. Saves to
 // NVS and reboots on submit; never returns.
 // hasSaved: if true, reboots after a few idle minutes to retry saved settings.
 [[noreturn]] void prov_run(bool hasSaved);

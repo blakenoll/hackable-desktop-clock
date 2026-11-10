@@ -36,7 +36,7 @@
 
 **The setup page didn't pop up.** Some phones don't auto-open captive portals. Browse to `http://192.168.4.1` manually. If your phone says "no internet" and offers to leave the network, choose to stay connected.
 
-**I don't know the setup password.** It's random each time setup starts and is shown on the screen (and in the QR code). It's also printed on the serial console at 115200 baud.
+**I don't know the setup password.** It's random each time setup starts and is shown on the screen. It's also printed on the serial console at 115200 baud.
 
 **My network isn't listed.** The clock scans once when setup starts. Choose "Other (type manually)..." in the network dropdown to type the name by hand. It must be 2.4 GHz (the ESP32-C3 has no 5 GHz radio).
 

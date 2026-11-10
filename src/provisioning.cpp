@@ -9,7 +9,7 @@
 static constexpr int BOOT_PIN = 9;
 static constexpr uint32_t LONG_PRESS_MS = 3000;
 static constexpr uint32_t IDLE_REBOOT_MS = 5UL * 60 * 1000;
-static const char *AP_SSID_PREFIX = "DeskClock-Setup";  // a per-board suffix is appended at runtime
+static const char *AP_SSID_PREFIX = "clk-setup";  // a per-board suffix is appended at runtime
 static const char *DEFAULT_TZ = "PST8PDT,M3.2.0,M11.1.0";
 
 struct Zone {
@@ -236,7 +236,7 @@ static String scanOptions() {
   char apPass[9];
   snprintf(apPass, sizeof(apPass), "%08lu", (unsigned long)(esp_random() % 100000000UL));
   WiFi.mode(WIFI_AP);
-  // "DeskClock-Setup-A1B2": last two bytes of this chip's MAC, so several clocks being set up
+  // "clk-setup-A1B2": last two bytes of this chip's MAC, so several clocks being set up
   // at once each advertise a distinct, stable name.
   char apSsid[32];
   uint64_t efuse = ESP.getEfuseMac();  // byte 0 of the MAC is the lowest byte
@@ -246,8 +246,7 @@ static String scanOptions() {
   IPAddress ip = WiFi.softAPIP();
   Serial.printf("Setup AP \"%s\" password %s at %s\n", apSsid, apPass, ip.toString().c_str());
 
-  String qr = String("WIFI:T:WPA;S:") + apSsid + ";P:" + apPass + ";;";
-  ui_show_setup(apSsid, apPass, qr.c_str(), ip.toString().c_str());
+  ui_show_setup(apSsid, apPass, ip.toString().c_str());
 
   DNSServer dns;
   dns.start(53, "*", ip);  // answer every hostname with our IP -> captive portal

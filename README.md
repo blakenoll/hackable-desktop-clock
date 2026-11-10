@@ -54,9 +54,9 @@ If the upload can't connect, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.
 
 ## First-time setup
 
-On first boot (or whenever the saved network can't be joined for 20 s) the clock starts its own WiFi access point, **DeskClock-Setup-XXXX**. The `XXXX` is the last four hex digits of that board's MAC address, so several clocks being set up at the same time each show a different name (and it stays the same for a given clock).
+On first boot (or whenever the saved network can't be joined for 20 s) the clock starts its own WiFi access point, **clk-setup-XXXX**. The `XXXX` is the last four hex digits of that board's MAC address, so several clocks being set up at the same time each show a different name (and it stays the same for a given clock).
 
-1. The screen shows a QR code and a one-time password. Scan the code with your phone camera, or join the `DeskClock-Setup-XXXX` network shown on the screen manually.
+1. The screen shows the `clk-setup-XXXX` network name and a one-time password. Join that network from your phone.
 2. The setup page should pop up. If it doesn't, open `http://192.168.4.1`.
 3. Pick your WiFi network (2.4 GHz only) and enter its password, choose a timezone, optionally enter a **US 5-digit ZIP code** for weather, choose °F or °C, and tap **Save & restart**.
 
@@ -90,7 +90,7 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 | Path | What it is |
 |------|------------|
 | `src/main.cpp` | Display glue (TFT_eSPI → LVGL), boot flow, main loop |
-| `src/ui.cpp`, `src/ui.h` | The clock face, seconds ring, night mode, setup (QR) screen |
+| `src/ui.cpp`, `src/ui.h` | The clock face, seconds ring, night mode, setup screen |
 | `src/weather.cpp`, `src/weather.h` | Open-Meteo geocoding + forecast in a background task |
 | `src/provisioning.cpp`, `src/provisioning.h` | Saved settings (NVS), setup AP + captive portal + web form, BOOT long-press |
 | `src/font_weather.c` | Generated 26 px weather-icon font (12 glyphs) |
