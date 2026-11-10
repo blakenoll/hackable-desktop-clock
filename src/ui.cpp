@@ -12,6 +12,9 @@ LV_FONT_DECLARE(manrope_20);
 LV_FONT_DECLARE(manrope_56);
 
 static lv_obj_t *skeleton, *skelShape[5], *skelHilo, *weatherRow, *weatherIcon, *weatherLabel, *hiloBox, *hiLabel, *loLabel, *rangeTrack, *rangeDot, *timeH, *timeC, *timeM, *ampmLabel, *dayLabel, *dateLabel, *status;
+static lv_obj_t *detailBox, *detailLabel, *offBox, *offIcon, *offSlash;
+static constexpr int DROP_COUNT = 4;
+static lv_obj_t *drops[DROP_COUNT];
 
 
 // ---- Seconds ring: 60 ticks around the rim --------------------------------------
@@ -455,6 +458,45 @@ void ui_init() {
   lv_obj_set_style_text_color(status, lv_color_white(), 0);
   lv_obj_center(status);
   lv_obj_add_flag(status, LV_OBJ_FLAG_HIDDEN);
+  // Detail line under the weather row ("40% rain" / "Feels 65°"). The box carries the stale dimming,
+  // the label its own swap fades.
+  detailBox = lv_obj_create(scr);
+  lv_obj_remove_style_all(detailBox);
+  lv_obj_set_size(detailBox, 120, 18);
+  lv_obj_align(detailBox, LV_ALIGN_CENTER, 0, 90);
+  detailLabel = lv_label_create(detailBox);
+  lv_obj_set_style_text_font(detailLabel, &manrope_14, 0);
+  lv_label_set_text(detailLabel, "");
+  lv_obj_center(detailLabel);
+
+  // Offline marker above the date: WiFi glyph with a slash through it.
+  offBox = lv_obj_create(scr);
+  lv_obj_remove_style_all(offBox);
+  lv_obj_set_size(offBox, 20, 16);
+  lv_obj_align(offBox, LV_ALIGN_CENTER, 0, -91);
+  offIcon = lv_label_create(offBox);
+  lv_obj_set_style_text_font(offIcon, &lv_font_montserrat_14, 0);
+  lv_label_set_text(offIcon, LV_SYMBOL_WIFI);
+  lv_obj_center(offIcon);
+  static lv_point_precise_t slashPts[2] = {{2, 1}, {18, 15}};
+  offSlash = lv_line_create(offBox);
+  lv_obj_remove_style_all(offSlash);
+  lv_line_set_points(offSlash, slashPts, 2);
+  lv_obj_set_style_line_width(offSlash, 2, 0);
+  lv_obj_set_style_line_rounded(offSlash, true, 0);
+  lv_obj_set_style_opa(offBox, LV_OPA_TRANSP, 0);
+  lv_obj_add_flag(offBox, LV_OBJ_FLAG_HIDDEN);
+
+  // Rain/snow particles: children of the icon, so they follow its fades and the row's night slide.
+  lv_obj_add_flag(weatherRow, LV_OBJ_FLAG_OVERFLOW_VISIBLE);
+  lv_obj_add_flag(weatherIcon, LV_OBJ_FLAG_OVERFLOW_VISIBLE);
+  for (auto &d : drops) {
+    d = lv_obj_create(weatherIcon);
+    lv_obj_remove_style_all(d);
+    lv_obj_set_style_bg_opa(d, LV_OPA_COVER, 0);
+    lv_obj_add_flag(d, LV_OBJ_FLAG_HIDDEN);
+  }
+
   createWifi(scr);
   createSync(scr);
   createSonar(scr);
@@ -476,7 +518,7 @@ static void rangeExec(void *, int32_t v) {
 
 // ---- Minute-change transition: the changed digits fade out (rising), swap text, fade back in ----
 struct Swap { lv_obj_t *label; char text[32]; };
-enum { SW_HOURS, SW_MINUTES, SW_ICON, SW_TEMP, SW_HI, SW_LO, SW_COUNT };
+enum { SW_HOURS, SW_MINUTES, SW_ICON, SW_TEMP, SW_HI, SW_LO, SW_DETAIL, SW_COUNT };
 static Swap swaps[SW_COUNT];
 static uint32_t pendingIconColor;  // applied when the icon glyph actually swaps
 
@@ -549,11 +591,35 @@ static void swapText(int idx, lv_obj_t *label, const char *text) {
   lv_anim_start(&out);
 }
 
+// ---- Hourly chime: one comet lap around the ring at the top of the hour (day only, non-blocking) ----
+static lv_timer_t *chimeTimer;
+static int chimeStep;
+
+static void chimeTick(lv_timer_t *) {
+  chimeStep++;
+  int tailEnd = chimeStep - TAIL_LEN - 1;  // ticks at or before this are behind the comet
+  int lo = tailEnd - 1 < 0 ? 0 : tailEnd - 1;
+  int hi = chimeStep < TICK_COUNT - 1 ? chimeStep : TICK_COUNT - 1;
+  for (int i = lo; i <= hi; i++) styleTick(i, i > tailEnd ? chimeStep : ringSec);  // left behind: back to the real ring
+  if (tailEnd >= TICK_COUNT) {
+    lv_timer_delete(chimeTimer);
+    chimeTimer = nullptr;
+    for (int i = 0; i < TICK_COUNT; i++) styleTick(i, ringSec);
+  }
+}
+
+static void startChime() {
+  if (chimeTimer || nightMix != 0) return;  // quiet night: no chime
+  chimeStep = -1;
+  chimeTimer = lv_timer_create(chimeTick, 16, nullptr);
+}
+
 void ui_update(const tm &t) {
   char buf[24];
 
   if (t.tm_sec != ringSec) {  // seconds ring (not drawn at all once night is fully faded in)
-    if (nightMix == 255) {
+    if (nightMix == 255 || chimeTimer) {
+      // hidden, or the chime owns the ring (it restyles everything when done)
       // hidden: nothing to restyle
     } else if (ringSec < 0 || t.tm_sec <= TAIL_LEN || t.tm_sec < ringSec) {  // first draw, new minute, or last minute's ticks still dissolving: restyle everything
       for (int i = 0; i < TICK_COUNT; i++) styleTick(i, t.tm_sec);
@@ -579,6 +645,7 @@ void ui_update(const tm &t) {
     } else {
       swapText(SW_HOURS, timeH, hh);
       swapText(SW_MINUTES, timeM, mm);
+      if (t.tm_min == 0) startChime();
     }
   }
 
@@ -622,6 +689,9 @@ static void applyTheme() {
   lv_obj_set_style_border_color(rangeDot, lv_color_black(), 0);
   rangeNightSync();
   lv_obj_set_style_text_color(status, mixDN(0xFFFFFF, 0xC01515), 0);
+  lv_obj_set_style_text_color(detailLabel, mixDN(0x8A949E, 0x901010), 0);
+  lv_obj_set_style_text_color(offIcon, mixDN(0x8A949E, 0x901010), 0);
+  lv_obj_set_style_line_color(offSlash, mixDN(0x8A949E, 0x901010), 0);
   applyIconColor();
   wifiPaint();    // these three only show during boot/setup and follow the target mode
   syncPaint();
@@ -709,9 +779,99 @@ void ui_set_weather_loading(bool loading) {
   }
 }
 
+// ---- Rain/snow: a few particles drift down under the icon for a few seconds, then stop ----
+static int fallKind;  // 1 rain, 2 snow
+static constexpr int FALL_DIST = 10;
+
+static void fallExec(void *o, int32_t v) {  // v: 0..1000 through one fall
+  lv_obj_t *d = (lv_obj_t *)o;
+  int opa = v < 200 ? v * 200 / 200 : (1000 - v) * 200 / 800;  // quick fade in, long fade out (max ~80%)
+  lv_obj_set_style_opa(d, (lv_opa_t)opa, 0);
+  lv_obj_set_style_translate_y(d, v * FALL_DIST / 1000, 0);
+  if (fallKind == 2) lv_obj_set_style_translate_x(d, (int32_t)lroundf(2.0f * sinf(v * 0.00628f)), 0);  // snow sways
+}
+
+static void fallStart(lv_anim_t *a) {  // place when it starts, after any icon swap has settled
+  lv_obj_t *d = (lv_obj_t *)a->var;
+  int k = (int)(intptr_t)lv_anim_get_user_data(a);
+  lv_obj_update_layout(weatherRow);
+  int w = lv_obj_get_width(weatherIcon), h = lv_obj_get_height(weatherIcon);
+  static const int xs[DROP_COUNT] = {30, 46, 62, 78};  // percent of the icon width
+  lv_obj_set_pos(d, w * xs[k] / 100 - lv_obj_get_width(d) / 2, h * 62 / 100);
+  lv_obj_remove_flag(d, LV_OBJ_FLAG_HIDDEN);
+}
+
+static void fallDone(lv_anim_t *a) { lv_obj_add_flag((lv_obj_t *)a->var, LV_OBJ_FLAG_HIDDEN); }
+
+static void startFall(int kind, uint32_t color) {
+  if (kind == 0 || nightMix != 0) return;  // quiet night: nothing moves
+  fallKind = kind;
+  bool snow = kind == 2;
+  for (int k = 0; k < DROP_COUNT; k++) {
+    lv_obj_t *d = drops[k];
+    lv_anim_delete(d, nullptr);
+    lv_obj_add_flag(d, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_size(d, snow ? 3 : 2, snow ? 3 : 5);
+    lv_obj_set_style_radius(d, snow ? LV_RADIUS_CIRCLE : 1, 0);
+    lv_obj_set_style_bg_color(d, lv_color_hex(color), 0);
+    lv_obj_set_style_opa(d, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_translate_x(d, 0, 0);
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, d);
+    lv_anim_set_exec_cb(&a, fallExec);
+    lv_anim_set_values(&a, 0, 1000);
+    lv_anim_set_duration(&a, snow ? 1800 : 700);
+    lv_anim_set_repeat_count(&a, snow ? 2 : 5);  // ~4 s either way
+    lv_anim_set_delay(&a, 500 + k * (snow ? 450 : 170) + (k % 2) * (snow ? 200 : 60));  // after the icon fade-in
+    lv_anim_set_path_cb(&a, snow ? lv_anim_path_linear : lv_anim_path_ease_in);
+    lv_anim_set_user_data(&a, (void *)(intptr_t)k);
+    lv_anim_set_start_cb(&a, fallStart);
+    lv_anim_set_completed_cb(&a, fallDone);
+    lv_anim_start(&a);
+  }
+}
+
+void ui_set_weather_detail(const char *text) { swapText(SW_DETAIL, detailLabel, text ? text : ""); }
+
+static bool staleShown = false;
+void ui_set_weather_stale(bool stale) {
+  if (stale == staleShown) return;
+  staleShown = stale;
+  lv_opa_t to = stale ? 90 : LV_OPA_COVER;  // ~35%: still readable, clearly not current
+  for (lv_obj_t *o : {weatherRow, detailBox}) {
+    lv_anim_delete(o, nullptr);
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, o);
+    lv_anim_set_exec_cb(&a, [](void *v, int32_t x) { lv_obj_set_style_opa((lv_obj_t *)v, (lv_opa_t)x, 0); });
+    lv_anim_set_values(&a, lv_obj_get_style_opa(o, LV_PART_MAIN), to);
+    lv_anim_set_duration(&a, 800);
+    lv_anim_start(&a);
+  }
+}
+
+static bool offShown = false;
+void ui_set_offline(bool off) {
+  if (off == offShown) return;
+  offShown = off;
+  lv_obj_remove_flag(offBox, LV_OBJ_FLAG_HIDDEN);
+  lv_anim_delete(offBox, nullptr);
+  lv_anim_t a;
+  lv_anim_init(&a);
+  lv_anim_set_var(&a, offBox);
+  lv_anim_set_exec_cb(&a, [](void *v, int32_t x) { lv_obj_set_style_opa((lv_obj_t *)v, (lv_opa_t)x, 0); });
+  lv_anim_set_values(&a, lv_obj_get_style_opa(offBox, LV_PART_MAIN), off ? LV_OPA_COVER : LV_OPA_TRANSP);
+  lv_anim_set_duration(&a, 600);
+  if (!off) lv_anim_set_completed_cb(&a, [](lv_anim_t *x) { lv_obj_add_flag((lv_obj_t *)x->var, LV_OBJ_FLAG_HIDDEN); });
+  lv_anim_start(&a);
+}
+
 // Updates fade (out, swap, in) instead of snapping; content appearing after the skeleton fades in.
 // The range dot glides to its new position.
-void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool hasRange, int lo, int hi, float cur) {
+void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool hasRange, int lo, int hi, float cur,
+                    int fall) {
+  if (icon) startFall(fall, iconColor);
   swapText(SW_TEMP, weatherLabel, text ? text : "");
   rangeWanted = hasRange;
   if (hasRange) {

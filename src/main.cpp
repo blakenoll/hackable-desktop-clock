@@ -75,6 +75,17 @@ void setup() {
   weather_begin(cfg);
 }
 
+static constexpr uint32_t STALE_MS = 30UL * 60 * 1000;   // weather older than this is dimmed
+static constexpr uint32_t OFFLINE_MS = 10UL * 1000;       // brief WiFi blips don't show the marker
+
+// Short line under the weather: rain chance if it matters, else "feels like" if it differs noticeably.
+static void weatherDetail(const WeatherData &w, char *out, size_t n) {
+  out[0] = 0;
+  if (w.rainPct >= 30) snprintf(out, n, "%d%% rain", w.rainPct);
+  else if (fabsf(w.feels - w.temp) >= (w.unit == 'C' ? 3 : 5))
+    snprintf(out, n, "Feels %d\xC2\xB0", (int)lroundf(w.feels));
+}
+
 void loop() {
   if (prov_button_long_press()) prov_run(true);
   static int lastSec = -1;
@@ -91,12 +102,19 @@ void loop() {
     }
 #endif
 
+    static uint32_t offSince = 0;
+    if (WiFi.status() == WL_CONNECTED) offSince = 0;
+    else if (!offSince) offSince = millis() | 1;
+    ui_set_offline(offSince && millis() - offSince > OFFLINE_MS);
+
     static uint32_t shownWx = 0;
     WeatherData w = weather_get();
+    ui_set_weather_stale(w.valid && millis() - w.fetchedAt > STALE_MS);
     if (w.version != shownWx) {
       shownWx = w.version;
       char buf[32];
       ui_set_weather_loading(w.loading);
+      if (!w.valid) ui_set_weather_detail("");
       if (w.loading) {
         // skeleton only; wait for the first result
       } else if (w.valid) {
@@ -110,7 +128,9 @@ void loop() {
         uint32_t color;
         const char *icon = weather_icon(w.code, w.isDay, &color);
         snprintf(buf, sizeof(buf), "%d\xC2\xB0", (int)lroundf(w.temp));  // "80°" (the 20 pt font includes U+00B0)
-        ui_set_weather(icon, color, buf, w.hasRange, (int)lroundf(w.lo), (int)lroundf(w.hi), w.temp);
+        ui_set_weather(icon, color, buf, w.hasRange, (int)lroundf(w.lo), (int)lroundf(w.hi), w.temp, weather_fall(w.code));
+        weatherDetail(w, buf, sizeof(buf));
+        ui_set_weather_detail(buf);
       } else {
         ui_set_weather(nullptr, 0, w.error, false, 0, 0, 0);
       }

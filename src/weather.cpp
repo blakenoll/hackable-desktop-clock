@@ -11,9 +11,16 @@ static constexpr uint32_t RETRY_MS = 60UL * 1000;
 static WeatherData g_data;
 static SemaphoreHandle_t g_mu;
 
+struct Extra { float feels = 0; int rainPct = -1; };
+
 static void publish(bool valid, float temp, int code, bool isDay, float hi, float lo, bool hasRange, char unit,
-                    const char *err) {
+                    const char *err, const Extra &ex = Extra()) {
   xSemaphoreTake(g_mu, portMAX_DELAY);
+  if (valid) {
+    g_data.feels = ex.feels;
+    g_data.rainPct = ex.rainPct;
+    g_data.fetchedAt = millis();
+  }
   g_data.valid = valid;
   g_data.temp = temp;
   g_data.code = code;
@@ -56,6 +63,12 @@ const char *weather_icon(int c, bool isDay, uint32_t *color) {
   if (c >= 80 && c <= 82) { *color = 0x4DA3FF; return "\uF01A"; }  // showers
   if (c >= 95) { *color = 0xFFD54F; return "\uF01E"; }              // thunderstorm
   return "\uF013";
+}
+
+int weather_fall(int c) {
+  if ((c >= 71 && c <= 77) || c == 85 || c == 86) return 2;                // snow
+  if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82) || c >= 95) return 1;  // drizzle, rain, sleet, showers, storms
+  return 0;
 }
 
 // ---- HTTP helpers -----------------------------------------------------------
@@ -110,10 +123,14 @@ static Geo geocode(const String &city, float &lat, float &lon) {
   return Geo::Ok;
 }
 
+static constexpr int RAIN_HOURS = 6;  // rain chance looks this many hours ahead
+
 static bool fetchCurrent(float lat, float lon, char unit, float &temp, int &code, bool &isDay, float &hi, float &lo,
-                         bool &hasRange) {
+                         bool &hasRange, Extra &ex) {
   String body;
-  String url = "https://api.open-meteo.com/v1/forecast?current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&timezone=auto&temperature_unit=" +
+  String url = "https://api.open-meteo.com/v1/forecast?current=temperature_2m,apparent_temperature,weather_code,is_day"
+               "&daily=temperature_2m_max,temperature_2m_min&hourly=precipitation_probability&forecast_hours=" +
+               String(RAIN_HOURS) + "&forecast_days=1&timezone=auto&temperature_unit=" +
                String(unit == 'C' ? "celsius" : "fahrenheit") + "&latitude=" + String(lat, 4) + "&longitude=" + String(lon, 4);
   if (!httpsGet(url, body)) return false;
   int c = body.indexOf("\"current\":{");  // not "current_units"
@@ -123,6 +140,24 @@ static bool fetchCurrent(float lat, float lon, char unit, float &temp, int &code
   temp = (float)t;
   code = (int)w;
   isDay = d != 0;
+  double fl;
+  ex.feels = findNum(body, "\"apparent_temperature\":", c, fl) ? (float)fl : temp;
+
+  // Rain chance: max over the next RAIN_HOURS hourly values (entries may be null).
+  ex.rainPct = -1;
+  int hr = body.indexOf("\"hourly\":{");
+  int arr = hr >= 0 ? body.indexOf("\"precipitation_probability\":[", hr) : -1;
+  if (arr >= 0) {
+    const char *p = body.c_str() + arr + strlen("\"precipitation_probability\":[");
+    for (int n = 0; n < RAIN_HOURS && *p && *p != ']'; n++) {
+      char *end;
+      long v = strtol(p, &end, 10);
+      if (end != p && v > ex.rainPct) ex.rainPct = (int)v;
+      const char *comma = strchr(end, ','), *close = strchr(end, ']');
+      if (!comma || (close && close < comma)) break;  // that was the last entry
+      p = comma + 1;
+    }
+  }
 
   // Today's range. Search after "daily":{ so we skip the "daily_units" block.
   int dd = body.indexOf("\"daily\":{");
@@ -164,8 +199,9 @@ static void weatherTask(void *) {
         int code;
         bool isDay, hasRange;
         float hi = 0, lo = 0;
-        if (fetchCurrent(cfg.lat, cfg.lon, cfg.units, temp, code, isDay, hi, lo, hasRange)) {
-          publish(true, temp, code, isDay, hi, lo, hasRange, cfg.units, nullptr);
+        Extra ex;
+        if (fetchCurrent(cfg.lat, cfg.lon, cfg.units, temp, code, isDay, hi, lo, hasRange, ex)) {
+          publish(true, temp, code, isDay, hi, lo, hasRange, cfg.units, nullptr, ex);
           ok = true;
         } else if (!weather_get().valid) {
           publish(false, 0, 0, true, 0, 0, false, cfg.units, "No weather");  // keep showing stale data if we have it

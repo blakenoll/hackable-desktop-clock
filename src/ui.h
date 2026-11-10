@@ -28,7 +28,18 @@ void ui_set_weather_loading(bool loading);
 // range bar (today's high at the top, low at the bottom, a dot at the current temperature).
 // icon may be nullptr (text only, e.g. an error message); hasRange false hides the bar;
 // text nullptr/"" clears the temperature.
-void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool hasRange, int lo, int hi, float cur);
+// fall: 0 none, 1 rain, 2 snow -> a few drops/flakes drift down under the icon for a few seconds (day only).
+void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool hasRange, int lo, int hi, float cur,
+                    int fall = 0);
+
+// Small line under the weather row, e.g. "40% rain" or "Feels 65°"; "" fades it away.
+void ui_set_weather_detail(const char *text);
+
+// Dims the weather when the last successful fetch is too old to trust.
+void ui_set_weather_stale(bool stale);
+
+// Small crossed-out WiFi glyph above the date while the network is down.
+void ui_set_offline(bool offline);
 
 // Replaces the clock face with the WiFi-setup screen (AP name + password).
 void ui_show_setup(const char *apSsid, const char *apPass, const char *ip);
