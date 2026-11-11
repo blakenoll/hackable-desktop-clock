@@ -283,7 +283,7 @@ static struct {
 static char detailText[32] = "";
 static bool loadingShown = false, staleShown = false, offShown = false;
 static constexpr int RAIN_BARS = 6;
-static int rainPct[RAIN_BARS], rainStart = -1;  // hourly rain chance from the hour `rainStart` (-1 = none)
+static int rainPct[RAIN_BARS], tempHr[RAIN_BARS], rainStart = -1;  // hourly rain chance from the hour `rainStart` (-1 = none)
 static int sunriseMin = -1, sunsetMin = -1;     // minutes after midnight (-1 = unknown)
 
 // ---- Small helpers -----------------------------------------------------------------------
@@ -343,7 +343,8 @@ static void polar(float r, float deg, float &x, float &y) {
 // K_BLOCKS: chunky LCD-style blocks that fill up. K_MARKERS: static analog-dial batons.
 // K_ARC: one arc that grows with the seconds. K_ORBIT: a single dot on a hairline circle.
 // K_DAYLIGHT: 24 h dial, noon at the top: sunrise-to-sunset arc with a sun dot at "now".
-enum RingKind { K_NONE, K_TICKS, K_DOTTICKS, K_BLOCKS, K_MARKERS, K_ARC, K_ORBIT, K_DAYLIGHT };
+// K_COMPASS: static compass rose (hairline circle + 30 degree ticks) with a needle at the wind direction.
+enum RingKind { K_NONE, K_TICKS, K_DOTTICKS, K_BLOCKS, K_MARKERS, K_ARC, K_ORBIT, K_DAYLIGHT, K_COMPASS };
 static RingKind rk = K_NONE;
 static constexpr int TICK_COUNT = 60;
 static lv_obj_t *ticks[TICK_COUNT];
@@ -353,7 +354,7 @@ static lv_obj_t *ringArc, *orbitRing, *orbitDot, *dayTrack, *dayArc, *sunDot;
 static bool sunUp = true;
 
 static RingKind ringKind() {
-  static const RingKind def[FACE_COUNT] = {K_DOTTICKS, K_ARC, K_TICKS, K_MARKERS, K_ORBIT, K_DOTTICKS, K_BLOCKS, K_DAYLIGHT};
+  static const RingKind def[FACE_COUNT] = {K_DOTTICKS, K_ARC, K_TICKS, K_MARKERS, K_ORBIT, K_COMPASS, K_BLOCKS, K_DAYLIGHT};
   return def[opt.face];
 }
 static bool tickKind() { return rk == K_TICKS || rk == K_DOTTICKS || rk == K_BLOCKS; }  // has a comet (splash, chime)
@@ -552,6 +553,7 @@ static void daylightUpdate() {
   }
 }
 
+static void buildCompass();
 static void buildRing() {
   switch (rk) {
     case K_TICKS: case K_DOTTICKS: case K_BLOCKS: case K_MARKERS:
@@ -575,6 +577,9 @@ static void buildRing() {
       orbitDot = mkDisc(ringBox, ORBIT_DOT);
       orbitExec(nullptr, 0);
       break;
+    case K_COMPASS:
+      buildCompass();
+      break;
     case K_DAYLIGHT:
       dayTrack = mkRingArc(6);
       lv_obj_set_style_arc_opa(dayTrack, LV_OPA_TRANSP, LV_PART_INDICATOR);
@@ -588,6 +593,83 @@ static void buildRing() {
       break;
     default: break;
   }
+}
+
+// ---- Compass ring (Forecast face): wind direction needle + readout ---------------------------------
+static lv_obj_t *compRing, *compTick[12], *compCard[4], *windNeedle;
+static lv_point_precise_t compPts[12][2], needlePts[5];  // must outlive the line objects
+static int windDeg = -1;
+static char windStr[16] = "";
+static constexpr float COMP_R = 111.0f;
+
+// A line from radius r1 to r2 at bearing `deg`; lv_line points are relative to the object's bounding-box corner.
+static void placeSeg(lv_obj_t *l, lv_point_precise_t *pts, float r1, float r2, float deg) {
+  float x1, y1, x2, y2;
+  polar(r1, deg, x1, y1);
+  polar(r2, deg, x2, y2);
+  float minx = fminf(x1, x2), miny = fminf(y1, y2);
+  pts[0] = {(lv_value_precise_t)lroundf(x1 - minx), (lv_value_precise_t)lroundf(y1 - miny)};
+  pts[1] = {(lv_value_precise_t)lroundf(x2 - minx), (lv_value_precise_t)lroundf(y2 - miny)};
+  lv_line_set_points(l, pts, 2);
+  lv_obj_set_pos(l, (int32_t)lroundf(minx), (int32_t)lroundf(miny));
+}
+
+// Arrow on the rim at the bearing the wind comes FROM, pointing inward (the way the wind blows).
+static void placeArrow(float deg) {
+  float a = deg * (float)M_PI / 180.0f, dx = sinf(a), dy = -cosf(a);  // outward unit vector; perpendicular is (-dy, dx)
+  auto pt = [&](float r, float lat, float &x, float &y) {
+    x = RING_CENTER + r * dx - lat * dy;
+    y = RING_CENTER + r * dy + lat * dx;
+  };
+  const float tail = COMP_R + 3, tip = COMP_R - 19, back = 8, wing = 5.5f;
+  float px[5], py[5];
+  pt(tip + back, -wing, px[0], py[0]);  // barb
+  pt(tip, 0, px[1], py[1]);             // tip
+  pt(tip + back, wing, px[2], py[2]);   // other barb
+  pt(tip, 0, px[3], py[3]);
+  pt(tail, 0, px[4], py[4]);            // tail
+  float minx = px[0], miny = py[0];
+  for (int i = 1; i < 5; i++) { minx = fminf(minx, px[i]); miny = fminf(miny, py[i]); }
+  for (int i = 0; i < 5; i++) needlePts[i] = {(lv_value_precise_t)lroundf(px[i] - minx), (lv_value_precise_t)lroundf(py[i] - miny)};
+  lv_line_set_points(windNeedle, needlePts, 5);
+  lv_obj_set_pos(windNeedle, (int32_t)lroundf(minx), (int32_t)lroundf(miny));
+}
+
+static void windUpdate() {
+  if (windNeedle) {
+    setHidden(windNeedle, windDeg < 0);
+    if (windDeg >= 0) placeArrow((float)windDeg);
+  }
+}
+
+static void buildCompass() {
+  compRing = box(ringBox);
+  lv_obj_set_size(compRing, 222, 222);
+  lv_obj_center(compRing);
+  lv_obj_set_style_radius(compRing, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_border_width(compRing, 1, 0);
+  lv_obj_set_style_border_opa(compRing, LV_OPA_COVER, 0);
+  static const char *CARD[4] = {"N", "E", "S", "W"};
+  for (int i = 0; i < 12; i++) {
+    if (i % 3 == 0) {  // N/E/S/W: a letter instead of a tick
+      lv_obj_t *l = compCard[i / 3] = mkLabel(ringBox, &manrope_caps_12);
+      lv_label_set_text(l, CARD[i / 3]);
+      float x, y;
+      polar(100, i * 30.0f, x, y);
+      lv_obj_align(l, LV_ALIGN_CENTER, (int)lroundf(x - RING_CENTER), (int)lroundf(y - RING_CENTER));
+      continue;
+    }
+    compTick[i] = lv_line_create(ringBox);
+    lv_obj_remove_style_all(compTick[i]);
+    placeSeg(compTick[i], compPts[i], COMP_R - 6, COMP_R - 1, i * 30.0f);
+    lv_obj_set_style_line_width(compTick[i], 2, 0);
+    lv_obj_set_style_line_rounded(compTick[i], true, 0);
+  }
+  windNeedle = lv_line_create(ringBox);
+  lv_obj_remove_style_all(windNeedle);
+  lv_obj_set_style_line_width(windNeedle, 4, 0);
+  lv_obj_set_style_line_rounded(windNeedle, true, 0);
+  lv_obj_add_flag(windNeedle, LV_OBJ_FLAG_HIDDEN);
 }
 
 // ---- Hourly chime: one comet lap around the ring at the top of the hour (day only, non-blocking) ----
@@ -720,29 +802,64 @@ static void buildSegments(int cy) {
 }
 
 // ---- Forecast: hourly rain-chance bars -----------------------------------------------------------
-static lv_obj_t *bars[RAIN_BARS], *barLbl[RAIN_BARS];
+static lv_obj_t *bars[RAIN_BARS], *barLbl[RAIN_BARS], *barTemp[RAIN_BARS];
 static constexpr int BAR_W = 12, BAR_PITCH = 18, BAR_MAX = 24, BAR_BASE = 191;  // BAR_BASE: y of the bars' bottom edge
+
+// Dry spell (max chance < 30 %) with hourly temperatures known: the bars show temperature instead
+// (scaled between the coolest and warmest of the six hours, cool blue to warm amber).
+static bool barsTempMode() {
+  int mx = -1, ok = 0;
+  for (int k = 0; k < RAIN_BARS; k++) {
+    if (rainPct[k] > mx) mx = rainPct[k];
+    if (tempHr[k] != -32768) ok++;
+  }
+  return mx < 30 && ok == RAIN_BARS;
+}
+
+static void tempRange(int &lo, int &hi) {
+  lo = 32767; hi = -32768;
+  for (int k = 0; k < RAIN_BARS; k++) { if (tempHr[k] < lo) lo = tempHr[k]; if (tempHr[k] > hi) hi = tempHr[k]; }
+}
 
 static void barsPaint() {
   if (!bars[0]) return;
+  bool tm = barsTempMode();
+  int lo = 0, hi = 0;
+  if (tm) tempRange(lo, hi);
   for (int k = 0; k < RAIN_BARS; k++) {
     int p = rainPct[k] < 0 ? 0 : rainPct[k] > 100 ? 100 : rainPct[k];
-    bgc(bars[k], mixDN(mixHex(0x6FB6FF, 0x24384F, p), nightC(18 + p / 2)));
+    uint32_t day = tm ? mixHex(0x5FA8FF, 0xFFB454, hi > lo ? (hi - tempHr[k]) * 100 / (hi - lo) : 50) : mixHex(0x6FB6FF, 0x24384F, p);
+    bgc(bars[k], mixDN(day, nightC(tm ? 40 : 18 + p / 2)));
     tc(barLbl[k], mixDN(THEMES[opt.theme].colon, nightC(45)));
+    tc(barTemp[k], mixDN(0xE6E6E6, nightC(70)));
   }
 }
 
 static void barsUpdate() {
   if (!bars[0]) return;
+  bool tm = barsTempMode();
+  int lo = 0, hi = 0;
+  if (tm) tempRange(lo, hi);
   for (int k = 0; k < RAIN_BARS; k++) {
     bool show = rainStart >= 0;
     setHidden(bars[k], !show);
     setHidden(barLbl[k], !show);
+    setHidden(barTemp[k], !show || !tm);
     if (!show) continue;
     int p = rainPct[k] < 0 ? 0 : rainPct[k] > 100 ? 100 : rainPct[k];
-    int h = 3 + p * (BAR_MAX - 3) / 100, x = 120 - (RAIN_BARS * BAR_PITCH - (BAR_PITCH - BAR_W)) / 2 + k * BAR_PITCH;
+    int tmax = BAR_MAX - 10;  // leave room for the number above
+    int h = tm ? 6 + (hi > lo ? (tempHr[k] - lo) * (tmax - 6) / (hi - lo) : (tmax - 6) / 2)
+               : 3 + p * (BAR_MAX - 3) / 100;
+    int x = 120 - (RAIN_BARS * BAR_PITCH - (BAR_PITCH - BAR_W)) / 2 + k * BAR_PITCH;
     lv_obj_set_size(bars[k], BAR_W, h);
     lv_obj_set_pos(bars[k], x, BAR_BASE - h);
+    if (tm) {
+      char tb[6];
+      snprintf(tb, sizeof(tb), "%d", tempHr[k]);
+      lv_label_set_text(barTemp[k], tb);
+      lv_obj_update_layout(barTemp[k]);
+      lv_obj_set_pos(barTemp[k], x + BAR_W / 2 - lv_obj_get_width(barTemp[k]) / 2, BAR_BASE - h - 17);
+    }
     int hr = (rainStart + k) % 24;
     char buf[4];
     snprintf(buf, sizeof(buf), "%d", opt.h24 ? hr : (hr % 12 == 0 ? 12 : hr % 12));
@@ -759,6 +876,7 @@ static void buildBars() {
     lv_obj_set_style_radius(bars[k], 3, 0);
     lv_obj_set_style_bg_opa(bars[k], LV_OPA_COVER, 0);
     barLbl[k] = mkLabel(content, &manrope_caps_12);
+    barTemp[k] = mkLabel(content, &manrope_caps_12);
   }
 }
 
@@ -952,6 +1070,7 @@ static void buildFace() {
       mkWeather(0, -6, false, 0, &manrope_34, &weather_icons_42);
       mkDetail(0, 30);
       buildBars();
+      lv_obj_set_width(detailBox, 200);  // room for "NW 12 MPH · 40% RAIN"
       mkOffline(-66, -59);
       break;
     case FACE_RETRO:  // seven-segment LCD
@@ -1256,6 +1375,13 @@ static void applyTheme() {
     lv_obj_set_style_border_color(orbitRing, mixDN(mixHex(T.dim, 0x000000, 70), 0x000000), 0);
     bgc(orbitDot, mixDN(T.tick, 0x000000));
   }
+  if (compRing) {
+    lv_obj_set_style_border_color(compRing, mixDN(mixHex(T.dim, 0x000000, 80), 0x000000), 0);
+    for (int i = 0; i < 12; i++)
+      if (compTick[i]) lv_obj_set_style_line_color(compTick[i], mixDN(T.base, 0x000000), 0);
+    for (int i = 0; i < 4; i++) tc(compCard[i], mixDN(i == 0 ? T.tick : T.bright, 0x000000));
+    lv_obj_set_style_line_color(windNeedle, mixDN(T.accent, 0x000000), 0);
+  }
   daylightPaint();
 }
 
@@ -1381,10 +1507,18 @@ static void startFall(int kind, uint32_t color) {
 static bool msgInDetail() { return opt.face == FACE_STACKED || opt.face == FACE_FORECAST; }
 
 // The detail line shows the weather message (see above), else the detail text if that option is on.
+// The Forecast face adds the wind readout to it ("NW 12 MPH · 40% RAIN").
 static void refreshDetail() {
-  char buf[32] = "";
+  char buf[56] = "";
   if (wx.set && !wx.hasIcon && wx.text[0] && msgInDetail()) strlcpy(buf, wx.text, sizeof(buf));
-  else if (opt.detail) strlcpy(buf, detailText, sizeof(buf));
+  else {
+    bool wind = opt.face == FACE_FORECAST && windStr[0];
+    if (wind) strlcpy(buf, windStr, sizeof(buf));
+    if (opt.detail && detailText[0]) {
+      if (wind) strlcat(buf, " \xC2\xB7 ", sizeof(buf));
+      strlcat(buf, detailText, sizeof(buf));
+    }
+  }
   upper(buf);  // the small-caps font has no lowercase
   swapText(SW_DETAIL, detailLabel, buf);
 }
@@ -1414,7 +1548,7 @@ static void applyStale(uint32_t ms) {
   lv_opa_t to = staleShown ? 90 : LV_OPA_COVER;  // ~35%: still readable, clearly not current
   setOpa(weatherRow, to, ms);
   setOpa(detailBox, to, ms);
-  for (int k = 0; k < RAIN_BARS; k++) setOpa(bars[k], to, ms);
+  for (int k = 0; k < RAIN_BARS; k++) { setOpa(bars[k], to, ms); setOpa(barTemp[k], to, ms); }
 }
 
 void ui_set_weather_stale(bool stale) {
@@ -1512,8 +1646,16 @@ void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool
   applyWeather(true);
 }
 
-void ui_set_weather_extra(const int *rain, int count, int startHour, int sunrise, int sunset) {
+void ui_set_wind(int fromDeg, const char *text) {
+  windDeg = fromDeg;
+  snprintf(windStr, sizeof(windStr), "%s", text ? text : "");
+  windUpdate();
+  refreshDetail();
+}
+
+void ui_set_weather_extra(const int *rain, int count, int startHour, int sunrise, int sunset, const int *temps) {
   for (int k = 0; k < RAIN_BARS; k++) rainPct[k] = rain && k < count ? rain[k] : -1;
+  for (int k = 0; k < RAIN_BARS; k++) tempHr[k] = temps && k < count ? temps[k] : -32768;
   rainStart = rain && count > 0 ? startHour : -1;
   sunriseMin = sunrise;
   sunsetMin = sunset;
@@ -1539,6 +1681,10 @@ static void rebuild() {
   memset(segColon, 0, sizeof(segColon));
   memset(bars, 0, sizeof(bars));
   memset(barLbl, 0, sizeof(barLbl));
+  memset(barTemp, 0, sizeof(barTemp));
+  memset(compTick, 0, sizeof(compTick));
+  memset(compCard, 0, sizeof(compCard));
+  compRing = windNeedle = nullptr;
   memset(swaps, 0, sizeof(swaps));
   floatAmpm = false;
   lastMin = lastHour = lastDay = ringSec = -1;
@@ -1560,6 +1706,7 @@ static void rebuild() {
   if (!loadingShown) applyWeather(false);
   refreshDetail();
   barsUpdate();
+  windUpdate();
   applyStale(0);
   if (offBox && offShown) {
     lv_obj_remove_flag(offBox, LV_OBJ_FLAG_HIDDEN);
@@ -1573,6 +1720,7 @@ void ui_init() {
   lv_obj_set_style_pad_all(scr, 0, 0);
   lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
   for (int &p : rainPct) p = -1;
+  for (int &t : tempHr) t = -32768;
 
   faceRoot = box(scr);
   lv_obj_set_size(faceRoot, 240, 240);

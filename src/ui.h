@@ -62,7 +62,12 @@ void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool
 
 // Extra weather data some faces use: rain chance for the next `count` hours starting at local hour
 // `startHour` (rain may be nullptr), and today's sunrise/sunset in minutes after midnight (-1 = unknown).
-void ui_set_weather_extra(const int *rain, int count, int startHour, int sunriseMin, int sunsetMin);
+void ui_set_weather_extra(const int *rain, int count, int startHour, int sunriseMin, int sunsetMin,
+                           const int *temps = nullptr);
+
+// Wind for the compass ring (Forecast face): direction it comes FROM in degrees (-1 = unknown) and a
+// ready-made readout such as "NW 12 MPH" ("" hides it).
+void ui_set_wind(int fromDeg, const char *text);
 
 // Small line under the weather row, e.g. "40% rain" or "Feels 65°"; "" fades it away.
 void ui_set_weather_detail(const char *text);
