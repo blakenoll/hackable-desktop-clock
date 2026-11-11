@@ -26,7 +26,7 @@ Change the `-DTFT_*` pin flags and rewire to match. On the C3, avoid GPIO 2, 8 a
 
 1. In `platformio.ini`, replace `-DGC9A01_DRIVER=1` with your controller's TFT_eSPI define (`ST7789_DRIVER`, `ILI9341_DRIVER`, …) and set `TFT_WIDTH` / `TFT_HEIGHT`. See TFT_eSPI's `User_Setup.h` for the list and for options such as color order and inversion (`TFT_RGB_ORDER`, `TFT_INVERSION_ON`) if colors look wrong. These were not needed on the tested module.
 2. In `src/main.cpp`, update `W` and `H` and the `drawBuf` size (a 40-line partial render buffer).
-3. **The UI assumes a 240x240 round screen.** For other sizes or square panels, adjust in `src/ui.cpp`: `RING_CENTER`, `TICK_OUTER` and the tick lengths (or remove the ring), the ±58 px label offsets, and the weather row width (190). On a square screen you can use the corners that the round bezel hides.
+3. **The UI assumes a 240x240 round screen.** For other sizes or square panels, adjust in `src/ui.cpp`: `RING_CENTER`, the radii in `tickGeo()` / `mkRingArc()` and the tick lengths (or remove the ring), the ±58 px label offsets, and the weather row width (190). On a square screen you can use the corners that the round bezel hides.
 4. Other color depths are not supported: LVGL runs in RGB565 and `flushCb` byte-swaps for the SPI bus.
 
 ## A different ESP32 board

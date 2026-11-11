@@ -10,6 +10,7 @@
 static TFT_eSPI tft;
 static constexpr int W = 240, H = 240;
 static bool g_night = false;  // current display mode; persisted so power-up matches the last known state
+static ClockConfig g_cfg;
 static lv_color_t drawBuf[W * 40];  // partial render buffer (40 lines)
 
 static void flushCb(lv_display_t *disp, const lv_area_t *area, uint8_t *px) {
@@ -40,13 +41,23 @@ void setup() {
                          LV_DISPLAY_RENDER_MODE_PARTIAL);
 
   ui_init();
-  ClockConfig cfg;
+  ClockConfig &cfg = g_cfg;
   bool haveCfg = prov_load(cfg);
-  ui_set_options(cfg.h24, cfg.dateFmt, cfg.accent);
+  UiOptions o;
+  o.h24 = cfg.h24;
+  o.dateFmt = cfg.dateFmt;
+  o.theme = cfg.accent;
+  o.face = cfg.face;
+  o.ring = cfg.ring;
+  o.nightColor = cfg.nightColor;
+  o.chime = cfg.chime;
+  o.detail = cfg.detail;
+  o.seconds = cfg.seconds;
+  ui_set_options(o);
 #ifdef FORCE_NIGHT  // dev preview (-DFORCE_NIGHT=1): pin night mode on, ignore is_day, persist nothing
   g_night = true;
 #else
-  g_night = prov_load_night();
+  g_night = cfg.nightMode != 2 && prov_load_night();  // mode 2 = never
 #endif
   ui_set_night(g_night);
   ui_boot_splash();
@@ -86,8 +97,29 @@ static void weatherDetail(const WeatherData &w, char *out, size_t n) {
     snprintf(out, n, "Feels %d\xC2\xB0", (int)lroundf(w.feels));
 }
 
+// Night by the clock (setup page "Fixed hours"): from nightStart:00 until nightEnd:00, possibly across midnight.
+static bool scheduledNight(int hour) {
+  int a = g_cfg.nightStart, b = g_cfg.nightEnd;
+  return a == b ? false : a < b ? (hour >= a && hour < b) : (hour >= a || hour < b);
+}
+
+static void setNight(bool n) {
+  if (n == g_night) return;
+  g_night = n;
+  ui_set_night(n);
+  prov_save_night(n);
+}
+
 void loop() {
-  if (prov_button_long_press()) prov_run(true);
+  switch (prov_button_event()) {
+    case BTN_LONG: prov_run(true);
+    case BTN_SHORT:  // next face; saved so it survives a power cycle
+      g_cfg.face = (g_cfg.face + 1) % FACE_COUNT;
+      ui_set_face(g_cfg.face);
+      prov_save_face(g_cfg.face);
+      break;
+    default: break;
+  }
   static int lastSec = -1;
   tm t;
   if (getLocalTime(&t, 0) && t.tm_sec != lastSec) {
@@ -100,6 +132,8 @@ void loop() {
       g_night = !g_night;
       ui_set_night(g_night);
     }
+#elif !defined(FORCE_NIGHT)
+    if (g_cfg.nightMode == 1) setNight(scheduledNight(t.tm_hour));
 #endif
 
     static uint32_t offSince = 0;
@@ -119,11 +153,7 @@ void loop() {
         // skeleton only; wait for the first result
       } else if (w.valid) {
 #if !defined(FORCE_NIGHT) && !defined(CYCLE_NIGHT)
-        if (w.isDay == g_night) {  // is_day flipped
-          g_night = !w.isDay;
-          ui_set_night(g_night);
-          prov_save_night(g_night);
-        }
+        if (g_cfg.nightMode == 0) setNight(!w.isDay);  // follows is_day from the weather
 #endif
         uint32_t color;
         const char *icon = weather_icon(w.code, w.isDay, &color);
@@ -131,8 +161,10 @@ void loop() {
         ui_set_weather(icon, color, buf, w.hasRange, (int)lroundf(w.lo), (int)lroundf(w.hi), w.temp, weather_fall(w.code));
         weatherDetail(w, buf, sizeof(buf));
         ui_set_weather_detail(buf);
+        ui_set_weather_extra(w.rainHours, WeatherData::RAIN_HOURS, w.rainStartHour, w.sunriseMin, w.sunsetMin);
       } else {
         ui_set_weather(nullptr, 0, w.error, false, 0, 0, 0);
+        ui_set_weather_extra(nullptr, 0, -1, -1, -1);
       }
     }
   }

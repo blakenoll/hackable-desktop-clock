@@ -9,7 +9,7 @@ Boot flow (`src/main.cpp`):
 1. Init the display and LVGL, build the UI (`ui_init`), restore the last day/night mode.
 2. Load saved settings from flash (`prov_load`). If there's no WiFi saved → setup mode (`prov_run`, never returns).
 3. Join WiFi (20 s timeout → setup mode), sync time over NTP with the saved timezone, start the weather task (`weather_begin`).
-4. `loop()` once a second: update the clock face (`ui_update`) and, when the weather task publishes new data, redraw the weather row. Holding BOOT for 3 s enters setup mode at any time.
+4. `loop()` once a second: update the clock face (`ui_update`) and, when the weather task publishes new data, redraw the weather row. A short BOOT press switches to the next face; holding BOOT for 3 s enters setup mode at any time.
 
 Rules of thumb:
 
@@ -21,7 +21,7 @@ Rules of thumb:
 
 All in `ui_update()` in `src/ui.cpp`.
 
-**12/24-hour time, date order, accent colour** — these are setup-page settings (NVS keys `h24`, `datefmt`, `accent`), applied by `ui_set_options()` at boot and used in `ui_update()` / `ACCENTS[]` in `src/ui.cpp`. To add an accent colour, append `{weekday colour, current-tick colour}` to `ACCENTS[]` and an `<option>` in `buildForm()` (clamp in `/save`).
+**12/24-hour time, date order, face, theme, ring, seconds digits, chime, detail line, night options** — these are setup-page settings (NVS keys `h24`, `datefmt`, `face`, `accent` (theme), `ring`, `secs`, `chime`, `detail`, `nmode`, `nstart`, `nend`, `ncolor`), passed to `ui_set_options()` as a `UiOptions` at boot. To add a theme, append a row to `THEMES[]` in `src/ui.cpp`, add an `<option>` in `buildForm()` and bump `THEME_OPTIONS` in `src/provisioning.cpp`.
 
 **Date format details** — the date is two labels side by side: the weekday in red (`dayLabel`, from `strftime("%a")`) and `Nov 6` in gray (`dateLabel`, built from `strftime("%b")` and `t.tm_mday`; the day is printed with `%d` through `snprintf` rather than `strftime` so single digits have no leading zero). `datefmt` 0/1 picks the order; for other wording, change those lines in `ui_update()`; to show the weekday in the same color as the rest, give both labels the same color. The date uses a 20 pt font; keep it under about 14 characters so it fits inside the ring.
 
@@ -29,7 +29,7 @@ All in `ui_update()` in `src/ui.cpp`.
 
 ## Colors
 
-Day colors are set where each label is created in `ui_init()`. Night colors are in `ui_set_night()` and `styleTick()` (ring). Colors are `0xRRGGBB`.
+Colours come from the theme (`THEMES[]` in `src/ui.cpp`: digits, accent, current-second tick, secondary text, dim text and three ring greys) and are assigned to elements in `applyTheme()`. Night colours are one base colour (`NIGHTS[]`: red, amber, dim white) at different brightness: `nightC(percent)`. Every colour is a day/night pair blended by `mixDN()`. Colors are `0xRRGGBB`. The table shows the default theme (Red) with the red night colour.
 
 | Element | Day | Night |
 |---------|-----|-------|
@@ -47,19 +47,29 @@ Keep night mode to reds: blue and green light is what hurts night vision. If you
 
 ## Layout
 
-In `ui_init()`:
+Each face is a `case` in `buildFace()` in `src/ui.cpp`, built from shared pieces (`mkTime`, `mkDateRow`, `mkWeather`, `mkDetail`, `mkOffline`); the numbers are pixel offsets from the centre. For the default face (`FACE_POLISHED`):
 
-- Date: `makeLabel(..., -58)` and weather row: `lv_obj_align(weatherRow, LV_ALIGN_CENTER, 0, 58)`. The numbers are pixel offsets from the center; smaller = closer to the time.
+- Date: `mkDateRow(-62, ...)`, weather: `mkWeather(0, 62, ...)`, detail line: `mkDetail(0, 90)`. Smaller numbers = closer to the time.
 - The time is a row of labels (hours, colon, minutes; AM/PM hangs off the right) in the 56 pt font, centred; date and weather sit at y = ∓62.
 - Loading states: `ui_set_connecting()` shows an animated WiFi glyph (dot + 3 arcs lit in sequence by an `lv_timer`, built in `createWifi()`) during WiFi connect; `ui_set_weather_loading()` shows a pulsing skeleton (`skeleton`, an `lv_anim` on opacity) in the weather row until the first fetch resolves. Both only animate while the main loop calls `lv_timer_handler()`, so keep that call in any blocking wait in `setup()`.
-- Fonts: Manrope (SIL OFL), generated into `src/font_manrope_14.c` (500 weight), `_20.c` (500) and `_56.c` (600, digits and `:` only). Regenerate with `npx lv_font_conv --font manrope-latin-<weight>-normal.woff --size <px> --bpp 4 --no-compress --format lvgl --lv-include lvgl.h --lv-font-name manrope_<px> -r <ranges> -o src/font_manrope_<px>.c` (static weights from the `@fontsource/manrope` npm package; download into its own empty folder). Each size costs flash.
+- Fonts: Manrope (SIL OFL), generated into `src/font_manrope_14.c` (500 weight), `_20.c` (500), `_56.c` (600, digits and `:` only), `_caps_12.c` (700, `0x20-0x5F,0xB0,0xB7`: small caps, no lowercase), `_34.c` (600, digits `:` `-` `°`; Forecast), `_74.c` (700, digits; Stacked) and `_light_64.c` (300, digits and `:`; Zen). `src/font_weather_42.c` is the weather icon font at 42 px for Forecast. Regenerate with `npx lv_font_conv --font manrope-latin-<weight>-normal.woff --size <px> --bpp 4 --no-compress --format lvgl --lv-include lvgl.h --lv-font-name manrope_<px> -r <ranges> -o src/font_manrope_<px>.c` (static weights from the `@fontsource/manrope` npm package; download into its own empty folder). Each size costs flash.
+
+## Faces
+
+`enum Face` in `src/ui.h`; the setup page and a short BOOT press (`prov_button_event()` -> `ui_set_face()` in `loop()`) select one. Everything on the face lives under `faceRoot` and is deleted and rebuilt by `rebuild()` when the face or an option changes, then refilled from cached state (time, weather, detail, stale, offline). A face only creates what it uses, so most object pointers can be null: use the null-safe helpers (`tc`, `bgc`, `setText`, `setHidden`, `swapText`).
+
+**Add a face:** add an enum value before `FACE_COUNT`, a `case` in `buildFace()`, a default ring in `ringKind()`'s `def[]` table, any face-specific colours in `applyTheme()` and date wording in `dateUpdate()`, then an `<option>` in `buildForm()`.
+
+**See it without flashing:** `sh docs/tools/sim/render.sh` compiles `src/ui.cpp` for your computer (needs gcc and one prior `pio run`) and writes renders of every face, night mode and several states to `docs/faces/`. Edit `docs/tools/sim/sim.cpp` to stage other situations.
+
+Ring kinds (`RingKind`): `K_TICKS`, `K_DOTTICKS` (default face), `K_BLOCKS` (retro), `K_MARKERS` (analog dial), `K_ARC`, `K_ORBIT` (dot), `K_DAYLIGHT`. Tick geometry is in `tickGeo()`, colours in `styleTick()`. The boot comet and hourly chime only run on the tick kinds.
 
 ## Seconds ring
 
-Constants at the top of `src/ui.cpp`: `TICK_OUTER` (radius), `TICK_MINOR_LEN`, `TICK_MAJOR_LEN`; widths are in `styleTick()`.
+Radii, lengths and widths per ring kind are in `tickGeo()` in `src/ui.cpp`.
 
 - **Single moving dot instead of a filling trail:** in `styleTick()`, make the elapsed (`i < sec`) color the same as the upcoming color.
-- **Remove the ring:** delete the `createTicks(scr)` call in `ui_init()`, the `ringSec` block at the top of `ui_update()`, and the `styleTick` loop in `ui_set_night()`; then `LV_USE_LINE` in `lv_conf.h` can go back to 0.
+- **Remove the ring:** choose *Seconds ring: Off* on the setup page, or make `ringKind()` return `K_NONE`.
 
 ## Setup screen and behavior
 
@@ -94,7 +104,7 @@ In `src/weather.cpp`:
 - **Other fields:** add them to the `current=`/`daily=` list in `fetchCurrent()` and read them with `findNum()` (a tiny parser; no JSON library). Add the value to `WeatherData` (`weather.h`) and `publish()`. [Open-Meteo parameters](https://open-meteo.com/en/docs).
 - **Non-US locations:** the lookup is restricted to US ZIP codes via `countryCode=US` in `geocode()`, and the setup field accepts 5 digits (`pattern` in `buildForm()`). Remove both to allow city names or other postal codes (Open-Meteo's geocoder does not understand free text like "Paris France"; a bare name or a postal code works).
 - **Which icon for which weather:** `weather_icon()` maps WMO weather codes to glyphs and colors.
-- **Night mode without a ZIP:** night mode is driven by `is_day` in the main loop (`src/main.cpp`). To use a time-of-day schedule instead, set `g_night` from `t.tm_hour` there.
+- **Night mode without a ZIP:** choose *Night mode: Fixed hours* on the setup page (`scheduledNight()` in `src/main.cpp`).
 
 ### Adding or changing weather icons
 
