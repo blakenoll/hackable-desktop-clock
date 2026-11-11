@@ -283,7 +283,7 @@ static struct {
 static char detailText[32] = "";
 static bool loadingShown = false, staleShown = false, offShown = false;
 static constexpr int RAIN_BARS = 6;
-static int rainPct[RAIN_BARS], rainStart = -1;  // hourly rain chance from the hour `rainStart` (-1 = none)
+static int rainPct[RAIN_BARS], tempHr[RAIN_BARS], rainStart = -1;  // hourly rain chance from the hour `rainStart` (-1 = none)
 static int sunriseMin = -1, sunsetMin = -1;     // minutes after midnight (-1 = unknown)
 
 // ---- Small helpers -----------------------------------------------------------------------
@@ -720,29 +720,64 @@ static void buildSegments(int cy) {
 }
 
 // ---- Forecast: hourly rain-chance bars -----------------------------------------------------------
-static lv_obj_t *bars[RAIN_BARS], *barLbl[RAIN_BARS];
+static lv_obj_t *bars[RAIN_BARS], *barLbl[RAIN_BARS], *barTemp[RAIN_BARS];
 static constexpr int BAR_W = 12, BAR_PITCH = 18, BAR_MAX = 24, BAR_BASE = 191;  // BAR_BASE: y of the bars' bottom edge
+
+// Dry spell (max chance < 30 %) with hourly temperatures known: the bars show temperature instead
+// (scaled between the coolest and warmest of the six hours, cool blue to warm amber).
+static bool barsTempMode() {
+  int mx = -1, ok = 0;
+  for (int k = 0; k < RAIN_BARS; k++) {
+    if (rainPct[k] > mx) mx = rainPct[k];
+    if (tempHr[k] != -32768) ok++;
+  }
+  return mx < 30 && ok == RAIN_BARS;
+}
+
+static void tempRange(int &lo, int &hi) {
+  lo = 32767; hi = -32768;
+  for (int k = 0; k < RAIN_BARS; k++) { if (tempHr[k] < lo) lo = tempHr[k]; if (tempHr[k] > hi) hi = tempHr[k]; }
+}
 
 static void barsPaint() {
   if (!bars[0]) return;
+  bool tm = barsTempMode();
+  int lo = 0, hi = 0;
+  if (tm) tempRange(lo, hi);
   for (int k = 0; k < RAIN_BARS; k++) {
     int p = rainPct[k] < 0 ? 0 : rainPct[k] > 100 ? 100 : rainPct[k];
-    bgc(bars[k], mixDN(mixHex(0x6FB6FF, 0x24384F, p), nightC(18 + p / 2)));
+    uint32_t day = tm ? mixHex(0x5FA8FF, 0xFFB454, hi > lo ? (hi - tempHr[k]) * 100 / (hi - lo) : 50) : mixHex(0x6FB6FF, 0x24384F, p);
+    bgc(bars[k], mixDN(day, nightC(tm ? 40 : 18 + p / 2)));
     tc(barLbl[k], mixDN(THEMES[opt.theme].colon, nightC(45)));
+    tc(barTemp[k], mixDN(0xE6E6E6, nightC(70)));
   }
 }
 
 static void barsUpdate() {
   if (!bars[0]) return;
+  bool tm = barsTempMode();
+  int lo = 0, hi = 0;
+  if (tm) tempRange(lo, hi);
   for (int k = 0; k < RAIN_BARS; k++) {
     bool show = rainStart >= 0;
     setHidden(bars[k], !show);
     setHidden(barLbl[k], !show);
+    setHidden(barTemp[k], !show || !tm);
     if (!show) continue;
     int p = rainPct[k] < 0 ? 0 : rainPct[k] > 100 ? 100 : rainPct[k];
-    int h = 3 + p * (BAR_MAX - 3) / 100, x = 120 - (RAIN_BARS * BAR_PITCH - (BAR_PITCH - BAR_W)) / 2 + k * BAR_PITCH;
+    int tmax = BAR_MAX - 10;  // leave room for the number above
+    int h = tm ? 6 + (hi > lo ? (tempHr[k] - lo) * (tmax - 6) / (hi - lo) : (tmax - 6) / 2)
+               : 3 + p * (BAR_MAX - 3) / 100;
+    int x = 120 - (RAIN_BARS * BAR_PITCH - (BAR_PITCH - BAR_W)) / 2 + k * BAR_PITCH;
     lv_obj_set_size(bars[k], BAR_W, h);
     lv_obj_set_pos(bars[k], x, BAR_BASE - h);
+    if (tm) {
+      char tb[6];
+      snprintf(tb, sizeof(tb), "%d", tempHr[k]);
+      lv_label_set_text(barTemp[k], tb);
+      lv_obj_update_layout(barTemp[k]);
+      lv_obj_set_pos(barTemp[k], x + BAR_W / 2 - lv_obj_get_width(barTemp[k]) / 2, BAR_BASE - h - 17);
+    }
     int hr = (rainStart + k) % 24;
     char buf[4];
     snprintf(buf, sizeof(buf), "%d", opt.h24 ? hr : (hr % 12 == 0 ? 12 : hr % 12));
@@ -759,6 +794,7 @@ static void buildBars() {
     lv_obj_set_style_radius(bars[k], 3, 0);
     lv_obj_set_style_bg_opa(bars[k], LV_OPA_COVER, 0);
     barLbl[k] = mkLabel(content, &manrope_caps_12);
+    barTemp[k] = mkLabel(content, &manrope_caps_12);
   }
 }
 
@@ -1414,7 +1450,7 @@ static void applyStale(uint32_t ms) {
   lv_opa_t to = staleShown ? 90 : LV_OPA_COVER;  // ~35%: still readable, clearly not current
   setOpa(weatherRow, to, ms);
   setOpa(detailBox, to, ms);
-  for (int k = 0; k < RAIN_BARS; k++) setOpa(bars[k], to, ms);
+  for (int k = 0; k < RAIN_BARS; k++) { setOpa(bars[k], to, ms); setOpa(barTemp[k], to, ms); }
 }
 
 void ui_set_weather_stale(bool stale) {
@@ -1512,8 +1548,9 @@ void ui_set_weather(const char *icon, uint32_t iconColor, const char *text, bool
   applyWeather(true);
 }
 
-void ui_set_weather_extra(const int *rain, int count, int startHour, int sunrise, int sunset) {
+void ui_set_weather_extra(const int *rain, int count, int startHour, int sunrise, int sunset, const int *temps) {
   for (int k = 0; k < RAIN_BARS; k++) rainPct[k] = rain && k < count ? rain[k] : -1;
+  for (int k = 0; k < RAIN_BARS; k++) tempHr[k] = temps && k < count ? temps[k] : -32768;
   rainStart = rain && count > 0 ? startHour : -1;
   sunriseMin = sunrise;
   sunsetMin = sunset;
@@ -1539,6 +1576,7 @@ static void rebuild() {
   memset(segColon, 0, sizeof(segColon));
   memset(bars, 0, sizeof(bars));
   memset(barLbl, 0, sizeof(barLbl));
+  memset(barTemp, 0, sizeof(barTemp));
   memset(swaps, 0, sizeof(swaps));
   floatAmpm = false;
   lastMin = lastHour = lastDay = ringSec = -1;
@@ -1573,6 +1611,7 @@ void ui_init() {
   lv_obj_set_style_pad_all(scr, 0, 0);
   lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
   for (int &p : rainPct) p = -1;
+  for (int &t : tempHr) t = -32768;
 
   faceRoot = box(scr);
   lv_obj_set_size(faceRoot, 240, 240);

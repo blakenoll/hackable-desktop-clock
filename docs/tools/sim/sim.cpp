@@ -32,7 +32,8 @@ static void weather(bool rainy) {
   if (rainy) ui_set_weather("\xEF\x80\x99", 0x4DA3FF, "72\xC2\xB0", true, 61, 78, 72, 0);
   else ui_set_weather("\xEF\x80\x82", 0xFFD66B, "72\xC2\xB0", true, 61, 78, 72, 0);
   ui_set_weather_detail("40% rain");
-  ui_set_weather_extra(rain, 6, 11, 6 * 60 + 42, 17 * 60 + 21);
+  static const int dry[6] = {0, 0, 5, 10, 0, 0}, temps[6] = {68, 71, 73, 74, 72, 69};
+  ui_set_weather_extra(rainy ? rain : dry, 6, 11, 6 * 60 + 42, 17 * 60 + 21, temps);
 }
 int main(int argc, char **argv) {
   std::string out = argc > 1 ? argv[1] : ".";

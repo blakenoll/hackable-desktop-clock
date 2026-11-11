@@ -15,6 +15,7 @@ struct Extra {
   float feels = 0;
   int rainPct = -1;
   int rainHours[WeatherData::RAIN_HOURS] = {-1, -1, -1, -1, -1, -1};
+  int tempHours[WeatherData::RAIN_HOURS] = {-32768, -32768, -32768, -32768, -32768, -32768};
   int rainStartHour = -1, sunriseMin = -1, sunsetMin = -1;
 };
 
@@ -25,6 +26,7 @@ static void publish(bool valid, float temp, int code, bool isDay, float hi, floa
     g_data.feels = ex.feels;
     g_data.rainPct = ex.rainPct;
     memcpy(g_data.rainHours, ex.rainHours, sizeof(g_data.rainHours));
+    memcpy(g_data.tempHours, ex.tempHours, sizeof(g_data.tempHours));
     g_data.rainStartHour = ex.rainStartHour;
     g_data.sunriseMin = ex.sunriseMin;
     g_data.sunsetMin = ex.sunsetMin;
@@ -151,7 +153,7 @@ static bool fetchCurrent(float lat, float lon, char unit, float &temp, int &code
                          bool &hasRange, Extra &ex) {
   String body;
   String url = "https://api.open-meteo.com/v1/forecast?current=temperature_2m,apparent_temperature,weather_code,is_day"
-               "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&hourly=precipitation_probability&forecast_hours=" +
+               "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&hourly=precipitation_probability,temperature_2m&forecast_hours=" +
                String(RAIN_HOURS) + "&forecast_days=1&timezone=auto&temperature_unit=" +
                String(unit == 'C' ? "celsius" : "fahrenheit") + "&latitude=" + String(lat, 4) + "&longitude=" + String(lon, 4);
   if (!httpsGet(url, body)) return false;
@@ -180,6 +182,20 @@ static bool fetchCurrent(float lat, float lon, char unit, float &temp, int &code
       }
       const char *comma = strchr(end, ','), *close = strchr(end, ']');
       if (!comma || (close && close < comma)) break;  // that was the last entry
+      p = comma + 1;
+    }
+  }
+
+  // Hourly temperature (same slots), for the Forecast face when no rain is expected.
+  int tarr = hr >= 0 ? body.indexOf("\"temperature_2m\":[", hr) : -1;
+  if (tarr >= 0) {
+    const char *p = body.c_str() + tarr + strlen("\"temperature_2m\":[");
+    for (int n = 0; n < RAIN_HOURS && *p && *p != ']'; n++) {
+      char *end;
+      double v = strtod(p, &end);
+      if (end != p) ex.tempHours[n] = (int)lround(v);
+      const char *comma = strchr(end, ','), *close = strchr(end, ']');
+      if (!comma || (close && close < comma)) break;
       p = comma + 1;
     }
   }

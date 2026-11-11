@@ -165,7 +165,8 @@ void loop() {
         ui_set_weather(icon, color, buf, w.hasRange, (int)lroundf(w.lo), (int)lroundf(w.hi), w.temp, weather_fall(w.code));
         weatherDetail(w, buf, sizeof(buf));
         ui_set_weather_detail(buf);
-        ui_set_weather_extra(w.rainHours, WeatherData::RAIN_HOURS, w.rainStartHour, w.sunriseMin, w.sunsetMin);
+        ui_set_weather_extra(w.rainHours, WeatherData::RAIN_HOURS, w.rainStartHour, w.sunriseMin, w.sunsetMin,
+                            w.tempHours);
       } else {
         ui_set_weather(nullptr, 0, w.error, false, 0, 0, 0);
         ui_set_weather_extra(nullptr, 0, -1, -1, -1);
