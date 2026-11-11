@@ -913,6 +913,12 @@ static void buildFace() {
     case FACE_STACKED:  // hours over minutes; date in a column on the left, weather on the right
       timeH = mkLabelAt(&manrope_74, 0, 0, -33);
       timeM = mkLabelAt(&manrope_74, 0, 0, 33);
+      {  // right-justify the hour over the minutes' units digit (matters for single-digit hours)
+        lv_obj_set_width(timeH, 2 * lv_font_get_glyph_width(&manrope_74, 0x30, 0));
+        lv_obj_set_style_text_align(timeH, LV_TEXT_ALIGN_RIGHT, 0);
+        lv_obj_set_style_text_letter_space(timeH, 8, 0);  // "1" is narrow, so the hour pair read tighter than the minutes
+        lv_obj_align(timeH, LV_ALIGN_CENTER, 0, -33);
+      }
       dayLabel = mkLabelAt(&manrope_caps_12, 2, -77, -21);
       date2Label = mkLabelAt(&manrope_20, 0, -77, 0);
       dateLabel = mkLabelAt(&manrope_caps_12, 2, -77, 21);
@@ -1030,9 +1036,16 @@ static void fadeIn(lv_obj_t *o) {
   lv_anim_start(&in);
 }
 
+// Stacked hour: two digits centre over the minutes, a single digit right-justifies over their units digit.
+static void hourAlign(lv_obj_t *l) {
+  if (l != timeH || opt.face != FACE_STACKED) return;
+  lv_obj_set_style_text_align(l, strlen(lv_label_get_text(l)) > 1 ? LV_TEXT_ALIGN_CENTER : LV_TEXT_ALIGN_RIGHT, 0);
+}
+
 static void swapOutDone(lv_anim_t *a) {
   Swap *sw = (Swap *)lv_anim_get_user_data(a);
   lv_label_set_text(sw->label, sw->text);
+  hourAlign(sw->label);
   if (sw->label == weatherIcon) {  // new glyph arrives with its own colour
     iconDayColor = pendingIconColor;
     applyIconColor();
@@ -1047,6 +1060,7 @@ static void swapText(int idx, lv_obj_t *label, const char *text) {
   if (lv_obj_has_flag(label, LV_OBJ_FLAG_HIDDEN)) {
     lv_anim_delete(label, nullptr);
     lv_label_set_text(label, text);
+    hourAlign(label);
     lv_obj_remove_flag(label, LV_OBJ_FLAG_HIDDEN);
     if (label == weatherIcon) { iconDayColor = pendingIconColor; applyIconColor(); }
     fadeIn(label);
@@ -1141,6 +1155,7 @@ void ui_update(const tm &tIn) {
     }
     if (first) {  // no transition on the very first draw
       setText(timeH, hh);
+      hourAlign(timeH);
       setText(timeM, mm);
       placeAmpm();
     } else {
