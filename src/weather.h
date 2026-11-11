@@ -1,5 +1,5 @@
 #pragma once
-#include "provisioning.h"
+#include "config.h"
 
 struct WeatherData {
   bool valid = false;     // true once a forecast has been fetched
@@ -24,16 +24,9 @@ struct WeatherData {
   uint32_t version = 0;   // bumps on every change; poll to know when to redraw
 };
 
-// Starts the background fetch task (geocodes cfg.city once, then refreshes the
-// current conditions every 15 min via Open-Meteo). Call after WiFi is up.
-// Does nothing if cfg.city is empty.
+// Starts the background fetch task (geocodes cfg.city once, then refreshes the current conditions every
+// 10 min via Open-Meteo). Call after WiFi is up. Does nothing if cfg.city is empty.
 void weather_begin(const ClockConfig &cfg);
 
 // Thread-safe snapshot of the latest data.
 WeatherData weather_get();
-
-// UTF-8 glyph in the `weather_icons` font for a WMO weather code, plus its colour (0xRRGGBB).
-const char *weather_icon(int wmoCode, bool isDay, uint32_t *color);
-
-// Falling-precipitation animation for a WMO code: 0 none, 1 rain, 2 snow.
-int weather_fall(int wmoCode);
