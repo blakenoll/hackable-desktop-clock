@@ -8,7 +8,8 @@ A digital desk clock for an ESP32-C3 and a 240x240 round GC9A01 display, built w
 - A 60-tick **seconds ring** around the rim
 - **Weather** from [Open-Meteo](https://open-meteo.com/) (no API key): icon, temperature and the day's high/low, refreshed every 10 minutes
 - **Night mode**: everything turns dim red after sunset
-- **No secrets in the firmware**: WiFi, timezone, time/date format, accent colour, ZIP code and units are set from your phone through a captive-portal setup page on the clock itself
+- **Eight clock faces**: Polished (default), Arc, Stacked, Analog, Zen, Forecast, Retro LCD and Daylight. Tap the BOOT button to switch; themes, ring style and night colour are on the setup page
+- **No secrets in the firmware**: WiFi, timezone, time/date format, clock face, colour theme, ZIP code and units are set from your phone through a captive-portal setup page on the clock itself
 
 ## What you need
 
@@ -68,6 +69,13 @@ Settings are stored in flash and survive reboots and reflashing. To change them 
 - **Seconds ring:** elapsed seconds are lit, the current second is bright, upcoming ones are dim.
 - **Night mode:** when Open-Meteo says it's dark (`is_day = 0`) everything switches to red tones. It needs a ZIP code, since the flag comes from the weather fetch. The last state is remembered across reboots.
 - **No ZIP entered:** weather and night mode are simply off.
+- **Night mode options (setup page):** follow sunset (default), fixed hours (works without a ZIP), or never; night colour red, amber or dim white.
+
+## Faces
+
+<p align="center"><img src="docs/faces/faces.png" alt="The eight clock faces" width="100%"></p>
+
+Top row: Polished, Arc, Stacked, Analog. Bottom row: Zen, Forecast, Retro LCD, Daylight. **Tap BOOT** to step through them (the choice is saved), or pick one on the setup page. The setup page also has colour themes, the seconds-ring style (ticks, arc, dot, off), seconds as digits, the hourly chime and the weather detail line. Night versions and option examples: [night](docs/faces/night.png), [options](docs/faces/options.png), [states](docs/faces/states.png). These images are rendered from the real UI code by `sh docs/tools/sim/render.sh`.
 
 ## Make it yours
 
@@ -92,7 +100,7 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 | `src/main.cpp` | Display glue (TFT_eSPI → LVGL), boot flow, main loop |
 | `src/ui.cpp`, `src/ui.h` | The clock face, seconds ring, night mode, setup screen |
 | `src/weather.cpp`, `src/weather.h` | Open-Meteo geocoding + forecast in a background task |
-| `src/provisioning.cpp`, `src/provisioning.h` | Saved settings (NVS), setup AP + captive portal + web form, BOOT long-press |
+| `src/provisioning.cpp`, `src/provisioning.h` | Saved settings (NVS), setup AP + captive portal + web form, BOOT short/long press |
 | `src/font_weather.c` | Generated 26 px weather-icon font (12 glyphs) |
 | `src/font_manrope_*.c` | Generated Manrope text fonts (14, 20, 56 px) |
 | `include/lv_conf.h` | LVGL config: enabled fonts and widgets, memory |

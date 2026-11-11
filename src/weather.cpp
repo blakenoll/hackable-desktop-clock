@@ -11,7 +11,12 @@ static constexpr uint32_t RETRY_MS = 60UL * 1000;
 static WeatherData g_data;
 static SemaphoreHandle_t g_mu;
 
-struct Extra { float feels = 0; int rainPct = -1; };
+struct Extra {
+  float feels = 0;
+  int rainPct = -1;
+  int rainHours[WeatherData::RAIN_HOURS] = {-1, -1, -1, -1, -1, -1};
+  int rainStartHour = -1, sunriseMin = -1, sunsetMin = -1;
+};
 
 static void publish(bool valid, float temp, int code, bool isDay, float hi, float lo, bool hasRange, char unit,
                     const char *err, const Extra &ex = Extra()) {
@@ -19,6 +24,10 @@ static void publish(bool valid, float temp, int code, bool isDay, float hi, floa
   if (valid) {
     g_data.feels = ex.feels;
     g_data.rainPct = ex.rainPct;
+    memcpy(g_data.rainHours, ex.rainHours, sizeof(g_data.rainHours));
+    g_data.rainStartHour = ex.rainStartHour;
+    g_data.sunriseMin = ex.sunriseMin;
+    g_data.sunsetMin = ex.sunsetMin;
     g_data.fetchedAt = millis();
   }
   g_data.valid = valid;
@@ -123,13 +132,26 @@ static Geo geocode(const String &city, float &lat, float &lon) {
   return Geo::Ok;
 }
 
-static constexpr int RAIN_HOURS = 6;  // rain chance looks this many hours ahead
+static constexpr int RAIN_HOURS = WeatherData::RAIN_HOURS;  // rain chance looks this many hours ahead
+
+// Minutes after midnight from the first ISO time ("2026-11-10T06:42") in the array following `key`, or -1.
+static int isoMinutes(const String &s, const char *key, int from) {
+  int i = from >= 0 ? s.indexOf(key, from) : -1;
+  if (i < 0) return -1;
+  int t = s.indexOf('T', i + strlen(key));
+  if (t < 0 || t - i > (int)strlen(key) + 12 || t + 5 >= (int)s.length()) return -1;
+  const char *p = s.c_str() + t + 1;
+  if (!isdigit((unsigned char)p[0]) || !isdigit((unsigned char)p[1]) || p[2] != ':' || !isdigit((unsigned char)p[3]) ||
+      !isdigit((unsigned char)p[4]))
+    return -1;
+  return ((p[0] - '0') * 10 + (p[1] - '0')) * 60 + (p[3] - '0') * 10 + (p[4] - '0');
+}
 
 static bool fetchCurrent(float lat, float lon, char unit, float &temp, int &code, bool &isDay, float &hi, float &lo,
                          bool &hasRange, Extra &ex) {
   String body;
   String url = "https://api.open-meteo.com/v1/forecast?current=temperature_2m,apparent_temperature,weather_code,is_day"
-               "&daily=temperature_2m_max,temperature_2m_min&hourly=precipitation_probability&forecast_hours=" +
+               "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&hourly=precipitation_probability&forecast_hours=" +
                String(RAIN_HOURS) + "&forecast_days=1&timezone=auto&temperature_unit=" +
                String(unit == 'C' ? "celsius" : "fahrenheit") + "&latitude=" + String(lat, 4) + "&longitude=" + String(lon, 4);
   if (!httpsGet(url, body)) return false;
@@ -152,15 +174,23 @@ static bool fetchCurrent(float lat, float lon, char unit, float &temp, int &code
     for (int n = 0; n < RAIN_HOURS && *p && *p != ']'; n++) {
       char *end;
       long v = strtol(p, &end, 10);
-      if (end != p && v > ex.rainPct) ex.rainPct = (int)v;
+      if (end != p) {
+        ex.rainHours[n] = (int)v;
+        if (v > ex.rainPct) ex.rainPct = (int)v;
+      }
       const char *comma = strchr(end, ','), *close = strchr(end, ']');
       if (!comma || (close && close < comma)) break;  // that was the last entry
       p = comma + 1;
     }
   }
 
+  int startMin = isoMinutes(body, "\"time\":[\"", hr);  // first hourly slot
+  ex.rainStartHour = arr >= 0 && startMin >= 0 ? startMin / 60 : -1;
+
   // Today's range. Search after "daily":{ so we skip the "daily_units" block.
   int dd = body.indexOf("\"daily\":{");
+  ex.sunriseMin = isoMinutes(body, "\"sunrise\":[\"", dd);
+  ex.sunsetMin = isoMinutes(body, "\"sunset\":[\"", dd);
   double mx, mn;
   hasRange = dd >= 0 && findNum(body, "\"temperature_2m_max\":[", dd, mx) && findNum(body, "\"temperature_2m_min\":[", dd, mn);
   if (hasRange) {

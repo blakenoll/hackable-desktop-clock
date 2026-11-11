@@ -6,6 +6,8 @@
 #include <lvgl.h>
 #include "ui.h"
 
+static constexpr int THEME_OPTIONS = 7;  // keep in step with THEMES[] in ui.cpp
+
 static constexpr int BOOT_PIN = 9;
 static constexpr uint32_t LONG_PRESS_MS = 3000;
 static constexpr uint32_t IDLE_REBOOT_MS = 5UL * 60 * 1000;
@@ -56,6 +58,13 @@ void prov_save_night(bool night) {
   p.end();
 }
 
+void prov_save_face(uint8_t face) {
+  Preferences p;
+  p.begin("clock", false);
+  p.putUChar("face", face);
+  p.end();
+}
+
 bool prov_load(ClockConfig &cfg) {
   Preferences p;
   p.begin("clock", false);
@@ -67,6 +76,15 @@ bool prov_load(ClockConfig &cfg) {
   cfg.h24 = p.getBool("h24", false);
   cfg.dateFmt = p.getUChar("datefmt", 0) == 1 ? 1 : 0;
   cfg.accent = p.getUChar("accent", 0);
+  cfg.face = p.getUChar("face", 0);
+  cfg.ring = p.getUChar("ring", 0);
+  cfg.nightMode = p.getUChar("nmode", 0);
+  cfg.nightStart = p.getUChar("nstart", 22) % 24;
+  cfg.nightEnd = p.getUChar("nend", 7) % 24;
+  cfg.nightColor = p.getUChar("ncolor", 0);
+  cfg.chime = p.getBool("chime", true);
+  cfg.detail = p.getBool("detail", true);
+  cfg.seconds = p.getBool("secs", false);
   cfg.geocity = p.getString("geocity", "");
   cfg.lat = p.getFloat("lat", 0);
   cfg.lon = p.getFloat("lon", 0);
@@ -85,6 +103,15 @@ static void saveConfig(const ClockConfig &cfg) {
   p.putBool("h24", cfg.h24);
   p.putUChar("datefmt", cfg.dateFmt);
   p.putUChar("accent", cfg.accent);
+  p.putUChar("face", cfg.face);
+  p.putUChar("ring", cfg.ring);
+  p.putUChar("nmode", cfg.nightMode);
+  p.putUChar("nstart", cfg.nightStart);
+  p.putUChar("nend", cfg.nightEnd);
+  p.putUChar("ncolor", cfg.nightColor);
+  p.putBool("chime", cfg.chime);
+  p.putBool("detail", cfg.detail);
+  p.putBool("secs", cfg.seconds);
   p.end();
 }
 
@@ -99,8 +126,10 @@ void prov_save_geo(const String &city, float lat, float lon) {
 
 // ---- BOOT button ------------------------------------------------------------
 
-bool prov_button_long_press() {
-  static bool inited = false, down = false;
+static constexpr uint32_t SHORT_MIN_MS = 40, SHORT_MAX_MS = 1000;  // debounce .. clearly not a hold
+
+ButtonEvent prov_button_event() {
+  static bool inited = false, down = false, fired = false;
   static uint32_t since = 0;
   if (!inited) {
     pinMode(BOOT_PIN, INPUT_PULLUP);
@@ -109,16 +138,21 @@ bool prov_button_long_press() {
   if (digitalRead(BOOT_PIN) == LOW) {
     if (!down) {
       down = true;
+      fired = false;
       since = millis();
-    } else if (millis() - since >= LONG_PRESS_MS) {
-      down = false;
-      return true;
+    } else if (!fired && millis() - since >= LONG_PRESS_MS) {
+      fired = true;  // once per hold
+      return BTN_LONG;
     }
-  } else {
+  } else if (down) {
     down = false;
+    uint32_t held = millis() - since;
+    if (!fired && held >= SHORT_MIN_MS && held <= SHORT_MAX_MS) return BTN_SHORT;
   }
-  return false;
+  return BTN_NONE;
 }
+
+bool prov_button_long_press() { return prov_button_event() == BTN_LONG; }
 
 // ---- Web page ---------------------------------------------------------------
 
@@ -178,9 +212,37 @@ static String buildForm(const String &netOptions, const ClockConfig &cur) {
   };
   h += "<label>Time format</label><select name=h24>" + opt(0, cur.h24, "12-hour (2:30 PM)") + opt(1, cur.h24, "24-hour (14:30)") + "</select>";
   h += "<label>Date format</label><select name=datefmt>" + opt(0, cur.dateFmt, "Fri Nov 6") + opt(1, cur.dateFmt, "Fri 6 Nov") + "</select>";
-  h += "<label>Accent colour <small>(weekday and current-second tick)</small></label><select name=accent>" +
-       opt(0, cur.accent, "Red") + opt(1, cur.accent, "Amber") + opt(2, cur.accent, "Green") +
-       opt(3, cur.accent, "Cyan") + opt(4, cur.accent, "Pink") + opt(5, cur.accent, "White") + "</select>";
+  h += "<label>Clock face <small>(a short press of the BOOT button also cycles these)</small></label><select name=face>" +
+       opt(0, cur.face, "Polished") + opt(1, cur.face, "Arc") + opt(2, cur.face, "Stacked") + opt(3, cur.face, "Analog") +
+       opt(4, cur.face, "Zen") + opt(5, cur.face, "Forecast") + opt(6, cur.face, "Retro LCD") + opt(7, cur.face, "Daylight") +
+       "</select>";
+  h += "<label>Colour theme</label><select name=accent>" +
+       opt(0, cur.accent, "Red") + opt(1, cur.accent, "Amber") + opt(2, cur.accent, "Mint") + opt(3, cur.accent, "Ice") +
+       opt(4, cur.accent, "Orchid") + opt(5, cur.accent, "Mono") + opt(6, cur.accent, "Ember") + "</select>";
+  h += "<label>Seconds ring <small>(Analog and Daylight keep their own)</small></label><select name=ring>" +
+       opt(0, cur.ring, "Face default") + opt(1, cur.ring, "Ticks") + opt(2, cur.ring, "Arc") + opt(3, cur.ring, "Dot") +
+       opt(4, cur.ring, "Off") + "</select>";
+  h += "<label>Seconds as digits</label><select name=secs>" + opt(0, cur.seconds, "Off") + opt(1, cur.seconds, "On") + "</select>";
+  h += "<label>Hourly chime <small>(comet lap on the hour)</small></label><select name=chime>" + opt(1, cur.chime, "On") +
+       opt(0, cur.chime, "Off") + "</select>";
+  h += "<label>Weather detail line <small>(rain chance / feels like)</small></label><select name=detail>" +
+       opt(1, cur.detail, "Show") + opt(0, cur.detail, "Hide") + "</select>";
+  h += "<label>Night mode</label><select name=nmode>" + opt(0, cur.nightMode, "After sunset (needs ZIP)") +
+       opt(1, cur.nightMode, "Fixed hours") + opt(2, cur.nightMode, "Never") + "</select>";
+  auto hours = [&](const char *name, int sel) {
+    String o = String("<select name=") + name + ">";
+    for (int hr = 0; hr < 24; hr++) {
+      char label[12];
+      if (cur.h24) snprintf(label, sizeof(label), "%02d:00", hr);
+      else snprintf(label, sizeof(label), "%d %s", hr % 12 == 0 ? 12 : hr % 12, hr < 12 ? "AM" : "PM");
+      o += opt(hr, sel, label);
+    }
+    return o + "</select>";
+  };
+  h += "<label>Fixed hours: night starts</label>" + hours("nstart", cur.nightStart);
+  h += "<label>Fixed hours: night ends</label>" + hours("nend", cur.nightEnd);
+  h += "<label>Night colour</label><select name=ncolor>" + opt(0, cur.nightColor, "Red") + opt(1, cur.nightColor, "Amber") +
+       opt(2, cur.nightColor, "Dim white") + "</select>";
   h += "<label>ZIP code for weather <small>(optional, US 5-digit)</small></label>"
        "<input name=city inputmode=numeric pattern=\"[0-9]{5}\" maxlength=5 title=\"5-digit US ZIP code\" value=\"" + esc(cur.city) + "\">";
   h += String("<label>Temperature units</label><select name=units><option value=F") + (cur.units == 'F' ? " selected" : "") +
@@ -265,7 +327,16 @@ static String scanOptions() {
     n.units = server.arg("units") == "C" ? 'C' : 'F';
     n.h24 = server.arg("h24") == "1";
     n.dateFmt = server.arg("datefmt") == "1" ? 1 : 0;
-    n.accent = (uint8_t)constrain(server.arg("accent").toInt(), 0, 5);
+    n.accent = (uint8_t)constrain(server.arg("accent").toInt(), 0, THEME_OPTIONS - 1);
+    n.face = (uint8_t)constrain(server.arg("face").toInt(), 0, FACE_COUNT - 1);
+    n.ring = (uint8_t)constrain(server.arg("ring").toInt(), 0, 4);
+    n.nightMode = (uint8_t)constrain(server.arg("nmode").toInt(), 0, 2);
+    n.nightStart = (uint8_t)constrain(server.arg("nstart").toInt(), 0, 23);
+    n.nightEnd = (uint8_t)constrain(server.arg("nend").toInt(), 0, 23);
+    n.nightColor = (uint8_t)constrain(server.arg("ncolor").toInt(), 0, 2);
+    n.chime = server.arg("chime") != "0";
+    n.detail = server.arg("detail") != "0";
+    n.seconds = server.arg("secs") == "1";
     if (n.ssid.length() == 0) {
       server.send(400, "text/plain", "WiFi network name is required.");
       return;
