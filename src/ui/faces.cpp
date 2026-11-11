@@ -7,7 +7,7 @@ namespace ui {
 extern const FaceDef faceDefPolished, faceDefArc, faceDefStacked, faceDefAnalog, faceDefZen, faceDefForecast,
     faceDefRetro, faceDefDaylight;
 
-static const FaceDef *const FACES[FACE_COUNT] = {
+const FaceDef *const FACES[FACE_COUNT] = {
     &faceDefPolished, &faceDefArc, &faceDefStacked, &faceDefAnalog,
     &faceDefZen,      &faceDefForecast, &faceDefRetro, &faceDefDaylight,
 };
@@ -15,3 +15,7 @@ static const FaceDef *const FACES[FACE_COUNT] = {
 const FaceDef &face() { return *FACES[opt.face < FACE_COUNT ? opt.face : 0]; }
 
 }  // namespace ui
+
+// ---- Public API (ui.h) ----
+int ui_face_count() { return FACE_COUNT; }
+const char *ui_face_name(int i) { return i >= 0 && i < FACE_COUNT ? ui::FACES[i]->name : ""; }

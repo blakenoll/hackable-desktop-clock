@@ -97,10 +97,13 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 
 | Path | What it is |
 |------|------------|
-| `src/main.cpp` | Display glue (TFT_eSPI → LVGL), boot flow, main loop |
-| `src/ui.cpp`, `src/ui.h` | The clock face, seconds ring, night mode, setup screen |
-| `src/weather.cpp`, `src/weather.h` | Open-Meteo geocoding + forecast in a background task |
-| `src/provisioning.cpp`, `src/provisioning.h` | Saved settings (NVS), setup AP + captive portal + web form, BOOT short/long press |
+| `src/main.cpp` | Boot flow and main loop |
+| `src/display.cpp` | TFT_eSPI → LVGL glue |
+| `src/ui.h`, `src/ui/` | The UI behind `ui.h`: `faces/face_*.cpp` (one file per clock face), `faces.cpp` (the face table), `ring.cpp` (seconds ring, chime), `weather_view.cpp`, `theme.cpp` (colour themes, night colours), `boot_screens.cpp` (connecting / syncing / scanning / setup screens), `core.cpp` (theming, rebuild). See the comment atop `src/ui/ui_internal.h` |
+| `src/weather.cpp`, `src/weather_format.cpp` | Open-Meteo geocoding + forecast in a background task; icons and text for the data |
+| `src/config.cpp`, `src/config.h` | Saved settings (NVS) |
+| `src/button.cpp` | BOOT button: short / double / long press |
+| `src/provisioning.cpp` | Setup AP + captive portal + web form |
 | `src/font_weather.c` | Generated 26 px weather-icon font (12 glyphs) |
 | `src/font_manrope_*.c` | Generated Manrope text fonts (14, 20, 56 px) |
 | `include/lv_conf.h` | LVGL config: enabled fonts and widgets, memory |

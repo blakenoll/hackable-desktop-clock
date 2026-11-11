@@ -81,6 +81,7 @@ static void onTime(const tm &t, bool minuteChanged) {
 
 static FaceDef make() {
   FaceDef f;
+  f.name = "Retro LCD";
   f.ring = K_BLOCKS;
   f.build = build;
   f.date = date;

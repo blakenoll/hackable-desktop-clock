@@ -80,6 +80,7 @@ static void onData() { daylightUpdate(); }  // sunrise / sunset arrived
 
 static FaceDef make() {
   FaceDef f;
+  f.name = "Daylight";
   f.ring = K_CUSTOM;
   f.build = build;
   f.paint = paint;

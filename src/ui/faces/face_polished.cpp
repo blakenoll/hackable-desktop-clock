@@ -15,6 +15,7 @@ static void palette(Palette &p, const Theme &T) { p.timeC = mixDN(T.colon, night
 
 static FaceDef make() {
   FaceDef f;
+  f.name = "Polished";
   f.ring = K_DOTTICKS;
   f.build = build;
   f.palette = palette;

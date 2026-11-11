@@ -77,6 +77,7 @@ static void onTime(const tm &t, bool minuteChanged) { handsUpdate(t, minuteChang
 
 static FaceDef make() {
   FaceDef f;
+  f.name = "Analog";
   f.ring = K_MARKERS;
   f.build = build;
   f.date = date;

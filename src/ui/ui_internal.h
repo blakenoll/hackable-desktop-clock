@@ -40,9 +40,9 @@ struct DateParts;
 
 // ---- theme.cpp ---------------------------------------------------------------------------------
 // Theme presets (setup page; NVS key `accent`, so the first six keep the old accent order).
-// digits: time; accent: weekday etc.; tick: current-second mark; sub: secondary text; colon: dim text;
+// name: shown on the setup page; digits: time; accent: weekday etc.; tick: current-second mark; sub: secondary text; colon: dim text;
 // base / bright / dim: seconds-ring greys (elapsed, comet tail, upcoming).
-struct Theme { uint32_t digits, accent, tick, sub, colon, base, bright, dim; };
+struct Theme { const char *name; uint32_t digits, accent, tick, sub, colon, base, bright, dim; };
 extern const Theme THEMES[];
 extern const int THEME_COUNT;
 extern const int NIGHT_COUNT;
@@ -155,6 +155,7 @@ struct DateParts {
 // state and helpers it needs, usually via a small make() function); faces.cpp lists them in `enum Face`
 // order. Hooks may be null.
 struct FaceDef {
+  const char *name = "";  // shown on the setup page
   RingKind ring = K_NONE;
   void (*build)() = nullptr;                                  // creates the ring extras and content objects (see mkTime etc.)
   void (*date)(const DateParts &d) = nullptr;                 // lay the date out; default: weekday + date labels
@@ -170,6 +171,7 @@ struct FaceDef {
   bool fullDate = false;      // "TUESDAY" / "NOVEMBER" instead of "TUE" / "NOV"
   bool ringAtNight = false;   // the ring stays (dimmed) at night instead of fading out
 };
-const FaceDef &face();  // the active face (faces.cpp)
+extern const FaceDef *const FACES[];  // in `enum Face` order
+const FaceDef &face();                // the active face (faces.cpp)
 
 }  // namespace ui

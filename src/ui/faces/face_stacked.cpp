@@ -38,6 +38,7 @@ static void onText(lv_obj_t *l) {
 
 static FaceDef make() {
   FaceDef f;
+  f.name = "Stacked";
   f.ring = K_TICKS;
   f.build = build;
   f.date = date;

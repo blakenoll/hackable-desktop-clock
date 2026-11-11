@@ -18,6 +18,7 @@ static void palette(Palette &p, const Theme &T) {  // monochrome
 
 static FaceDef make() {
   FaceDef f;
+  f.name = "Zen";
   f.ring = K_ORBIT;
   f.build = build;
   f.date = dateQuietLine;

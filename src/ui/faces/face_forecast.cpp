@@ -199,6 +199,7 @@ static const char *detailPrefix() { return windStr; }  // "NW 12 MPH"
 
 static FaceDef make() {
   FaceDef f;
+  f.name = "Forecast";
   f.ring = K_CUSTOM;
   f.build = build;
   f.date = dateQuietLine;

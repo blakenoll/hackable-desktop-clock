@@ -141,6 +141,7 @@ void ui_set_theme(int theme) {
 }
 
 int ui_theme_count() { return THEME_COUNT; }
+const char *ui_theme_name(int i) { return i >= 0 && i < THEME_COUNT ? THEMES[i].name : ""; }
 
 void ui_set_face(int face) {
   opt.face = (uint8_t)(face >= 0 && face < FACE_COUNT ? face : 0);

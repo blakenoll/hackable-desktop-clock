@@ -2,7 +2,7 @@
 """Regenerates the clock-state diagrams in docs/states/*.svg.
 
 Run from anywhere: python3 docs/tools/gen_states.py
-Coordinates are in the 240x240 display space of src/ui.cpp, scaled up when drawn. Nothing is read
+Coordinates are in the 240x240 display space of src/ui/, scaled up when drawn. Nothing is read
 from the firmware, so update the numbers and colours here when the UI changes.
 """
 import os, math
@@ -78,7 +78,7 @@ def page(name,title,lines,body,code,note=None,proposed=False):
   <text x="450" y="30" text-anchor="middle" font-size="16" font-weight="600" fill="#1f2328">{title}</text>
   <g transform="translate(0,10)">{bezel(cx,cy,2)}{body(cx,cy,2)}</g>
   {side}
-  <text x="450" y="566" text-anchor="middle" font-size="11" fill="#57606a">{note or 'Drawn at 2x from the 240×240 display layout in src/ui.cpp; animated states show one frame.'}</text>
+  <text x="450" y="566" text-anchor="middle" font-size="11" fill="#57606a">{note or 'Drawn at 2x from the 240×240 display layout in src/ui/; animated states show one frame.'}</text>
 </svg>
 '''
     open(f'{OUT}/{name}.svg','w').write(svg)

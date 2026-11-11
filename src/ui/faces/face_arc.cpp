@@ -14,6 +14,7 @@ static void build() {
 
 static FaceDef make() {
   FaceDef f;
+  f.name = "Arc";
   f.ring = K_ARC;
   f.build = build;
   f.fullDate = true;
