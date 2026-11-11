@@ -96,6 +96,16 @@ static void weatherDetail(const WeatherData &w, char *out, size_t n) {
     snprintf(out, n, "Feels %d\xC2\xB0", (int)lroundf(w.feels));
 }
 
+// "NW 12 MPH" / "CALM" for the compass readout (the small font is caps-only).
+static void windText(const WeatherData &w, char *out, size_t n) {
+  static const char *P[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
+  out[0] = 0;
+  if (w.windDir < 0) return;
+  int sp = (int)lroundf(w.windSpeed);
+  if (sp < 1) snprintf(out, n, "CALM");
+  else snprintf(out, n, "%s %d %s", P[((w.windDir + 22) / 45) % 8], sp, w.unit == 'C' ? "KM/H" : "MPH");
+}
+
 // Night by the clock (setup page "Fixed hours"): from nightStart:00 until nightEnd:00, possibly across midnight.
 static bool scheduledNight(int hour) {
   int a = g_cfg.nightStart, b = g_cfg.nightEnd;
@@ -165,11 +175,14 @@ void loop() {
         ui_set_weather(icon, color, buf, w.hasRange, (int)lroundf(w.lo), (int)lroundf(w.hi), w.temp, weather_fall(w.code));
         weatherDetail(w, buf, sizeof(buf));
         ui_set_weather_detail(buf);
+        windText(w, buf, sizeof(buf));
+        ui_set_wind(w.windDir, buf);
         ui_set_weather_extra(w.rainHours, WeatherData::RAIN_HOURS, w.rainStartHour, w.sunriseMin, w.sunsetMin,
                             w.tempHours);
       } else {
         ui_set_weather(nullptr, 0, w.error, false, 0, 0, 0);
         ui_set_weather_extra(nullptr, 0, -1, -1, -1);
+        ui_set_wind(-1, "");
       }
     }
   }

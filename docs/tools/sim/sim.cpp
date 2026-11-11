@@ -33,6 +33,7 @@ static void weather(bool rainy) {
   else ui_set_weather("\xEF\x80\x82", 0xFFD66B, "72\xC2\xB0", true, 61, 78, 72, 0);
   ui_set_weather_detail("40% rain");
   static const int dry[6] = {0, 0, 5, 10, 0, 0}, temps[6] = {68, 71, 73, 74, 72, 69};
+  ui_set_wind(315, "NW 12 MPH");
   ui_set_weather_extra(rainy ? rain : dry, 6, 11, 6 * 60 + 42, 17 * 60 + 21, temps);
 }
 int main(int argc, char **argv) {

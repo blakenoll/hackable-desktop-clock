@@ -16,6 +16,8 @@ struct Extra {
   int rainPct = -1;
   int rainHours[WeatherData::RAIN_HOURS] = {-1, -1, -1, -1, -1, -1};
   int tempHours[WeatherData::RAIN_HOURS] = {-32768, -32768, -32768, -32768, -32768, -32768};
+  float windSpeed = 0;
+  int windDir = -1;
   int rainStartHour = -1, sunriseMin = -1, sunsetMin = -1;
 };
 
@@ -27,6 +29,8 @@ static void publish(bool valid, float temp, int code, bool isDay, float hi, floa
     g_data.rainPct = ex.rainPct;
     memcpy(g_data.rainHours, ex.rainHours, sizeof(g_data.rainHours));
     memcpy(g_data.tempHours, ex.tempHours, sizeof(g_data.tempHours));
+    g_data.windSpeed = ex.windSpeed;
+    g_data.windDir = ex.windDir;
     g_data.rainStartHour = ex.rainStartHour;
     g_data.sunriseMin = ex.sunriseMin;
     g_data.sunsetMin = ex.sunsetMin;
@@ -152,10 +156,10 @@ static int isoMinutes(const String &s, const char *key, int from) {
 static bool fetchCurrent(float lat, float lon, char unit, float &temp, int &code, bool &isDay, float &hi, float &lo,
                          bool &hasRange, Extra &ex) {
   String body;
-  String url = "https://api.open-meteo.com/v1/forecast?current=temperature_2m,apparent_temperature,weather_code,is_day"
+  String url = "https://api.open-meteo.com/v1/forecast?current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,wind_direction_10m"
                "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&hourly=precipitation_probability,temperature_2m&forecast_hours=" +
                String(RAIN_HOURS) + "&forecast_days=1&timezone=auto&temperature_unit=" +
-               String(unit == 'C' ? "celsius" : "fahrenheit") + "&latitude=" + String(lat, 4) + "&longitude=" + String(lon, 4);
+               String(unit == 'C' ? "celsius" : "fahrenheit") + "&wind_speed_unit=" + String(unit == 'C' ? "kmh" : "mph") + "&latitude=" + String(lat, 4) + "&longitude=" + String(lon, 4);
   if (!httpsGet(url, body)) return false;
   int c = body.indexOf("\"current\":{");  // not "current_units"
   double t, w, d = 1;
@@ -166,6 +170,10 @@ static bool fetchCurrent(float lat, float lon, char unit, float &temp, int &code
   isDay = d != 0;
   double fl;
   ex.feels = findNum(body, "\"apparent_temperature\":", c, fl) ? (float)fl : temp;
+
+  double wsp, wdir;
+  ex.windSpeed = findNum(body, "\"wind_speed_10m\":", c, wsp) ? (float)wsp : 0;
+  ex.windDir = findNum(body, "\"wind_direction_10m\":", c, wdir) ? ((int)lround(wdir) % 360 + 360) % 360 : -1;
 
   // Rain chance: max over the next RAIN_HOURS hourly values (entries may be null).
   ex.rainPct = -1;
