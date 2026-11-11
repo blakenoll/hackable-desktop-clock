@@ -21,7 +21,7 @@ Rules of thumb:
 
 All in `ui_update()` in `src/ui.cpp`.
 
-**12/24-hour time, date order, face, theme, ring, seconds digits, chime, detail line, night options** — these are setup-page settings (NVS keys `h24`, `datefmt`, `face`, `accent` (theme), `ring`, `secs`, `chime`, `detail`, `nmode`, `nstart`, `nend`, `ncolor`), passed to `ui_set_options()` as a `UiOptions` at boot. To add a theme, append a row to `THEMES[]` in `src/ui.cpp`, add an `<option>` in `buildForm()` and bump `THEME_OPTIONS` in `src/provisioning.cpp`.
+**12/24-hour time, date order, face, theme, seconds digits, chime, detail line, night options** — these are setup-page settings (NVS keys `h24`, `datefmt`, `face`, `accent` (theme), `secs`, `chime`, `detail`, `nmode`, `nstart`, `nend`, `ncolor`), passed to `ui_set_options()` as a `UiOptions` at boot. To add a theme, append a row to `THEMES[]` in `src/ui.cpp`, add an `<option>` in `buildForm()` and bump `THEME_OPTIONS` in `src/provisioning.cpp`.
 
 **Date format details** — the date is two labels side by side: the weekday in red (`dayLabel`, from `strftime("%a")`) and `Nov 6` in gray (`dateLabel`, built from `strftime("%b")` and `t.tm_mday`; the day is printed with `%d` through `snprintf` rather than `strftime` so single digits have no leading zero). `datefmt` 0/1 picks the order; for other wording, change those lines in `ui_update()`; to show the weekday in the same color as the rest, give both labels the same color. The date uses a 20 pt font; keep it under about 14 characters so it fits inside the ring.
 
@@ -69,7 +69,7 @@ Ring kinds (`RingKind`): `K_TICKS`, `K_DOTTICKS` (default face), `K_BLOCKS` (ret
 Radii, lengths and widths per ring kind are in `tickGeo()` in `src/ui.cpp`.
 
 - **Single moving dot instead of a filling trail:** in `styleTick()`, make the elapsed (`i < sec`) color the same as the upcoming color.
-- **Remove the ring:** choose *Seconds ring: Off* on the setup page, or make `ringKind()` return `K_NONE`.
+- **Remove the ring:** make `ringKind()` return `K_NONE` (each face uses its own default ring; there is no setup-page option).
 
 ## Setup screen and behavior
 

@@ -354,14 +354,7 @@ static bool sunUp = true;
 
 static RingKind ringKind() {
   static const RingKind def[FACE_COUNT] = {K_DOTTICKS, K_ARC, K_TICKS, K_MARKERS, K_ORBIT, K_DOTTICKS, K_BLOCKS, K_DAYLIGHT};
-  if (opt.face == FACE_ANALOG || opt.face == FACE_DAYLIGHT) return def[opt.face];  // the ring is the face
-  switch (opt.ring) {
-    case 1: return K_TICKS;
-    case 2: return K_ARC;
-    case 3: return K_ORBIT;
-    case 4: return K_NONE;
-    default: return def[opt.face];
-  }
+  return def[opt.face];
 }
 static bool tickKind() { return rk == K_TICKS || rk == K_DOTTICKS || rk == K_BLOCKS; }  // has a comet (splash, chime)
 
@@ -1586,10 +1579,16 @@ void ui_set_options(const UiOptions &o) {
   if (opt.face >= FACE_COUNT) opt.face = 0;
   if (opt.theme >= THEME_COUNT) opt.theme = 0;
   if (opt.nightColor >= NIGHT_COUNT) opt.nightColor = 0;
-  if (opt.ring > 4) opt.ring = 0;
   opt.dateFmt = opt.dateFmt == 1 ? 1 : 0;
   if (faceRoot) rebuild();
 }
+
+void ui_set_theme(int theme) {
+  opt.theme = (uint8_t)(theme >= 0 && theme < THEME_COUNT ? theme : 0);
+  if (faceRoot) rebuild();
+}
+
+int ui_theme_count() { return THEME_COUNT; }
 
 void ui_set_face(int face) {
   opt.face = (uint8_t)(face >= 0 && face < FACE_COUNT ? face : 0);

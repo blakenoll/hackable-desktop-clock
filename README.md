@@ -75,7 +75,7 @@ Settings are stored in flash and survive reboots and reflashing. To change them 
 
 <p align="center"><img src="docs/faces/faces.png" alt="The eight clock faces" width="100%"></p>
 
-Top row: Polished, Arc, Stacked, Analog. Bottom row: Zen, Forecast, Retro LCD, Daylight. **Tap BOOT** to step through them (the choice is saved), or pick one on the setup page. The setup page also has colour themes, the seconds-ring style (ticks, arc, dot, off), seconds as digits, the hourly chime and the weather detail line. Night versions and option examples: [night](docs/faces/night.png), [options](docs/faces/options.png), [states](docs/faces/states.png). These images are rendered from the real UI code by `sh docs/tools/sim/render.sh`.
+Top row: Polished, Arc, Stacked, Analog. Bottom row: Zen, Forecast, Retro LCD, Daylight. **Tap BOOT** to step through them, **double-tap** to cycle colour themes (both saved), or pick one on the setup page. The setup page also has colour themes, seconds as digits, the hourly chime and the weather detail line. Night versions and option examples: [night](docs/faces/night.png), [options](docs/faces/options.png), [states](docs/faces/states.png). These images are rendered from the real UI code by `sh docs/tools/sim/render.sh`.
 
 ## Make it yours
 

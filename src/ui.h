@@ -34,7 +34,6 @@ struct UiOptions {
   uint8_t dateFmt = 0;     // 0 = "Nov 6", 1 = "6 Nov"
   uint8_t theme = 0;       // index into THEMES[] in ui.cpp (0 red, 1 amber, 2 mint, 3 ice, 4 orchid, 5 mono, 6 ember)
   uint8_t face = 0;        // Face
-  uint8_t ring = 0;        // 0 = the face's own ring, 1 ticks, 2 arc, 3 dot, 4 off (analog and daylight ignore it)
   uint8_t nightColor = 0;  // 0 red, 1 amber, 2 dim white
   bool chime = true;       // comet lap around the ring on the hour
   bool detail = true;      // "40% RAIN" / "FEELS 65" line
@@ -44,6 +43,8 @@ struct UiOptions {
 void ui_set_options(const UiOptions &o);
 // Switches the face in place (BOOT short press); everything shown is carried over.
 void ui_set_face(int face);
+void ui_set_theme(int theme);  // colour theme index (BOOT double press cycles it)
+int ui_theme_count();
 
 // Boot splash: a comet sweeps once around the seconds ring (~1 s, blocking).
 void ui_boot_splash();

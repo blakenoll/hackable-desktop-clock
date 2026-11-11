@@ -48,7 +48,6 @@ void setup() {
   o.dateFmt = cfg.dateFmt;
   o.theme = cfg.accent;
   o.face = cfg.face;
-  o.ring = cfg.ring;
   o.nightColor = cfg.nightColor;
   o.chime = cfg.chime;
   o.detail = cfg.detail;
@@ -117,6 +116,11 @@ void loop() {
       g_cfg.face = (g_cfg.face + 1) % FACE_COUNT;
       ui_set_face(g_cfg.face);
       prov_save_face(g_cfg.face);
+      break;
+    case BTN_DOUBLE:  // next colour theme; saved too
+      g_cfg.accent = (g_cfg.accent + 1) % ui_theme_count();
+      ui_set_theme(g_cfg.accent);
+      prov_save_theme(g_cfg.accent);
       break;
     default: break;
   }

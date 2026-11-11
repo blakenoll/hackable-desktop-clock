@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
   }
   // 2. options: seconds digits + 24 h + other themes / rings
   for (int f = 0; f < FACE_COUNT; f++) {
-    UiOptions v; v.face = f; v.seconds = true; v.theme = 1 + f % 6; v.h24 = f % 2; v.dateFmt = f % 2; v.ring = (f % 4) + 1;
+    UiOptions v; v.face = f; v.seconds = true; v.theme = 1 + f % 6; v.h24 = f % 2; v.dateFmt = f % 2;
     ui_set_options(v);
     t = mk(f % 2 ? 20 : 12, 8, 5); ui_update(t);
     run(1500);

@@ -65,6 +65,13 @@ void prov_save_face(uint8_t face) {
   p.end();
 }
 
+void prov_save_theme(uint8_t theme) {
+  Preferences p;
+  p.begin("clock", false);
+  p.putUChar("accent", theme);
+  p.end();
+}
+
 bool prov_load(ClockConfig &cfg) {
   Preferences p;
   p.begin("clock", false);
@@ -77,7 +84,6 @@ bool prov_load(ClockConfig &cfg) {
   cfg.dateFmt = p.getUChar("datefmt", 0) == 1 ? 1 : 0;
   cfg.accent = p.getUChar("accent", 0);
   cfg.face = p.getUChar("face", 0);
-  cfg.ring = p.getUChar("ring", 0);
   cfg.nightMode = p.getUChar("nmode", 0);
   cfg.nightStart = p.getUChar("nstart", 22) % 24;
   cfg.nightEnd = p.getUChar("nend", 7) % 24;
@@ -104,7 +110,6 @@ static void saveConfig(const ClockConfig &cfg) {
   p.putUChar("datefmt", cfg.dateFmt);
   p.putUChar("accent", cfg.accent);
   p.putUChar("face", cfg.face);
-  p.putUChar("ring", cfg.ring);
   p.putUChar("nmode", cfg.nightMode);
   p.putUChar("nstart", cfg.nightStart);
   p.putUChar("nend", cfg.nightEnd);
@@ -127,10 +132,11 @@ void prov_save_geo(const String &city, float lat, float lon) {
 // ---- BOOT button ------------------------------------------------------------
 
 static constexpr uint32_t SHORT_MIN_MS = 40, SHORT_MAX_MS = 1000;  // debounce .. clearly not a hold
+static constexpr uint32_t DOUBLE_MS = 350;  // second press must start within this of the first release
 
 ButtonEvent prov_button_event() {
-  static bool inited = false, down = false, fired = false;
-  static uint32_t since = 0;
+  static bool inited = false, down = false, fired = false, pending = false;
+  static uint32_t since = 0, released = 0;
   if (!inited) {
     pinMode(BOOT_PIN, INPUT_PULLUP);
     inited = true;
@@ -140,6 +146,7 @@ ButtonEvent prov_button_event() {
       down = true;
       fired = false;
       since = millis();
+      if (pending && since - released > DOUBLE_MS) pending = false;
     } else if (!fired && millis() - since >= LONG_PRESS_MS) {
       fired = true;  // once per hold
       return BTN_LONG;
@@ -147,7 +154,17 @@ ButtonEvent prov_button_event() {
   } else if (down) {
     down = false;
     uint32_t held = millis() - since;
-    if (!fired && held >= SHORT_MIN_MS && held <= SHORT_MAX_MS) return BTN_SHORT;
+    if (!fired && held >= SHORT_MIN_MS && held <= SHORT_MAX_MS) {
+      if (pending) {
+        pending = false;
+        return BTN_DOUBLE;
+      }
+      pending = true;
+      released = millis();
+    }
+  } else if (pending && millis() - released > DOUBLE_MS) {
+    pending = false;  // no second press: it was a single
+    return BTN_SHORT;
   }
   return BTN_NONE;
 }
@@ -219,9 +236,6 @@ static String buildForm(const String &netOptions, const ClockConfig &cur) {
   h += "<label>Colour theme</label><select name=accent>" +
        opt(0, cur.accent, "Red") + opt(1, cur.accent, "Amber") + opt(2, cur.accent, "Mint") + opt(3, cur.accent, "Ice") +
        opt(4, cur.accent, "Orchid") + opt(5, cur.accent, "Mono") + opt(6, cur.accent, "Ember") + "</select>";
-  h += "<label>Seconds ring <small>(Analog and Daylight keep their own)</small></label><select name=ring>" +
-       opt(0, cur.ring, "Face default") + opt(1, cur.ring, "Ticks") + opt(2, cur.ring, "Arc") + opt(3, cur.ring, "Dot") +
-       opt(4, cur.ring, "Off") + "</select>";
   h += "<label>Seconds as digits</label><select name=secs>" + opt(0, cur.seconds, "Off") + opt(1, cur.seconds, "On") + "</select>";
   h += "<label>Hourly chime <small>(comet lap on the hour)</small></label><select name=chime>" + opt(1, cur.chime, "On") +
        opt(0, cur.chime, "Off") + "</select>";
@@ -329,7 +343,6 @@ static String scanOptions() {
     n.dateFmt = server.arg("datefmt") == "1" ? 1 : 0;
     n.accent = (uint8_t)constrain(server.arg("accent").toInt(), 0, THEME_OPTIONS - 1);
     n.face = (uint8_t)constrain(server.arg("face").toInt(), 0, FACE_COUNT - 1);
-    n.ring = (uint8_t)constrain(server.arg("ring").toInt(), 0, 4);
     n.nightMode = (uint8_t)constrain(server.arg("nmode").toInt(), 0, 2);
     n.nightStart = (uint8_t)constrain(server.arg("nstart").toInt(), 0, 23);
     n.nightEnd = (uint8_t)constrain(server.arg("nend").toInt(), 0, 23);
