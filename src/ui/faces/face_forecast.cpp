@@ -221,6 +221,30 @@ static void paintRing(const Theme &T) {
   lv_obj_set_style_bg_color(windDot, w, 0);
 }
 
+// ---- Blinking colon: this face has no seconds ring, so the colon marks the seconds instead ----
+// Every second the colon pulses: fades out (0-300 ms), stays out, fades back in from 500 ms (done by
+// 800 ms) and stays lit. Quiet at night: solid.
+static void colonExec(void *o, int32_t v) { lv_obj_set_style_text_opa((lv_obj_t *)o, (lv_opa_t)v, 0); }
+
+static void onTime(const tm &, bool) {
+  if (!timeC) return;
+  lv_anim_delete(timeC, colonExec);
+  if (nightMix != 0) {
+    lv_obj_set_style_text_opa(timeC, LV_OPA_COVER, 0);
+    return;
+  }
+  lv_anim_t a;
+  lv_anim_init(&a);
+  lv_anim_set_var(&a, timeC);
+  lv_anim_set_exec_cb(&a, colonExec);
+  lv_anim_set_values(&a, LV_OPA_COVER, LV_OPA_TRANSP);
+  lv_anim_set_path_cb(&a, lv_anim_path_ease_in_out);
+  lv_anim_set_duration(&a, 300);
+  lv_anim_set_reverse_delay(&a, 200);
+  lv_anim_set_reverse_duration(&a, 300);
+  lv_anim_start(&a);
+}
+
 static void onData() {
   barsUpdate();
   windUpdate();
@@ -251,6 +275,7 @@ static FaceDef make() {
   f.palette = palette;
   f.paint = paint;
   f.paintRing = paintRing;
+  f.onTime = onTime;
   f.onData = onData;
   f.onStale = onStale;
   f.detailPrefix = detailPrefix;
