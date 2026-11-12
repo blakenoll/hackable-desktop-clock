@@ -1,5 +1,5 @@
 #pragma once
-#include "config.h"
+#include "../config.h"
 
 struct WeatherData {
   bool valid = false;     // true once a forecast has been fetched

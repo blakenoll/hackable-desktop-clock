@@ -9,7 +9,7 @@ Start from `docs/CUSTOMIZING.md`: it lists the exact file and function for each 
 
 ## Workflow
 
-1. Make the change in the file named in the doc. Keep it small and in the existing style (the UI is `src/ui/`, one file per face in `src/ui/faces/`; weather is `src/weather.cpp`, shown via `src/weather_format.cpp`; saved settings are `src/config.cpp`; the setup page is `src/provisioning.cpp`).
+1. Make the change in the file named in the doc. Keep it small and in the existing style (the UI is `src/ui/`, one file per face in `src/ui/faces/`; weather is `src/data/weather.cpp`, shown via `src/data/weather_format.cpp`; saved settings are `src/config.cpp`; the setup page is `src/provisioning.cpp`).
 2. `pio run` (see the `flash-clock` skill for PATH and Rosetta notes). Report the flash-usage line.
 3. Ask before flashing; use the `flash-clock` skill to do it.
 4. **You can't see the screen.** Tell the user what to check and ask how it looks; expect a round or two of nudging offsets/sizes.

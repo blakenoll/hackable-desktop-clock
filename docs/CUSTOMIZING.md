@@ -38,7 +38,7 @@ Colours come from the theme (`THEMES[]` in `src/ui/theme.cpp`: digits, accent, c
 | Month and day | `0xA0A0A0` | `0x901010` |
 | Temperature | `0xD0D8E0` | `0xC01515` |
 | High / Low | `0xFF8A65` / `0x6FB6FF` | `0xC01515` / `0x801010` |
-| Weather icon | per condition, in `weather_icon()` (`src/weather_format.cpp`) | `0xC01515` |
+| Weather icon | per condition, in `weather_icon()` (`src/data/weather_format.cpp`) | `0xC01515` |
 | Skeleton loader shapes | `0x4A4F57` | `0x4A0E0E` |
 | WiFi connecting icon (lit / dim) | `0xFFFFFF` / `0x303030` | `0xC01515` / `0x2A0707` |
 | Ring (current / elapsed / upcoming) | `0xFF3030` / `0x8A95A3` / `0x2A3138` | `0xFF2020` / `0x8A1414` / `0x420C0C` |
@@ -98,12 +98,12 @@ Then use `cfg.yourfield` in `setup()` (`uiOptions()` for display options) or `we
 
 ## Weather
 
-In `src/weather.cpp` (fetching) and `src/weather_format.cpp` (how it is shown):
+In `src/data/weather.cpp` (fetching) and `src/data/weather_format.cpp` (how it is shown):
 
 - **Refresh interval:** `REFRESH_MS` (10 min; Open-Meteo's current data itself updates about every 15 min, so going much shorter mostly returns unchanged values). Failed fetches retry after `RETRY_MS` (60 s).
 - **Other fields:** add them to the `current=`/`daily=` list in `fetchCurrent()` and read them with `findNum()` (a tiny parser; no JSON library). Add the value to `WeatherData` (`weather.h`) and fill it in `fetchCurrent()`. [Open-Meteo parameters](https://open-meteo.com/en/docs).
 - **Non-US locations:** the lookup is restricted to US ZIP codes via `countryCode=US` in `geocode()`, and the setup field accepts 5 digits (`pattern` in `weatherFields()`). Remove both to allow city names or other postal codes (Open-Meteo's geocoder does not understand free text like "Paris France"; a bare name or a postal code works).
-- **Which icon for which weather:** `weather_icon()` (`src/weather_format.cpp`) maps WMO weather codes to glyphs and colors; the detail line and wind readout text are `weather_detail_text()` / `weather_wind_text()` in the same file.
+- **Which icon for which weather:** `weather_icon()` (`src/data/weather_format.cpp`) maps WMO weather codes to glyphs and colors; the detail line and wind readout text are `weather_detail_text()` / `weather_wind_text()` in the same file.
 - **Night mode without a ZIP:** choose *Night mode: Fixed hours* on the setup page (`scheduledNight()` in `src/main.cpp`).
 
 ### Adding or changing weather icons

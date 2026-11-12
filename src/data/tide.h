@@ -1,7 +1,7 @@
 #pragma once
 #include <math.h>
 #include <time.h>
-#include "config.h"
+#include "../config.h"
 
 // Tide predictions from NOAA CO-OPS (api.tidesandcurrents.noaa.gov, no key): the high and low tides of a
 // station, heights above MLLW (the tide-table datum). The station is the setup page's `tidestn`, or else the

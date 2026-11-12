@@ -7,9 +7,9 @@
 #include "display.h"
 #include "provisioning.h"
 #include "ui/ui.h"
-#include "tide.h"
-#include "weather.h"
-#include "weather_format.h"
+#include "data/tide.h"
+#include "data/weather.h"
+#include "data/weather_format.h"
 
 static ClockConfig g_cfg;
 static bool g_night = false;  // current display mode; persisted so power-up matches the last known state
