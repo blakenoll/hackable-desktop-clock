@@ -100,7 +100,7 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 | `src/main.cpp` | Boot flow and main loop |
 | `src/display.cpp` | TFT_eSPI → LVGL glue |
 | `src/ui/` | The UI behind `ui.h`: `faces/face_*.cpp` (one file per clock face), `faces.cpp` (the face table), `ring.cpp` (seconds ring, chime), `weather_view.cpp`, `theme.cpp` (colour themes, night colours), `boot_screens.cpp` (connecting / syncing / scanning / setup screens), `core.cpp` (theming, rebuild). See the comment atop `src/ui/ui_internal.h` |
-| `src/data/weather.cpp`, `src/data/weather_format.cpp` | Open-Meteo geocoding + forecast in a background task; icons and text for the data |
+| `src/data/` | `weather.cpp` (Open-Meteo geocoding + forecast in a background task), `weather_format.cpp` (icons and text for the data), `tide.cpp` (NOAA tides) |
 | `src/config.cpp`, `src/config.h` | Saved settings (NVS) |
 | `src/button.cpp` | BOOT button: short / double / long press |
 | `src/provisioning.cpp` | Setup AP + captive portal + web form |
