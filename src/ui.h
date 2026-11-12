@@ -69,8 +69,9 @@ void ui_set_weather_extra(const int *rain, int count, int startHour, int sunrise
                            const int *temps = nullptr);
 
 // Wind for the compass ring (Forecast face): direction it comes FROM in degrees (-1 = unknown) and a
-// ready-made readout such as "NW 12 MPH" ("" hides it).
-void ui_set_wind(int fromDeg, const char *text);
+// ready-made readout such as "NW 12 MPH" ("" hides it), plus "Feels 65°" or "" (shown instead of the
+// high/low on that face's detail line).
+void ui_set_wind(int fromDeg, const char *text, const char *feels);
 
 // Small line under the weather row, e.g. "40% rain" or "Feels 65°"; "" fades it away.
 void ui_set_weather_detail(const char *text);

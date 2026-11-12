@@ -140,7 +140,7 @@ static void showWeather(const WeatherData &w) {
   if (!w.valid) {
     ui_set_weather(nullptr, 0, w.error, false, 0, 0, 0);
     ui_set_weather_extra(nullptr, 0, -1, -1, -1);
-    ui_set_wind(-1, "");
+    ui_set_wind(-1, "", "");
     return;
   }
 #if !defined(FORCE_NIGHT) && !defined(CYCLE_NIGHT)
@@ -152,8 +152,10 @@ static void showWeather(const WeatherData &w) {
   ui_set_weather(icon, color, buf, w.hasRange, (int)lroundf(w.lo), (int)lroundf(w.hi), w.temp, weather_fall(w.code));
   weather_detail_text(w, buf, sizeof(buf));
   ui_set_weather_detail(buf);
+  char feels[16];
+  weather_feels_text(w, feels, sizeof(feels));
   weather_wind_text(w, buf, sizeof(buf));
-  ui_set_wind(w.windDir, buf);
+  ui_set_wind(weather_wind_calm(w) ? -1 : w.windDir, buf, feels);
   ui_set_weather_extra(w.rainHours, WeatherData::RAIN_HOURS, w.rainStartHour, w.sunriseMin, w.sunsetMin, w.tempHours);
 }
 
