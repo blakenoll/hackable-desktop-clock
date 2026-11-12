@@ -52,13 +52,13 @@ Each face's layout is its `build()` in `src/ui/faces/face_<name>.cpp`, built fro
 - Date: `mkDateRow(-62, ...)`, weather: `mkWeather(0, 62, ...)`, detail line: `mkDetail(0, 90)`. Smaller numbers = closer to the time.
 - The time is a row of labels (hours, colon, minutes; AM/PM hangs off the right) in the 56 pt font, centred; date and weather sit at y = ∓62.
 - Loading states: `ui_set_connecting()` shows an animated WiFi glyph (dot + 3 arcs lit in sequence by an `lv_timer`, built in `createWifi()` in `src/ui/boot_screens.cpp`) during WiFi connect; `ui_set_weather_loading()` shows a pulsing skeleton (`skeleton`, an `lv_anim` on opacity) in the weather row until the first fetch resolves. Both only animate while the main loop calls `lv_timer_handler()`, so keep that call in any blocking wait in `setup()`.
-- Fonts: Manrope (SIL OFL), generated into `src/font_manrope_14.c` (500 weight), `_20.c` (500), `_56.c` (600, digits and `:` only), `_caps_12.c` (700, `0x20-0x5F,0xB0,0xB7`: small caps, no lowercase), `_34.c` (600, digits `:` `-` `°`; Forecast), `_74.c` (700, digits; Stacked) and `_light_64.c` (300, digits and `:`; Zen). Regenerate with `npx lv_font_conv --font manrope-latin-<weight>-normal.woff --size <px> --bpp 4 --no-compress --format lvgl --lv-include lvgl.h --lv-font-name manrope_<px> -r <ranges> -o src/font_manrope_<px>.c` (static weights from the `@fontsource/manrope` npm package; download into its own empty folder). Each size costs flash.
+- Fonts: Manrope (SIL OFL), generated into `src/ui/fonts/font_manrope_14.c` (500 weight), `_20.c` (500), `_56.c` (600, digits and `:` only), `_caps_12.c` (700, `0x20-0x5F,0xB0,0xB7`: small caps, no lowercase), `_34.c` (600, digits `:` `-` `°`; Forecast), `_74.c` (700, digits; Stacked) and `_light_64.c` (300, digits and `:`; Zen). Regenerate with `npx lv_font_conv --font manrope-latin-<weight>-normal.woff --size <px> --bpp 4 --no-compress --format lvgl --lv-include lvgl.h --lv-font-name manrope_<px> -r <ranges> -o src/ui/fonts/font_manrope_<px>.c` (static weights from the `@fontsource/manrope` npm package; download into its own empty folder). Each size costs flash.
 
 ## Faces
 
-`enum Face` in `src/ui.h`; the setup page and a short BOOT press (`button_event()` -> `ui_set_face()` in `handleButton()`) select one. Everything on the face lives under `faceRoot` and is deleted and rebuilt by `rebuild()` when the face or an option changes, then refilled from cached state (time, weather, detail, stale, offline). A face only creates what it uses, so most object pointers can be null: use the null-safe helpers (`tc`, `bgc`, `setText`, `setHidden`, `swapText`).
+`enum Face` in `src/ui/ui.h`; the setup page and a short BOOT press (`button_event()` -> `ui_set_face()` in `handleButton()`) select one. Everything on the face lives under `faceRoot` and is deleted and rebuilt by `rebuild()` when the face or an option changes, then refilled from cached state (time, weather, detail, stale, offline). A face only creates what it uses, so most object pointers can be null: use the null-safe helpers (`tc`, `bgc`, `setText`, `setHidden`, `swapText`).
 
-**Add a face:** copy a small one such as `src/ui/faces/face_zen.cpp`; it defines a `FaceDef` (name, ring kind, `build()`, and optional hooks: `date`, `palette`, `paint`, `paintRing`, `onTime`, `onData`, `onText`, `onStale`, `detailPrefix`, plus the flags `msgInDetail`, `fullDate`, `ringAtNight`; they are documented in `src/ui/ui_internal.h`). Then add an enum value before `FACE_COUNT` in `ui.h` and a line in the table in `src/ui/faces.cpp`. The setup page lists faces from that table. Keep face-specific code in the face's file: shared code must not branch on `opt.face`. A face's private statics (its object pointers) are stale once another face is active, so reach them only through the hooks.
+**Add a face:** copy a small one such as `src/ui/faces/face_zen.cpp`; it defines a `FaceDef` (name, ring kind, `build()`, and optional hooks: `date`, `palette`, `paint`, `paintRing`, `onTime`, `onData`, `onText`, `onStale`, `detailPrefix`, plus the flags `msgInDetail`, `fullDate`, `ringAtNight`; they are documented in `src/ui/ui_internal.h`). Then add an enum value before `FACE_COUNT` in `src/ui/ui.h` and a line in the table in `src/ui/faces.cpp`. The setup page lists faces from that table. Keep face-specific code in the face's file: shared code must not branch on `opt.face`. A face's private statics (its object pointers) are stale once another face is active, so reach them only through the hooks.
 
 **See it without flashing:** `sh docs/tools/sim/render.sh` compiles `src/ui/` for your computer (needs gcc and one prior `pio run`) and writes renders of every face, night mode and several states to `docs/faces/`. Edit `docs/tools/sim/sim.cpp` to stage other situations.
 
@@ -108,7 +108,7 @@ In `src/weather.cpp` (fetching) and `src/weather_format.cpp` (how it is shown):
 
 ### Adding or changing weather icons
 
-Icons come from `src/font_weather.c`, a subset of the Weather Icons font generated with LVGL's `lv_font_conv` (needs Node).
+Icons come from `src/ui/fonts/font_weather.c`, a subset of the Weather Icons font generated with LVGL's `lv_font_conv` (needs Node).
 
 1. Download `weathericons-regular-webfont.ttf` and `weather-icons.css` from [erikflowers/weather-icons](https://github.com/erikflowers/weather-icons) into a **new, empty folder** outside the repo (treat downloads as untrusted; don't run tools from inside it).
 2. Find a glyph's codepoint in the CSS, e.g. `.wi-day-sunny:before { content: "\f00d"; }`.
@@ -118,7 +118,7 @@ Icons come from `src/font_weather.c`, a subset of the Weather Icons font generat
    npx lv_font_conv --font /path/to/weathericons-regular-webfont.ttf --size 26 --bpp 4 \
      --no-compress --no-kerning --format lvgl --lv-include lvgl.h --lv-font-name weather_icons \
      -r 0xf00d,0xf02e,0xf002,0xf086,0xf013,0xf014,0xf01c,0xf019,0xf0b5,0xf01b,0xf01a,0xf01e \
-     -o src/font_weather.c
+     -o src/ui/fonts/font_weather.c
    ```
 4. Use the glyph in `weather_icon()` as `""`. Keep the SIL OFL attribution in the README.
 

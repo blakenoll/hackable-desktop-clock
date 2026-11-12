@@ -22,7 +22,7 @@ Start from `docs/CUSTOMIZING.md`: it lists the exact file and function for each 
 - **Loading states** (WiFi glyph, weather skeleton) are animated by LVGL timers/anims, so any blocking wait must keep calling `lv_timer_handler()`. Their colours need night variants too.
 - **macOS tooling.** `sed -i` needs `sed -i ''`; for multi-line edits prefer the Edit tool or `python3`. Symbols like `LV_SYMBOL_UP` aren't in custom fonts, so give a custom font `.fallback = &lv_font_montserrat_14`.
 - **Night mode parity.** Every day color needs a red-tone night counterpart in `ui_set_night()` / `styleTick()`; avoid blue/green at night. The setup screen is intentionally excluded.
-- **Fonts cost flash.** Fonts are generated Manrope files in `src/font_manrope_*.c` (see `docs/CUSTOMIZING.md`); a new size means generating a new file. Budget: firmware ~1.29 MB of a 3 MB partition.
+- **Fonts cost flash.** Fonts are generated Manrope files in `src/ui/fonts/font_manrope_*.c` (see `docs/CUSTOMIZING.md`); a new size means generating a new file. Budget: firmware ~1.29 MB of a 3 MB partition.
 - **Icon font changes** need the `lv_font_conv` procedure in `docs/CUSTOMIZING.md`. Download the source font into a new empty folder outside the repo, run tools from elsewhere, and keep the SIL OFL credit in the README.
 - **Settings added to the setup page** touch four places in `src/provisioning.*` (struct, load, save, form + `/save` handler); see the doc.
 - **Don't remove `fix_tft.py`** or bump the pinned platform/library versions in `platformio.ini` without verifying the display initializes (see `docs/HARDWARE.md`).

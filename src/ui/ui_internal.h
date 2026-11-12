@@ -1,4 +1,4 @@
-// Private header shared by the files in src/ui/. The public API is ../ui.h; nothing outside src/ui includes this.
+// Private header shared by the files in src/ui/. The public API is ui.h (this directory); nothing outside src/ui includes this.
 //
 // Layout of the UI code:
 //   theme.cpp          options, colour themes, night colours and the day/night blend
@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "../ui.h"
+#include "ui.h"
 
 LV_FONT_DECLARE(weather_icons);
 LV_FONT_DECLARE(manrope_14);

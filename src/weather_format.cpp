@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 
-// Glyphs from src/font_weather.c (Weather Icons, codepoints U+F0xx).
+// Glyphs from src/ui/fonts/font_weather.c (Weather Icons, codepoints U+F0xx).
 const char *weather_icon(int c, bool isDay, uint32_t *color) {
   if (c == 0) {
     *color = isDay ? 0xFFC83D : 0xC9D6FF;

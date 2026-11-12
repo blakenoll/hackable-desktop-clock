@@ -99,13 +99,13 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 |------|------------|
 | `src/main.cpp` | Boot flow and main loop |
 | `src/display.cpp` | TFT_eSPI → LVGL glue |
-| `src/ui.h`, `src/ui/` | The UI behind `ui.h`: `faces/face_*.cpp` (one file per clock face), `faces.cpp` (the face table), `ring.cpp` (seconds ring, chime), `weather_view.cpp`, `theme.cpp` (colour themes, night colours), `boot_screens.cpp` (connecting / syncing / scanning / setup screens), `core.cpp` (theming, rebuild). See the comment atop `src/ui/ui_internal.h` |
+| `src/ui/` | The UI behind `ui.h`: `faces/face_*.cpp` (one file per clock face), `faces.cpp` (the face table), `ring.cpp` (seconds ring, chime), `weather_view.cpp`, `theme.cpp` (colour themes, night colours), `boot_screens.cpp` (connecting / syncing / scanning / setup screens), `core.cpp` (theming, rebuild). See the comment atop `src/ui/ui_internal.h` |
 | `src/weather.cpp`, `src/weather_format.cpp` | Open-Meteo geocoding + forecast in a background task; icons and text for the data |
 | `src/config.cpp`, `src/config.h` | Saved settings (NVS) |
 | `src/button.cpp` | BOOT button: short / double / long press |
 | `src/provisioning.cpp` | Setup AP + captive portal + web form |
-| `src/font_weather.c` | Generated 26 px weather-icon font (12 glyphs) |
-| `src/font_manrope_*.c` | Generated Manrope text fonts (14, 20, 56 px) |
+| `src/ui/fonts/font_weather.c` | Generated 26 px weather-icon font (12 glyphs) |
+| `src/ui/fonts/font_manrope_*.c` | Generated Manrope text fonts (14, 20, 56 px) |
 | `include/lv_conf.h` | LVGL config: enabled fonts and widgets, memory |
 | `fix_tft.py` | Build-time patch for a TFT_eSPI/ESP32-C3 crash; see [docs/HARDWARE.md](docs/HARDWARE.md) |
 | `platformio.ini` | Board, pins, pinned library versions, partition table |
@@ -113,8 +113,8 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 
 ## Credits
 
-Weather icons: [Weather Icons](https://github.com/erikflowers/weather-icons) by Erik Flowers, font licensed under the SIL Open Font License 1.1. `src/font_weather.c` is a subset of it generated with `lv_font_conv`. Text font: [Manrope](https://github.com/sharanda/manrope), SIL Open Font License 1.1; `src/font_manrope_*.c` are subsets generated with `lv_font_conv`. Weather data: [Open-Meteo](https://open-meteo.com/) (free for non-commercial use; see their terms).
+Weather icons: [Weather Icons](https://github.com/erikflowers/weather-icons) by Erik Flowers, font licensed under the SIL Open Font License 1.1. `src/ui/fonts/font_weather.c` is a subset of it generated with `lv_font_conv`. Text font: [Manrope](https://github.com/sharanda/manrope), SIL Open Font License 1.1; `src/ui/fonts/font_manrope_*.c` are subsets generated with `lv_font_conv`. Weather data: [Open-Meteo](https://open-meteo.com/) (free for non-commercial use; see their terms).
 
 ## License
 
-[MIT](LICENSE) © 2026 Blake Noll. The weather-icon font data in `src/font_weather.c` is derived from Weather Icons and remains under the SIL Open Font License 1.1 (see Credits). Third-party libraries (LVGL, TFT_eSPI, the Arduino core) keep their own licenses.
+[MIT](LICENSE) © 2026 Blake Noll. The weather-icon font data in `src/ui/fonts/font_weather.c` is derived from Weather Icons and remains under the SIL Open Font License 1.1 (see Credits). Third-party libraries (LVGL, TFT_eSPI, the Arduino core) keep their own licenses.

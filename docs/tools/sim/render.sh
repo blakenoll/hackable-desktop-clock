@@ -16,7 +16,7 @@ find "$LV/src" -name '*.c' | while read -r f; do
   o="$B/obj/$(echo "$f" | cksum | cut -d' ' -f1).o"
   [ -f "$o" ] || echo "$f $o"
 done | xargs -P 8 -n 2 sh -c 'gcc '"$CF"' -c "$0" -o "$1"'
-for f in "$ROOT"/src/font_*.c; do gcc $CF -c "$f" -o "$B/font_$(basename "$f" .c).o"; done
+for f in "$ROOT"/src/ui/fonts/*.c; do gcc $CF -c "$f" -o "$B/font_$(basename "$f" .c).o"; done
 rm -f "$B"/ui_*.o
 for f in "$ROOT"/src/ui/*.cpp "$ROOT"/src/ui/faces/*.cpp; do g++ $CF -std=gnu++17 -c "$f" -o "$B/ui_$(basename "$f" .cpp).o"; done
 g++ $CF -std=gnu++17 -c "$HERE/sim.cpp" -o "$B/sim.o"

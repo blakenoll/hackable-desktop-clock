@@ -4,7 +4,7 @@
 #include <DNSServer.h>
 #include <lvgl.h>
 #include "config.h"
-#include "ui.h"
+#include "ui/ui.h"
 
 static constexpr uint32_t IDLE_REBOOT_MS = 5UL * 60 * 1000;
 static const char *AP_SSID_PREFIX = "clk-setup";  // a per-board suffix is appended at runtime

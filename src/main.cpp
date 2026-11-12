@@ -6,7 +6,7 @@
 #include "config.h"
 #include "display.h"
 #include "provisioning.h"
-#include "ui.h"
+#include "ui/ui.h"
 #include "tide.h"
 #include "weather.h"
 #include "weather_format.h"
