@@ -33,11 +33,18 @@ int weather_fall(int c) {
 // Rain chance (max over the next hours) once it reaches this, else the "feels like" line.
 static constexpr int RAIN_SHOW_PCT = 30;
 
-void weather_detail_text(const WeatherData &w, char *out, size_t n) {
+void weather_feels_text(const WeatherData &w, char *out, size_t n) {
   out[0] = 0;
+  if (fabsf(w.feels - w.temp) >= (w.unit == 'C' ? 3 : 5)) snprintf(out, n, "Feels %d\xC2\xB0", (int)lroundf(w.feels));
+}
+
+void weather_detail_text(const WeatherData &w, char *out, size_t n) {
   if (w.rainPct >= RAIN_SHOW_PCT) snprintf(out, n, "%d%% rain", w.rainPct);
-  else if (fabsf(w.feels - w.temp) >= (w.unit == 'C' ? 3 : 5))
-    snprintf(out, n, "Feels %d\xC2\xB0", (int)lroundf(w.feels));
+  else weather_feels_text(w, out, n);
+}
+
+bool weather_wind_calm(const WeatherData &w) {
+  return w.windSpeed < (w.unit == 'C' ? 5.0f : 3.0f);  // under ~3 mph the direction is mostly noise
 }
 
 void weather_wind_text(const WeatherData &w, char *out, size_t n) {
@@ -45,6 +52,6 @@ void weather_wind_text(const WeatherData &w, char *out, size_t n) {
   out[0] = 0;
   if (w.windDir < 0) return;
   int speed = (int)lroundf(w.windSpeed);
-  if (speed < 1) snprintf(out, n, "CALM");
+  if (weather_wind_calm(w)) snprintf(out, n, "CALM");
   else snprintf(out, n, "%s %d %s", POINTS[((w.windDir + 22) / 45) % 8], speed, w.unit == 'C' ? "KM/H" : "MPH");
 }

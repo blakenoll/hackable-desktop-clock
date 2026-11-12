@@ -30,6 +30,10 @@ bool config_load(ClockConfig &cfg) {
   cfg.chime = p.getBool("chime", true);
   cfg.detail = p.getBool("detail", true);
   cfg.seconds = p.getBool("secs", false);
+  cfg.tideStation = p.getString("tidestn", "");
+  cfg.tideGeo = p.getString("tidegeo", "");
+  cfg.tideAuto = p.getString("tideauto", "");
+  cfg.tideName = p.getString("tidename", "");
   cfg.geocity = p.getString("geocity", "");
   cfg.lat = p.getFloat("lat", 0);
   cfg.lon = p.getFloat("lon", 0);
@@ -55,6 +59,7 @@ void config_save(const ClockConfig &cfg) {
   p.putBool("chime", cfg.chime);
   p.putBool("detail", cfg.detail);
   p.putBool("secs", cfg.seconds);
+  p.putString("tidestn", cfg.tideStation);
 }
 
 void config_save_geo(const String &city, float lat, float lon) {
@@ -62,6 +67,13 @@ void config_save_geo(const String &city, float lat, float lon) {
   n.p.putString("geocity", city);
   n.p.putFloat("lat", lat);
   n.p.putFloat("lon", lon);
+}
+
+void config_save_tide_auto(const String &city, const String &id, const String &name) {
+  Nvs n;
+  n.p.putString("tidegeo", city);
+  n.p.putString("tideauto", id);
+  n.p.putString("tidename", name);
 }
 
 bool config_load_night() {

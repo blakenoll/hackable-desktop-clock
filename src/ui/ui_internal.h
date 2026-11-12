@@ -24,7 +24,6 @@
 #include "../ui.h"
 
 LV_FONT_DECLARE(weather_icons);
-LV_FONT_DECLARE(weather_icons_42);
 LV_FONT_DECLARE(manrope_14);
 LV_FONT_DECLARE(manrope_20);
 LV_FONT_DECLARE(manrope_34);
@@ -167,6 +166,7 @@ struct FaceDef {
   void (*onText)(lv_obj_t *label) = nullptr;                  // a label's text was just set
   void (*onStale)(lv_opa_t to, uint32_t ms) = nullptr;        // dim face-private weather objects
   const char *(*detailPrefix)() = nullptr;                    // text shown before the detail ("NW 12 MPH"), or null
+  bool detailOwn = false;     // detailPrefix is the whole detail line (the detail-text option is ignored)
   bool msgInDetail = false;   // a weather message with no icon ("ZIP not found") goes on the detail line
   bool fullDate = false;      // "TUESDAY" / "NOVEMBER" instead of "TUE" / "NOV"
   bool ringAtNight = false;   // the ring stays (dimmed) at night instead of fading out

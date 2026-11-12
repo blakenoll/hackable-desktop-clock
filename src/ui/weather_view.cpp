@@ -215,7 +215,7 @@ static void startFall(int kind, uint32_t color) {
 }
 
 // The detail line shows the weather message (see above), else the detail text if that option is on.
-// The Forecast face adds the wind readout to it ("NW 12 MPH · 40% RAIN").
+// The Forecast face adds the wind readout to it, and with detailOwn the prefix is the whole line.
 void refreshDetail() {
   char buf[56] = "";
   if (wx.set && !wx.hasIcon && wx.text[0] && face().msgInDetail) strlcpy(buf, wx.text, sizeof(buf));
@@ -223,7 +223,7 @@ void refreshDetail() {
     const char *prefix = face().detailPrefix ? face().detailPrefix() : nullptr;  // Forecast: the wind readout
     bool wind = prefix && prefix[0];
     if (wind) strlcpy(buf, prefix, sizeof(buf));
-    if (opt.detail && detailText[0]) {
+    if (opt.detail && detailText[0] && !face().detailOwn) {
       if (wind) strlcat(buf, " \xC2\xB7 ", sizeof(buf));
       strlcat(buf, detailText, sizeof(buf));
     }

@@ -15,5 +15,11 @@ int weather_fall(int wmoCode);
 // Empty when neither applies.
 void weather_detail_text(const WeatherData &w, char *out, size_t n);
 
+// "Feels 65°" when the apparent temperature differs noticeably (5 °F / 3 °C), else empty.
+void weather_feels_text(const WeatherData &w, char *out, size_t n);
+
+// Too light for the direction to mean much (the compass hides its arrow).
+bool weather_wind_calm(const WeatherData &w);
+
 // "NW 12 MPH" / "CALM" for the compass readout (the small font is caps-only); empty if the direction is unknown.
 void weather_wind_text(const WeatherData &w, char *out, size_t n);

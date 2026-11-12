@@ -7,6 +7,7 @@
 #include "display.h"
 #include "provisioning.h"
 #include "ui.h"
+#include "tide.h"
 #include "weather.h"
 #include "weather_format.h"
 
@@ -140,7 +141,7 @@ static void showWeather(const WeatherData &w) {
   if (!w.valid) {
     ui_set_weather(nullptr, 0, w.error, false, 0, 0, 0);
     ui_set_weather_extra(nullptr, 0, -1, -1, -1);
-    ui_set_wind(-1, "");
+    ui_set_wind(-1, "", "");
     return;
   }
 #if !defined(FORCE_NIGHT) && !defined(CYCLE_NIGHT)
@@ -152,8 +153,10 @@ static void showWeather(const WeatherData &w) {
   ui_set_weather(icon, color, buf, w.hasRange, (int)lroundf(w.lo), (int)lroundf(w.hi), w.temp, weather_fall(w.code));
   weather_detail_text(w, buf, sizeof(buf));
   ui_set_weather_detail(buf);
+  char feels[16];
+  weather_feels_text(w, feels, sizeof(feels));
   weather_wind_text(w, buf, sizeof(buf));
-  ui_set_wind(w.windDir, buf);
+  ui_set_wind(weather_wind_calm(w) ? -1 : w.windDir, buf, feels);
   ui_set_weather_extra(w.rainHours, WeatherData::RAIN_HOURS, w.rainStartHour, w.sunriseMin, w.sunsetMin, w.tempHours);
 }
 
@@ -167,6 +170,17 @@ static void updateWeather() {
   }
 }
 
+// Pushes new tide data to the UI (the Tide face draws it).
+static void updateTide() {
+  static uint32_t shownVersion = UINT32_MAX;
+  TideData d = tide_get();
+  if (d.version == shownVersion) return;
+  shownVersion = d.version;
+  ui_set_tide_info(d.station, d.water);
+  if (d.valid) ui_set_tide(d.t, d.h, d.high, d.n, d.unit, nullptr);
+  else ui_set_tide(nullptr, nullptr, nullptr, 0, d.unit, !g_cfg.city.length() ? "SET A ZIP FOR TIDES" : d.error[0] ? d.error : "LOADING TIDES");
+}
+
 void loop() {
   handleButton();
   static int lastSec = -1;
@@ -177,6 +191,7 @@ void loop() {
     updateNight(t);
     updateOffline();
     updateWeather();
+    updateTide();
   }
   lv_timer_handler();
   delay(5);
