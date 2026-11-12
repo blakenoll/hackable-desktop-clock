@@ -143,7 +143,11 @@ static String weatherFields(const ClockConfig &cur) {
   return "<label>ZIP code for weather <small>(optional, US 5-digit)</small></label>"
          "<input name=city inputmode=numeric pattern=\"[0-9]{5}\" maxlength=5 title=\"5-digit US ZIP code\" value=\"" + esc(cur.city) + "\">" +
          field("Temperature units", "units", String("<option value=F") + (cur.units == 'F' ? " selected" : "") + ">Fahrenheit</option><option value=C" +
-                                                 (cur.units == 'C' ? " selected" : "") + ">Celsius</option>");
+                                                 (cur.units == 'C' ? " selected" : "") + ">Celsius</option>") +
+         "<label>NOAA tide station <small>(optional, station ID for the Tide face, e.g. 8665530; blank = nearest" +
+         (cur.tideGeo == cur.city && cur.tideAuto.length() ? ", now " + esc(cur.tideAuto) + " " + esc(cur.tideName) : String("")) +
+         ")</small></label><input name=tidestn pattern=\"[A-Za-z0-9]{4,10}\" maxlength=10 title=\"NOAA station ID from tidesandcurrents.noaa.gov\" value=\"" +
+         esc(cur.tideStation) + "\">";
 }
 
 static String buildForm(const String &netOptions, const ClockConfig &cur) {
@@ -191,6 +195,8 @@ static void parseForm(WebServer &server, ClockConfig &n) {
   n.city = server.arg("city");
   n.city.trim();
   n.units = server.arg("units") == "C" ? 'C' : 'F';
+  n.tideStation = server.arg("tidestn");
+  n.tideStation.trim();
   n.h24 = server.arg("h24") == "1";
   n.dateFmt = server.arg("datefmt") == "1" ? 1 : 0;
   n.accent = num("accent", 0, ui_theme_count() - 1);

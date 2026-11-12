@@ -7,6 +7,7 @@
 #include "display.h"
 #include "provisioning.h"
 #include "ui.h"
+#include "tide.h"
 #include "weather.h"
 #include "weather_format.h"
 
@@ -169,6 +170,17 @@ static void updateWeather() {
   }
 }
 
+// Pushes new tide data to the UI (the Tide face draws it).
+static void updateTide() {
+  static uint32_t shownVersion = UINT32_MAX;
+  TideData d = tide_get();
+  if (d.version == shownVersion) return;
+  shownVersion = d.version;
+  ui_set_tide_info(d.station, d.water);
+  if (d.valid) ui_set_tide(d.t, d.h, d.high, d.n, d.unit, nullptr);
+  else ui_set_tide(nullptr, nullptr, nullptr, 0, d.unit, !g_cfg.city.length() ? "SET A ZIP FOR TIDES" : d.error[0] ? d.error : "LOADING TIDES");
+}
+
 void loop() {
   handleButton();
   static int lastSec = -1;
@@ -179,6 +191,7 @@ void loop() {
     updateNight(t);
     updateOffline();
     updateWeather();
+    updateTide();
   }
   lv_timer_handler();
   delay(5);

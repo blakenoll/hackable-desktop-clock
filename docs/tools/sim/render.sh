@@ -22,7 +22,7 @@ for f in "$ROOT"/src/ui/*.cpp "$ROOT"/src/ui/faces/*.cpp; do g++ $CF -std=gnu++1
 g++ $CF -std=gnu++17 -c "$HERE/sim.cpp" -o "$B/sim.o"
 g++ -o "$B/sim" "$B/sim.o" "$B"/ui_*.o "$B"/font_*.o "$B"/obj/*.o -lm
 "$B/sim" "$B/out"
-N="polished arc stacked analog zen forecast retro daylight"
+N="polished arc stacked analog zen forecast retro daylight tide"
 cd "$B/out"
 python3 "$HERE/montage.py" "$ROOT/docs/faces/faces.png" 4 $(for n in $N; do echo day-$n; done)
 python3 "$HERE/montage.py" "$ROOT/docs/faces/night.png" 4 $(for n in $N; do echo night-$n; done)

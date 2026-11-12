@@ -25,6 +25,7 @@ enum Face {
   FACE_FORECAST,  // weather in the centre, hourly rain bars
   FACE_RETRO,     // seven-segment LCD
   FACE_DAYLIGHT,  // 24 h dial with the sunrise-to-sunset arc
+  FACE_TIDE,      // tide chart (sea level, 6 h back to 12 h ahead) with the next high / low
   FACE_COUNT
 };
 
@@ -72,6 +73,12 @@ void ui_set_weather_extra(const int *rain, int count, int startHour, int sunrise
 // ready-made readout such as "NW 12 MPH" ("" hides it), plus "Feels 65°" or "" (shown instead of the
 // high/low on that face's detail line).
 void ui_set_wind(int fromDeg, const char *text, const char *feels);
+
+// Tide chart (Tide face): `n` high / low tides (epoch times ascending, heights above MLLW in feet for 'F' or
+// metres for 'C'). t nullptr shows `msg` instead ("NO TIDE STATION NEARBY").
+void ui_set_tide(const time_t *t, const float *h, const bool *high, int n, char unit, const char *msg);
+// Station name under the chart ("CHARLESTON", uppercase) and the water temperature (NAN hides it).
+void ui_set_tide_info(const char *station, float water);
 
 // Small line under the weather row, e.g. "40% rain" or "Feels 65°"; "" fades it away.
 void ui_set_weather_detail(const char *text);

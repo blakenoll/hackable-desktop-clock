@@ -8,7 +8,7 @@ A digital desk clock for an ESP32-C3 and a 240x240 round GC9A01 display, built w
 - A 60-tick **seconds ring** around the rim
 - **Weather** from [Open-Meteo](https://open-meteo.com/) (no API key): icon, temperature and the day's high/low, refreshed every 10 minutes
 - **Night mode**: everything turns dim red after sunset
-- **Eight clock faces**: Polished (default), Arc, Stacked, Analog, Zen, Forecast, Retro LCD and Daylight. Tap the BOOT button to switch; themes, ring style and night colour are on the setup page
+- **Nine clock faces**: Polished (default), Arc, Stacked, Analog, Zen, Forecast, Retro LCD, Daylight and Tide (high/low tide chart from NOAA predictions for the nearest US tide station, or one you pick on the setup page). Tap the BOOT button to switch; themes, ring style and night colour are on the setup page
 - **No secrets in the firmware**: WiFi, timezone, time/date format, clock face, colour theme, ZIP code and units are set from your phone through a captive-portal setup page on the clock itself
 
 ## What you need
@@ -75,7 +75,7 @@ Settings are stored in flash and survive reboots and reflashing. To change them 
 
 <p align="center"><img src="docs/faces/faces.png" alt="The eight clock faces" width="100%"></p>
 
-Top row: Polished, Arc, Stacked, Analog. Bottom row: Zen, Forecast, Retro LCD, Daylight. **Tap BOOT** to step through them, **double-tap** to cycle colour themes (both saved), or pick one on the setup page. The setup page also has colour themes, seconds as digits, the hourly chime and the weather detail line. Night versions and option examples: [night](docs/faces/night.png), [options](docs/faces/options.png), [states](docs/faces/states.png). These images are rendered from the real UI code by `sh docs/tools/sim/render.sh`.
+Top row: Polished, Arc, Stacked, Analog. Middle row: Zen, Forecast, Retro LCD, Daylight. Bottom: Tide. **Tap BOOT** to step through them, **double-tap** to cycle colour themes (both saved), or pick one on the setup page. The setup page also has colour themes, seconds as digits, the hourly chime and the weather detail line. Night versions and option examples: [night](docs/faces/night.png), [options](docs/faces/options.png), [states](docs/faces/states.png). These images are rendered from the real UI code by `sh docs/tools/sim/render.sh`.
 
 ## Make it yours
 

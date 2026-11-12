@@ -1,4 +1,5 @@
 #include "weather.h"
+#include "tide.h"
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
@@ -193,14 +194,15 @@ static bool refresh(const ClockConfig &cfg0) {
       publishError(cfg.units, "No weather");
     }
   }
-  if (!haveCoords) return false;
-  WeatherData d;
-  if (fetchCurrent(cfg.lat, cfg.lon, cfg.units, d)) {
-    publish(d);
-    return true;
+  bool ok = false;
+  if (haveCoords) {
+    WeatherData d;
+    ok = fetchCurrent(cfg.lat, cfg.lon, cfg.units, d);
+    if (ok) publish(d);
+    else if (!weather_get().valid) publishError(cfg.units, "No weather");  // keep showing stale data if we have it
   }
-  if (!weather_get().valid) publishError(cfg.units, "No weather");  // keep showing stale data if we have it
-  return false;
+  tide_refresh(cfg);  // after the weather, so it never delays the first weather on screen; paces itself
+  return ok;
 }
 
 static void weatherTask(void *) {
@@ -214,6 +216,7 @@ static void weatherTask(void *) {
 void weather_begin(const ClockConfig &cfg) {
   if (cfg.city.length() == 0) return;
   g_mu = xSemaphoreCreateMutex();
+  tide_begin();
   g_data.loading = true;  // show the skeleton until the first fetch resolves
   g_data.version = 1;     // differs from the UI's initial 0, so it redraws right away
   xTaskCreate(weatherTask, "weather", 10240, nullptr, 1, nullptr);

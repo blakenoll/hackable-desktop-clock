@@ -17,6 +17,9 @@ struct ClockConfig {
   bool chime = true;     // hourly comet lap
   bool detail = true;    // rain chance / feels-like line
   bool seconds = false;  // seconds as digits
+  String tideStation;    // NOAA tide station ID chosen on the setup page ("" = nearest to the ZIP)
+  // Nearest tide station the tide code found for `tideGeo` (cached in NVS; "" = none within range).
+  String tideGeo, tideAuto, tideName;
   // Coordinates the weather task resolved for `geocity` (cached in NVS).
   String geocity;
   float lat = 0, lon = 0;
@@ -29,6 +32,8 @@ void config_save(const ClockConfig &cfg);
 
 // Caches coordinates resolved for `city` so we only geocode when the city changes.
 void config_save_geo(const String &city, float lat, float lon);
+// Caches the nearest tide station found for `city` (id "" = none nearby), so the station list is only read once.
+void config_save_tide_auto(const String &city, const String &id, const String &name);
 // Last known day/night state (from the weather fetch), so the screen powers up in the right mode.
 bool config_load_night();
 void config_save_night(bool night);

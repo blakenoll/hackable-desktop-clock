@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <lvgl.h>
 #include <stdio.h>
+#include <math.h>
 #include <string>
 #include "ui.h"
 static uint32_t now_ms = 1000;
@@ -35,6 +36,16 @@ static void weather(bool rainy) {
   static const int dry[6] = {0, 0, 5, 10, 0, 0}, temps[6] = {68, 71, 73, 74, 72, 69};
   ui_set_wind(315, "NW 12 MPH", "");
   ui_set_weather_extra(rainy ? rain : dry, 6, 11, 6 * 60 + 42, 17 * 60 + 21, temps);
+  // Highs and lows like Charleston's (NOAA style), local times on the sim day and the next.
+  static const int hm[][2] = {{3, 5}, {9, 34}, {15, 58}, {21, 42}, {27, 51}, {34, 12}, {40, 30}, {46, 20}};
+  static const float hv[] = {0.7f, 5.9f, 1.0f, 4.9f, 0.6f, 5.8f, 0.9f, 5.0f};
+  time_t tt[8]; float th[8]; bool hi[8];
+  for (int k = 0; k < 8; k++) {
+    tm b = {}; b.tm_year = 126; b.tm_mon = 10; b.tm_mday = 10; b.tm_hour = hm[k][0]; b.tm_min = hm[k][1]; b.tm_isdst = -1;
+    tt[k] = mktime(&b); th[k] = hv[k]; hi[k] = k % 2 == 1;
+  }
+  ui_set_tide_info("CHARLESTON", 68.7f);
+  ui_set_tide(tt, th, hi, 8, 'F', nullptr);
 }
 int main(int argc, char **argv) {
   std::string out = argc > 1 ? argv[1] : ".";
@@ -48,7 +59,7 @@ int main(int argc, char **argv) {
   ui_set_options(o);
   ui_set_night(false);
   ui_boot_splash();
-  static const char *names[] = {"polished", "arc", "stacked", "analog", "zen", "forecast", "retro", "daylight"};
+  static const char *names[] = {"polished", "arc", "stacked", "analog", "zen", "forecast", "retro", "daylight", "tide"};
   lv_mem_monitor_t mon;
   // 1. every face by day, switched in place like the BOOT button does
   tm t = mk(10, 47, 37);

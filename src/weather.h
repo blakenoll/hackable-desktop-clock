@@ -25,7 +25,7 @@ struct WeatherData {
 };
 
 // Starts the background fetch task (geocodes cfg.city once, then refreshes the current conditions every
-// 10 min via Open-Meteo). Call after WiFi is up. Does nothing if cfg.city is empty.
+// 10 min via Open-Meteo), and the tides (tide.h). Call after WiFi is up. Does nothing if cfg.city is empty.
 void weather_begin(const ClockConfig &cfg);
 
 // Thread-safe snapshot of the latest data.
