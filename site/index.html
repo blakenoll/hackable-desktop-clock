@@ -340,10 +340,65 @@
       const md = d.shadowRoot && d.shadowRoot.querySelector('ew-dialog');
       if (!md || !md.shadowRoot) return requestAnimationFrame(tryStyle);
       md.shadowRoot.adoptedStyleSheets = [...md.shadowRoot.adoptedStyleSheets, dialogCss];
+      const box = md.shadowRoot.querySelector('.container');
+      if (box) refract(box, { blur: 3, ca: 3, depthMax: 18, strength: 60 });
       d.dataset.themed = '1';
     };
     tryStyle();
   }).observe(document.body, { childList: true });
+
+  // Refractive liquid glass (technique from ekino's "Liquid glass in CSS and SVG"): a per-element SVG
+  // displacement map bends the backdrop at the edges via backdrop-filter: url(#filter). Chromium only;
+  // other browsers keep the plain blur glass from the stylesheet.
+  const refractive = !!(navigator.userAgentData
+    ? navigator.userAgentData.brands.some(b => /Chromium/.test(b.brand))
+    : window.chrome);
+  const svgUri = svg => 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  function displacementMap(w, h, r, depth) {
+    const px = Math.ceil(r / h * 15), py = Math.ceil(r / w * 15);
+    return svgUri(`<svg height="${h}" width="${w}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <style>.mix{mix-blend-mode:screen}</style>
+      <defs>
+        <linearGradient id="Y" x1="0" x2="0" y1="${px}%" y2="${Math.floor(100 - r / h * 15)}%"><stop offset="0%" stop-color="#0F0"/><stop offset="100%" stop-color="#000"/></linearGradient>
+        <linearGradient id="X" x1="${py}%" x2="${Math.floor(100 - r / w * 15)}%" y1="0" y2="0"><stop offset="0%" stop-color="#F00"/><stop offset="100%" stop-color="#000"/></linearGradient>
+      </defs>
+      <rect width="${w}" height="${h}" fill="#808080"/>
+      <g filter="blur(2px)">
+        <rect width="${w}" height="${h}" fill="#000080"/>
+        <rect width="${w}" height="${h}" fill="url(#Y)" class="mix"/>
+        <rect width="${w}" height="${h}" fill="url(#X)" class="mix"/>
+        <rect x="${depth}" y="${depth}" width="${w - 2 * depth}" height="${h - 2 * depth}" fill="#808080" rx="${r}" ry="${r}" filter="blur(${depth}px)"/>
+      </g></svg>`);
+  }
+  function displacementFilter(w, h, r, depth, strength, ca) {
+    const ch = (scale, m, res) => `<feDisplacementMap in="SourceGraphic" in2="map" scale="${scale}" xChannelSelector="R" yChannelSelector="G"/>
+      <feColorMatrix type="matrix" values="${m}" result="${res}"/>`;
+    return svgUri(`<svg height="${h}" width="${w}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><defs>
+      <filter id="displace" color-interpolation-filters="sRGB">
+        <feImage x="0" y="0" height="${h}" width="${w}" href="${displacementMap(w, h, r, depth)}" result="map"/>
+        ${ch(strength + ca * 2, '1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0', 'R')}
+        ${ch(strength + ca, '0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0', 'G')}
+        ${ch(strength, '0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0', 'B')}
+        <feBlend in="R" in2="G" mode="screen"/><feBlend in2="B" mode="screen"/>
+      </filter></defs></svg>`) + '#displace';
+  }
+  function refract(el, { blur = 2, ca = 0, depthMax = 10, strength } = {}) {
+    if (!refractive) return;
+    let t;
+    const apply = () => {
+      const w = Math.round(el.offsetWidth), h = Math.round(el.offsetHeight);
+      if (w < 8 || h < 8) return;
+      const r = Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, w / 2, h / 2);
+      const depth = Math.max(3, Math.min(depthMax, Math.round(Math.min(w, h) * .25)));
+      const str = strength ?? Math.min(100, Math.round(Math.min(w, h) * 1.1));
+      const f = `blur(${blur / 2}px) url('${displacementFilter(w, h, r, depth, str, ca)}') blur(${blur}px) brightness(1.1) saturate(1.5)`;
+      el.style.backdropFilter = el.style.webkitBackdropFilter = f;
+    };
+    apply();
+    new ResizeObserver(() => { clearTimeout(t); t = setTimeout(apply, 60); }).observe(el);
+  }
+  document.querySelectorAll('.glass').forEach(el =>
+    refract(el, el.classList.contains('install-btn') ? { blur: 2, ca: 4 } : { blur: 1.5 }));
 
   document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => {
     document.getElementById('faces').dataset.mode = b.dataset.mode;
