@@ -1,341 +1,321 @@
 <!doctype html>
-<html lang="en" class="bg-[#0b0f14]">
+<html lang="en" class="bg-[#050607]">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Install the hackable desktop clock</title>
 <meta name="description" content="Flash the ESP32-C3 hackable desktop clock firmware from your browser.">
+<meta name="theme-color" content="#050607">
 <script type="module" src="https://unpkg.com/esp-web-tools@10.0.1/dist/web/install-button.js?module"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style type="text/tailwindcss">
+  /* Palette taken from the clock faces: black glass, white digits, red date/second accent,
+     blue-grey ticks, dim grey secondary text. */
   @theme {
     --font-sans: Manrope, ui-sans-serif, system-ui, sans-serif;
-    --color-cyan-brand: #36D6F0;
-    --color-ink: #9aa4b2;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --color-bg: #050607;
+    --color-panel: #0c0e11;
+    --color-line: #1c2026;
+    --color-accent: #ff3b30;
+    --color-tick: #8595a8;
+    --color-ink: #8b939d;
+    --color-dim: #5b636d;
   }
   body {
     background:
-      radial-gradient(40vmax 40vmax at -4% 92%, rgb(124 92 255 / .30), transparent 70%),
-      radial-gradient(34vmax 34vmax at 55% 4%, rgb(54 214 240 / .26), transparent 70%),
-      radial-gradient(30vmax 30vmax at 96% 88%, rgb(255 90 140 / .16), transparent 70%),
-      linear-gradient(to right, rgb(255 255 255 / .04) 1px, transparent 1px) 0 0 / 32px 32px,
-      linear-gradient(to bottom, rgb(255 255 255 / .04) 1px, transparent 1px) 0 0 / 32px 32px,
-      linear-gradient(135deg, #0b0f14, #121a24);
-    background-attachment: fixed;
+      radial-gradient(60rem 36rem at 72% -8%, rgb(255 59 48 / .07), transparent 70%),
+      radial-gradient(50rem 40rem at 10% 110%, rgb(133 149 168 / .06), transparent 70%),
+      var(--color-bg);
   }
+  .eyebrow { @apply text-xs font-bold uppercase tracking-[.22em]; }
+  .kbd { @apply rounded-md border border-line bg-white/[.04] px-1.5 py-0.5 font-mono text-[.85em] text-slate-200; }
+  .card { @apply rounded-3xl border border-line bg-panel p-7; }
+
   /* ESP Web Tools dialog + spinner (Material Web) pick these up through CSS variables */
   :root {
     --md-ref-typeface-brand: Manrope, system-ui, sans-serif;
     --md-ref-typeface-plain: Manrope, system-ui, sans-serif;
-    --md-sys-color-primary: #36D6F0;
-    --md-sys-color-on-primary: #0b0f14;
-    --md-sys-color-primary-container: #0e3a46;
-    --md-sys-color-on-primary-container: #9fe9f7;
-    --md-sys-color-secondary: #36D6F0;
-    --md-sys-color-secondary-container: #12303a;
-    --md-sys-color-on-secondary-container: #cfeff7;
-    --md-sys-color-surface: #121a24;
-    --md-sys-color-surface-container: #121a24;
-    --md-sys-color-surface-container-high: #121a24;
-    --md-sys-color-surface-container-highest: #1a2430;
-    --md-sys-color-surface-variant: #1a2430;
-    --md-sys-color-on-surface: #e6edf3;
-    --md-sys-color-on-surface-variant: #9aa4b2;
-    --md-sys-color-outline: #3a4654;
-    --md-sys-color-outline-variant: #263140;
+    --md-sys-color-primary: #ff3b30;
+    --md-sys-color-on-primary: #ffffff;
+    --md-sys-color-primary-container: #3a1210;
+    --md-sys-color-on-primary-container: #ffd2cf;
+    --md-sys-color-secondary: #8595a8;
+    --md-sys-color-secondary-container: #161a20;
+    --md-sys-color-on-secondary-container: #e6e9ee;
+    --md-sys-color-surface: #0c0e11;
+    --md-sys-color-surface-container: #0c0e11;
+    --md-sys-color-surface-container-high: #0c0e11;
+    --md-sys-color-surface-container-highest: #161a20;
+    --md-sys-color-surface-variant: #161a20;
+    --md-sys-color-on-surface: #eef1f4;
+    --md-sys-color-on-surface-variant: #8b939d;
+    --md-sys-color-outline: #2a3038;
+    --md-sys-color-outline-variant: #1c2026;
     --md-sys-color-scrim: #000;
-    --md-dialog-container-color: rgb(255 255 255 / .06);
+    --md-dialog-container-color: #0c0e11;
     --md-dialog-headline-color: #ffffff;
-    --md-dialog-supporting-text-color: #c3ccd8;
+    --md-dialog-supporting-text-color: #b4bbc4;
     --md-dialog-container-shape: 24px;
     --md-list-container-color: transparent;
-    --md-list-item-label-text-color: #e6edf3;
-    --md-list-item-supporting-text-color: #9aa4b2;
-    --md-list-item-leading-icon-color: #36D6F0;
-    --md-list-item-hover-state-layer-color: #36D6F0;
-    --md-list-item-pressed-state-layer-color: #36D6F0;
-    --md-list-item-hover-state-layer-opacity: .08;
-    --md-list-item-pressed-state-layer-opacity: .14;
-    --md-circular-progress-active-indicator-color: #36D6F0;
-    --mdc-theme-primary: #36D6F0;
-    --mdc-theme-secondary: #36D6F0;
-    --text-color: #e6edf3;
+    --md-list-item-label-text-color: #eef1f4;
+    --md-list-item-supporting-text-color: #8b939d;
+    --md-list-item-leading-icon-color: #ff3b30;
+    --md-list-item-hover-state-layer-color: #ffffff;
+    --md-list-item-pressed-state-layer-color: #ffffff;
+    --md-list-item-hover-state-layer-opacity: .05;
+    --md-list-item-pressed-state-layer-opacity: .1;
+    --md-circular-progress-active-indicator-color: #ff3b30;
+    --mdc-theme-primary: #ff3b30;
+    --mdc-theme-secondary: #8595a8;
+    --text-color: #eef1f4;
     --danger-color: #ff6b6b;
   }
   ewt-install-dialog {
-    --text-color: #e6edf3;
+    --text-color: #eef1f4;
     --danger-color: #ff6b6b;
-    --md-icon-button-icon-color: #e6edf3;
+    --md-icon-button-icon-color: #eef1f4;
     --md-icon-button-hover-icon-color: #ffffff;
     --md-icon-button-focus-icon-color: #ffffff;
     --md-icon-button-pressed-icon-color: #ffffff;
-    --md-icon-button-hover-state-layer-color: #36D6F0;
-    --md-icon-button-pressed-state-layer-color: #36D6F0;
+    --md-icon-button-hover-state-layer-color: #ffffff;
+    --md-icon-button-pressed-state-layer-color: #ffffff;
     --md-icon-button-icon-size: 26px;
+    font-family: Manrope, system-ui, sans-serif; color-scheme: dark;
   }
-  ewt-install-dialog { font-family: Manrope, system-ui, sans-serif; color-scheme: dark; }
 
   /* Each face is cropped out of the repo's docs/faces montage (4 columns, 240px circles, 8px padding) */
   .face {
-    --s: 100%;
-    aspect-ratio: 1; width: min(100%, 220px); border-radius: 9999px;
+    aspect-ratio: 1; width: min(100%, 200px); border-radius: 9999px;
+    background-color: #000;
     background-image: var(--img, url(faces/day.png));
     background-repeat: no-repeat;
     background-size: 416.667% auto;
     background-position:
       calc((8 + var(--c) * 248) / 760 * 100%)
       calc((8 + var(--r) * 248) / 512 * 100%);
-    box-shadow: 0 0 0 1px rgb(255 255 255 / .08), 0 18px 40px -12px rgb(0 0 0 / .8);
-    transition: transform .2s ease, box-shadow .2s ease;
+    box-shadow: 0 0 0 1px #1c2026, 0 0 0 6px #0a0c0e, 0 0 0 7px #1c2026, 0 24px 48px -18px rgb(0 0 0 / .9);
+    transition: transform .25s ease, box-shadow .25s ease;
   }
   #faces[data-mode="night"] .face { --img: url(faces/night.png); }
-  figure:hover .face { transform: scale(1.05); box-shadow: 0 0 0 1px rgb(54 214 240 / .5), 0 0 40px rgb(54 214 240 / .25); }
-  .mode[aria-pressed="true"] { background: radial-gradient(120% 140% at 15% 0%, rgb(255 255 255 / .38), rgb(255 255 255 / .1) 70%); color: #fff; font-weight: 700; text-shadow: 0 1px 6px rgb(0 0 0 / .35); box-shadow: inset 1.5px 1.5px 0 rgb(255 255 255 / .7), inset -1px -1px 0 rgb(255 255 255 / .3), 0 4px 14px -4px rgb(0 0 0 / .4); }
-  .mode[aria-pressed="false"] { color: #9aa4b2; }
+  .face-card:hover .face { transform: translateY(-4px); box-shadow: 0 0 0 1px #2a3038, 0 0 0 6px #0a0c0e, 0 0 0 7px rgb(255 59 48 / .55), 0 28px 56px -18px rgb(0 0 0 / .95); }
+  .face-card:hover figcaption { color: #fff; }
 
-  /* Liquid glass (after Apple's): nearly clear fill, heavy backdrop blur + saturation boost,
-     and a lit rim: bright on the top-left edge, fainter on the bottom-right. */
-  .glass {
-    position: relative;
-    background:
-      radial-gradient(120% 140% at 15% 0%, rgb(255 255 255 / .16), rgb(255 255 255 / 0) 55%),
-      linear-gradient(180deg, rgb(255 255 255 / .07), rgb(255 255 255 / .02));
-    border: 0;
-    backdrop-filter: blur(10px) saturate(1.8) brightness(1.06);
-    -webkit-backdrop-filter: blur(10px) saturate(1.8) brightness(1.06);
-    box-shadow:
-      inset 1px 1px 0 rgb(255 255 255 / .5),
-      inset -1px -1px 0 rgb(255 255 255 / .2),
-      inset 0 1px 6px rgb(255 255 255 / .18),
-      inset 0 -6px 10px -6px rgb(255 255 255 / .12),
-      0 8px 24px -10px rgb(0 0 0 / .45);
-  }
-  .glass-cyan {
-    background:
-      radial-gradient(120% 140% at 15% 0%, rgb(255 255 255 / .26), rgb(255 255 255 / 0) 55%),
-      linear-gradient(180deg, rgb(255 255 255 / .12), rgb(255 255 255 / .04));
-    box-shadow:
-      inset 1.5px 1.5px 0 rgb(255 255 255 / .65),
-      inset -1px -1px 0 rgb(255 255 255 / .3),
-      inset 0 1px 8px rgb(255 255 255 / .25),
-      inset 0 -8px 14px -8px rgb(255 255 255 / .18),
-      0 12px 30px -10px rgb(0 0 0 / .5);
-  }
-  /* Refractive mode (Chromium): the filter lives on an inner layer, tint stays on the element. */
-  .glass.lg { isolation: isolate; background: rgb(255 255 255 / .1); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 8px 24px -10px rgb(0 0 0 / .45); }
-  .glass.lg.glass-cyan { background: rgb(255 255 255 / .24); box-shadow: 0 12px 30px -10px rgb(0 0 0 / .5); }
-  .lg-layer { position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 4px 0 rgb(250 250 250 / .5); }
-  button.glass, a.glass { transition: transform .15s ease, background .2s ease; }
-  button.glass:hover, a.glass:hover { background: radial-gradient(120% 140% at 15% 0%, rgb(255 255 255 / .28), rgb(255 255 255 / .04) 60%), linear-gradient(180deg, rgb(255 255 255 / .12), rgb(255 255 255 / .05)); }
+  .mode { color: #8b939d; transition: background .2s ease, color .2s ease; }
+  .mode[aria-pressed="true"] { background: #1c2026; color: #fff; }
+  .mode[data-mode="night"][aria-pressed="true"] { background: rgb(255 59 48 / .16); color: #ff6a61; }
 
   .install-btn {
-    display: inline-flex; align-items: center; gap: .75rem; overflow: hidden;
-    padding: 1.1rem 2.25rem; border-radius: 9999px; cursor: pointer;
-    font: 800 1.25rem/1 Manrope, system-ui, sans-serif; letter-spacing: -.01em;
-    color: #fff; text-shadow: 0 1px 8px rgb(0 0 0 / .45), 0 0 2px rgb(0 0 0 / .3);
-    transition: transform .15s ease, box-shadow .15s ease;
-    animation: flash-ring 2.4s ease-out infinite;
+    display: inline-flex; align-items: center; gap: .7rem; cursor: pointer;
+    padding: 1rem 2rem; border-radius: 9999px;
+    font: 800 1.125rem/1 Manrope, system-ui, sans-serif; letter-spacing: -.005em;
+    color: #050607; background: #fff;
+    transition: transform .15s ease, background .2s ease, box-shadow .2s ease;
+    animation: flash-ring 2.6s ease-out infinite;
   }
-  .install-btn { isolation: isolate; }
-  .install-btn::before { /* specular sheen on the upper half, behind the label */
-    z-index: -1;
-    content: ""; position: absolute; inset: 1px 8% 52% 8%; border-radius: 9999px;
-    background: linear-gradient(to bottom, rgb(255 255 255 / .35), rgb(255 255 255 / 0)); pointer-events: none;
-  }
-  .install-btn:hover { transform: translateY(-2px) scale(1.03); }
-  .install-btn:hover { background: radial-gradient(120% 140% at 15% 0%, rgb(255 255 255 / .36), rgb(255 255 255 / .06) 60%), linear-gradient(180deg, rgb(255 255 255 / .16), rgb(255 255 255 / .06)); }
+  .install-btn:hover { transform: translateY(-1px); background: #f1f3f5; }
   .install-btn:active { transform: scale(.98); }
-  .install-btn svg { width: 1.5rem; height: 1.5rem; }
+  .install-btn svg { width: 1.25rem; height: 1.25rem; }
   @keyframes flash-ring {
-    0% { box-shadow: inset 2px 2px 0 rgb(255 255 255 / .75), inset -1.5px -1.5px 0 rgb(255 255 255 / .3), 0 0 0 0 rgb(255 255 255 / .35), 0 10px 30px -10px rgb(0 0 0 / .5); }
-    70%, 100% { box-shadow: inset 2px 2px 0 rgb(255 255 255 / .75), inset -1.5px -1.5px 0 rgb(255 255 255 / .3), 0 0 0 22px rgb(255 255 255 / 0), 0 10px 30px -10px rgb(0 0 0 / .5); }
+    0%       { box-shadow: 0 0 0 0 rgb(255 59 48 / .45), 0 12px 32px -12px rgb(255 59 48 / .5); }
+    70%, 100% { box-shadow: 0 0 0 16px rgb(255 59 48 / 0), 0 12px 32px -12px rgb(255 59 48 / .5); }
   }
   @media (prefers-reduced-motion: reduce) { .install-btn { animation: none; } }
 </style>
 </head>
-<body class="min-h-screen font-sans text-slate-200 antialiased">
-<main class="mx-auto max-w-5xl px-5 py-12 md:py-20">
+<body class="min-h-screen font-sans text-slate-200 antialiased selection:bg-accent/40">
 
-  <section class="grid items-center gap-12 md:grid-cols-2">
+<header class="mx-auto flex max-w-6xl items-center justify-between px-5 pt-6">
+  <a href="#" class="flex items-center gap-2.5 text-sm font-extrabold tracking-tight text-white">
+    <svg viewBox="0 0 24 24" class="h-6 w-6" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="none" stroke="#2a3038" stroke-width="1.5"/><path d="M12 12V6.5M12 12l3.5 2" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="1.4" fill="#ff3b30"/></svg>
+    hackable clock
+  </a>
+  <a href="https://github.com/blakenoll/hackable-desktop-clock"
+     class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-1.5 text-sm font-semibold text-ink transition hover:border-[#2a3038] hover:text-white">
+    <svg viewBox="0 0 16 16" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    GitHub
+  </a>
+</header>
+
+<main class="mx-auto max-w-6xl px-5 pb-16 pt-10 md:pt-16">
+
+  <section class="grid items-center gap-14 md:grid-cols-[1.05fr_1fr]">
     <div>
-      <p class="font-mono text-sm uppercase tracking-[.2em] text-cyan-brand">&lt;/&gt; Open source tinkering project</p>
-      <h1 class="mt-4 bg-gradient-to-r from-white to-[#9fe9f7] bg-clip-text text-5xl font-extrabold leading-[1.05] tracking-tight text-transparent md:text-6xl">
-        hackable<br>desktop clock
+      <p class="eyebrow text-accent">Open source · ESP32-C3</p>
+      <h1 class="mt-5 text-5xl font-extrabold leading-[1.02] tracking-[-.035em] text-white md:text-7xl">
+        hackable<br><span class="text-[#c9ced5]">desktop clock</span>
       </h1>
-      <ul class="mt-6 flex flex-wrap gap-2 font-mono text-sm text-[#9fe9f7]">
-        <li class="glass rounded-full px-4 py-1.5">ESP32-C3</li>
-        <li class="glass rounded-full px-4 py-1.5">GC9A01</li>
-        <li class="glass rounded-full px-4 py-1.5">LVGL 9</li>
-        <li class="glass rounded-full px-4 py-1.5">PlatformIO</li>
-      </ul>
       <p class="mt-6 max-w-md text-lg leading-relaxed text-ink">
         A pocket-size round clock with weather, a seconds ring, night mode and phone-based setup.
         Flash the firmware straight from your browser.
       </p>
-      <div class="mt-8">
+      <div class="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
         <esp-web-install-button manifest="manifest.json">
-          <button slot="activate" class="install-btn glass glass-cyan" type="button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
-            Flash
+          <button slot="activate" class="install-btn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+            Flash firmware
           </button>
           <span slot="unsupported" class="text-sm text-amber-400">Web Serial isn't available in this browser.</span>
         </esp-web-install-button>
-        <p class="mt-4 text-sm text-ink">Plug in your clock, click Flash, then pick the port in your browser's popup.</p>
+        <p class="max-w-[16rem] text-sm leading-snug text-dim">Plug in your clock, click Flash, then pick the port in the browser popup.</p>
       </div>
-      <div id="unsupported" class="mt-6 hidden rounded-xl border border-amber-500/60 bg-amber-500/10 p-4 text-sm text-amber-200">
+      <div id="unsupported" class="mt-6 hidden rounded-2xl border border-amber-500/40 bg-amber-500/[.07] p-4 text-sm text-amber-200">
         Your browser doesn't support Web Serial. Use desktop <strong>Chrome</strong>, <strong>Edge</strong> or <strong>Opera</strong>
         (not Firefox, Safari or mobile).
       </div>
+      <ul class="mt-10 flex flex-wrap gap-x-5 gap-y-2 font-mono text-xs text-dim">
+        <li>ESP32-C3</li><li class="text-line">/</li>
+        <li>GC9A01 240×240</li><li class="text-line">/</li>
+        <li>LVGL 9</li><li class="text-line">/</li>
+        <li>PlatformIO</li>
+      </ul>
     </div>
 
-    <!-- clock face, echoing the README header -->
-    <div class="relative mx-auto aspect-square w-72 md:w-96" aria-hidden="true">
-      <div class="absolute -inset-16 rounded-full bg-cyan-brand/25 blur-3xl"></div>
-      <div class="absolute inset-0 rounded-full bg-[#8a929c] p-[3%]">
-        <div class="relative grid h-full w-full place-items-center rounded-full bg-black">
-          <div class="absolute inset-[3%] rounded-full"
-               style="background: repeating-conic-gradient(from -1.5deg, #56606D 0 3deg, transparent 3deg 6deg);
-                      -webkit-mask-image: radial-gradient(circle closest-side, transparent 90%, #000 90.5%); mask-image: radial-gradient(circle closest-side, transparent 90%, #000 90.5%);"></div>
-          <div class="absolute inset-[3%] rounded-full"
-               style="background: conic-gradient(from 0deg, #2A3138 0 215deg, #FF3030 215deg 220deg, #8595a8 220deg 360deg);
-                      -webkit-mask-image: radial-gradient(circle closest-side, transparent 92%, #000 92.5%); mask-image: radial-gradient(circle closest-side, transparent 92%, #000 92.5%); opacity:.9"></div>
-          <div class="text-center">
-            <p class="text-lg font-medium"><span class="text-[#FF4D4D]">Tue</span> <span class="text-[#A0A0A0]">Nov 23</span></p>
-            <p class="text-6xl font-medium tracking-tight text-white md:text-7xl">10:47<span class="ml-1 align-top text-base text-[#A0A0A0]">AM</span></p>
-            <p class="mt-1 text-xl font-medium text-[#D0D8E0]">
-              <span class="text-[#FFD66B]">☀</span> 72°
-              <span class="ml-2 text-sm text-[#FF8A65]">78°</span><span class="ml-1 text-sm text-[#6FB6FF]">61°</span>
-            </p>
+    <!-- Live clock drawn like the Polished face: dim ticks, blue-grey comet tail, red second -->
+    <div class="relative mx-auto aspect-square w-72 sm:w-80 md:w-[26rem]" aria-hidden="true">
+      <div class="absolute inset-[8%] rounded-full bg-accent/10 blur-3xl"></div>
+      <div class="absolute inset-0 rounded-full bg-gradient-to-b from-[#24282e] to-[#0d0f12] p-[2.5%] shadow-[0_40px_80px_-30px_rgb(0_0_0/.9)]">
+        <div class="relative h-full w-full rounded-full bg-black shadow-[inset_0_0_0_1px_#000,inset_0_2px_12px_rgb(0_0_0/.9)]">
+          <svg id="ring" viewBox="0 0 240 240" class="absolute inset-0 h-full w-full"></svg>
+          <div class="absolute inset-0 grid place-items-center text-center">
+            <div>
+              <p class="text-[.95rem] font-bold tracking-[.14em] md:text-lg"><span id="hc-day" class="text-[#ff4d4d]">TUE</span> <span id="hc-date" class="text-[#a0a0a0]">NOV 10</span></p>
+              <p class="mt-1 flex items-start justify-center font-medium leading-none tracking-tight text-white">
+                <span id="hc-time" class="text-6xl tabular-nums md:text-[5.25rem]">10:47</span>
+                <span id="hc-ampm" class="ml-1.5 mt-auto mb-2 text-sm font-semibold text-[#a0a0a0] md:text-base">AM</span>
+              </p>
+              <p class="mt-3 flex items-center justify-center gap-2 text-xl font-medium text-[#d0d8e0] md:text-2xl">
+                <svg viewBox="0 0 24 24" class="h-6 w-6 md:h-7 md:w-7" fill="none" stroke="#ffd66b" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>
+                72°
+                <span class="ml-1 flex flex-col text-[.65rem] font-bold leading-tight md:text-xs"><span class="text-[#ff8a65]">78</span><span class="text-[#6fb6ff]">61</span></span>
+              </p>
+              <p class="mt-2 text-[.65rem] font-bold tracking-[.16em] text-[#8b939d] md:text-xs">40% RAIN</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="mt-20">
-    <div class="flex flex-wrap items-end justify-between gap-4">
+  <section class="mt-28">
+    <div class="flex flex-wrap items-end justify-between gap-6">
       <div>
-        <p class="font-mono text-sm uppercase tracking-[.2em] text-cyan-brand">Nine faces</p>
-        <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-white">Pick a look. Change it any time.</h2>
-        <p class="mt-2 max-w-xl text-ink">Tap the <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">BOOT</code> button to cycle faces; double-tap it to change the colour theme. Every face switches to a dim night palette after sunset.</p>
+        <p class="eyebrow text-accent">Nine faces</p>
+        <h2 class="mt-3 text-3xl font-extrabold tracking-[-.025em] text-white md:text-4xl">Pick a look. Change it any time.</h2>
+        <p class="mt-3 max-w-xl text-ink">Tap the <span class="kbd">BOOT</span> button to cycle faces; double-tap it to change the colour theme. Every face switches to a dim night palette after sunset.</p>
       </div>
-      <div class="glass inline-flex rounded-full p-1 font-mono text-sm" role="group" aria-label="Day or night">
-        <button type="button" data-mode="day" class="mode rounded-full px-4 py-1.5 transition" aria-pressed="true">Day</button>
-        <button type="button" data-mode="night" class="mode rounded-full px-4 py-1.5 transition" aria-pressed="false">Night</button>
+      <div class="inline-flex rounded-full border border-line bg-panel p-1 text-sm font-bold" role="group" aria-label="Day or night">
+        <button type="button" data-mode="day" class="mode inline-flex items-center gap-1.5 rounded-full px-4 py-1.5" aria-pressed="true">
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Day</button>
+        <button type="button" data-mode="night" class="mode inline-flex items-center gap-1.5 rounded-full px-4 py-1.5" aria-pressed="false">
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></svg>Night</button>
       </div>
     </div>
-    <div id="faces" data-mode="day" class="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3">
-      <figure class="group text-center">
+    <div id="faces" data-mode="day" class="mt-12 grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-3">
+      <figure class="face-card text-center">
         <div class="face mx-auto" style="--c:0;--r:0" role="img" aria-label="Polished face"></div>
-        <figcaption class="mt-3 font-extrabold text-white">Polished</figcaption>
-        <p class="text-sm text-ink">Default: seconds ring, weather, range bar</p>
+        <figcaption class="mt-5 font-extrabold text-slate-200 transition">Polished</figcaption>
+        <p class="mt-0.5 text-sm text-dim">Default: seconds ring, weather, range bar</p>
       </figure>
-      <figure class="group text-center">
+      <figure class="face-card text-center">
         <div class="face mx-auto" style="--c:1;--r:0" role="img" aria-label="Arc face"></div>
-        <figcaption class="mt-3 font-extrabold text-white">Arc</figcaption>
-        <p class="text-sm text-ink">Seconds as a sweeping arc</p>
+        <figcaption class="mt-5 font-extrabold text-slate-200 transition">Arc</figcaption>
+        <p class="mt-0.5 text-sm text-dim">Seconds as a sweeping arc</p>
       </figure>
-      <figure class="group text-center">
+      <figure class="face-card text-center">
         <div class="face mx-auto" style="--c:2;--r:0" role="img" aria-label="Stacked face"></div>
-        <figcaption class="mt-3 font-extrabold text-white">Stacked</figcaption>
-        <p class="text-sm text-ink">Big stacked hours and minutes</p>
+        <figcaption class="mt-5 font-extrabold text-slate-200 transition">Stacked</figcaption>
+        <p class="mt-0.5 text-sm text-dim">Big stacked hours and minutes</p>
       </figure>
-      <figure class="group text-center">
+      <figure class="face-card text-center">
         <div class="face mx-auto" style="--c:3;--r:0" role="img" aria-label="Analog face"></div>
-        <figcaption class="mt-3 font-extrabold text-white">Analog</figcaption>
-        <p class="text-sm text-ink">Classic hands and a date window</p>
+        <figcaption class="mt-5 font-extrabold text-slate-200 transition">Analog</figcaption>
+        <p class="mt-0.5 text-sm text-dim">Classic hands and a date window</p>
       </figure>
-      <figure class="group text-center">
+      <figure class="face-card text-center">
         <div class="face mx-auto" style="--c:0;--r:1" role="img" aria-label="Zen face"></div>
-        <figcaption class="mt-3 font-extrabold text-white">Zen</figcaption>
-        <p class="text-sm text-ink">Quiet and minimal</p>
+        <figcaption class="mt-5 font-extrabold text-slate-200 transition">Zen</figcaption>
+        <p class="mt-0.5 text-sm text-dim">Quiet and minimal</p>
       </figure>
-      <figure class="group text-center">
+      <figure class="face-card text-center">
         <div class="face mx-auto" style="--c:1;--r:1" role="img" aria-label="Forecast face"></div>
-        <figcaption class="mt-3 font-extrabold text-white">Forecast</figcaption>
-        <p class="text-sm text-ink">Wind compass and hourly rain</p>
+        <figcaption class="mt-5 font-extrabold text-slate-200 transition">Forecast</figcaption>
+        <p class="mt-0.5 text-sm text-dim">Wind compass and hourly rain</p>
       </figure>
-      <figure class="group text-center">
+      <figure class="face-card text-center">
         <div class="face mx-auto" style="--c:2;--r:1" role="img" aria-label="Retro face"></div>
-        <figcaption class="mt-3 font-extrabold text-white">Retro</figcaption>
-        <p class="text-sm text-ink">Seven-segment, red LCD look</p>
+        <figcaption class="mt-5 font-extrabold text-slate-200 transition">Retro</figcaption>
+        <p class="mt-0.5 text-sm text-dim">Seven-segment, red LCD look</p>
       </figure>
-      <figure class="group text-center">
+      <figure class="face-card text-center">
         <div class="face mx-auto" style="--c:3;--r:1" role="img" aria-label="Daylight face"></div>
-        <figcaption class="mt-3 font-extrabold text-white">Daylight</figcaption>
-        <p class="text-sm text-ink">Sunrise-to-sunset dial</p>
+        <figcaption class="mt-5 font-extrabold text-slate-200 transition">Daylight</figcaption>
+        <p class="mt-0.5 text-sm text-dim">Sunrise-to-sunset dial</p>
       </figure>
-      <figure class="group text-center">
+      <figure class="face-card text-center">
         <div class="face mx-auto" style="--c:0;--r:2" role="img" aria-label="Tide face"></div>
-        <figcaption class="mt-3 font-extrabold text-white">Tide</figcaption>
-        <p class="text-sm text-ink">NOAA tide chart and water temp</p>
+        <figcaption class="mt-5 font-extrabold text-slate-200 transition">Tide</figcaption>
+        <p class="mt-0.5 text-sm text-dim">NOAA tide chart and water temp</p>
       </figure>
     </div>
   </section>
 
-  <section class="mt-16 grid gap-5 md:grid-cols-3">
-    <div class="rounded-2xl border border-white/10 bg-white/[.04] p-6 backdrop-blur">
-      <p class="font-mono text-sm text-cyan-brand">01</p>
-      <h2 class="mt-1 text-xl font-extrabold text-white">Before you start</h2>
-      <ol class="mt-3 list-decimal space-y-2 pl-5 text-ink">
-        <li>Wire the display as shown in the <a class="text-cyan-brand underline-offset-4 hover:underline" href="https://github.com/blakenoll/hackable-desktop-clock#readme">README</a>. The firmware assumes that exact pinout.</li>
-        <li>Plug the board into your computer with a USB <em>data</em> cable.</li>
-        <li>Click <strong class="text-white">Flash</strong>. Your browser opens a list of serial ports. Choose the one called <strong class="text-white">USB JTAG/serial debug unit</strong>; that is the clock.
-          <div class="my-3 overflow-hidden rounded-xl border border-white/10 bg-black/30 font-mono text-xs" aria-hidden="true">
-            <div class="px-3 py-2 text-ink/60">cu.Bluetooth-Incoming-Port</div>
-            <div class="px-3 py-2 text-ink/60">cu.debug-console</div>
-            <div class="flex items-center justify-between gap-2 border-y border-cyan-brand/50 bg-cyan-brand/15 px-3 py-2 text-white"><span>USB JTAG/serial debug unit</span><span class="shrink-0 text-cyan-brand">← this one</span></div>
-            <div class="px-3 py-2 text-ink/60">cu.wlan-debug</div>
-          </div>
-          <span class="text-sm text-ink">The name after it varies by computer (<code class="rounded bg-white/10 px-1.5 py-0.5 font-mono">usbmodem…</code> on Mac, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono">COM…</code> on Windows, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono">ttyACM…</code> on Linux). Ignore the Bluetooth, debug-console and wlan entries.</span></li>
-      </ol>
-      <p class="mt-3 text-sm text-ink">Your saved WiFi and settings are kept when you update.</p>
-    </div>
+  <section class="mt-28">
+    <p class="eyebrow text-accent">Install guide</p>
+    <h2 class="mt-3 text-3xl font-extrabold tracking-[-.025em] text-white md:text-4xl">Three steps to a running clock.</h2>
+    <div class="mt-10 grid gap-5 md:grid-cols-3">
+      <div class="card">
+        <p class="font-mono text-sm text-accent">01</p>
+        <h3 class="mt-2 text-xl font-extrabold tracking-tight text-white">Before you start</h3>
+        <ol class="mt-4 list-decimal space-y-3 pl-5 leading-relaxed text-ink marker:font-mono marker:text-dim">
+          <li>Wire the display as shown in the <a class="font-semibold text-white underline decoration-accent/60 underline-offset-4 hover:decoration-accent" href="https://github.com/blakenoll/hackable-desktop-clock#readme">README</a>. The firmware assumes that exact pinout.</li>
+          <li>Plug the board into your computer with a USB <em>data</em> cable.</li>
+          <li>Click <strong class="text-white">Flash</strong>. Your browser opens a list of serial ports. Choose the one called <strong class="text-white">USB JTAG/serial debug unit</strong>; that is the clock.
+            <div class="my-4 overflow-hidden rounded-xl border border-line bg-black font-mono text-xs" aria-hidden="true">
+              <div class="px-3 py-2 text-dim">cu.Bluetooth-Incoming-Port</div>
+              <div class="px-3 py-2 text-dim">cu.debug-console</div>
+              <div class="flex items-center justify-between gap-2 border-y border-accent/40 bg-accent/10 px-3 py-2 text-white"><span>USB JTAG/serial debug unit</span><span class="shrink-0 text-accent">← this one</span></div>
+              <div class="px-3 py-2 text-dim">cu.wlan-debug</div>
+            </div>
+            <span class="text-sm">The name after it varies by computer (<span class="kbd">usbmodem…</span> on Mac, <span class="kbd">COM…</span> on Windows, <span class="kbd">ttyACM…</span> on Linux). Ignore the Bluetooth, debug-console and wlan entries.</span></li>
+        </ol>
+        <p class="mt-4 border-t border-line pt-4 text-sm text-dim">Your saved WiFi and settings are kept when you update.</p>
+      </div>
 
-    <div class="rounded-2xl border border-white/10 bg-white/[.04] p-6 backdrop-blur">
-      <p class="font-mono text-sm text-cyan-brand">02</p>
-      <h2 class="mt-1 text-xl font-extrabold text-white">If it can't connect</h2>
-      <p class="mt-3 text-ink">Auto-reset is sometimes unreliable. Unplug USB, hold the <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">BOOT</code> button, plug in while holding, keep holding
-      for a few seconds, then click Flash and choose the port.</p>
-      <p class="mt-3 text-ink">No driver is needed: the clock's chip has USB built in. If the clock isn't listed, try another cable. On Linux your user must be allowed to use the port
-      (usually the <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">dialout</code> group, then log out and back in).</p>
-    </div>
+      <div class="card">
+        <p class="font-mono text-sm text-accent">02</p>
+        <h3 class="mt-2 text-xl font-extrabold tracking-tight text-white">If it can't connect</h3>
+        <p class="mt-4 leading-relaxed text-ink">Auto-reset is sometimes unreliable. Unplug USB, hold the <span class="kbd">BOOT</span> button, plug in while holding, keep holding
+        for a few seconds, then click Flash and choose the port.</p>
+        <p class="mt-4 leading-relaxed text-ink">No driver is needed: the clock's chip has USB built in. If the clock isn't listed, try another cable. On Linux your user must be allowed to use the port
+        (usually the <span class="kbd">dialout</span> group, then log out and back in).</p>
+      </div>
 
-    <div class="rounded-2xl border border-white/10 bg-white/[.04] p-6 backdrop-blur">
-      <p class="font-mono text-sm text-cyan-brand">03</p>
-      <h2 class="mt-1 text-xl font-extrabold text-white">First-time setup</h2>
-      <p class="mt-3 text-ink">The clock starts a WiFi network named <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">clk-setup-XXXX</code>. The password is shown on the clock's screen.
-      Join it and a setup page opens, where you choose your WiFi (2.4&nbsp;GHz only), timezone and ZIP code for weather.</p>
-      <p class="mt-3 text-ink">To re-enter setup later, hold <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">BOOT</code> for 3 seconds while the clock is running.</p>
+      <div class="card">
+        <p class="font-mono text-sm text-accent">03</p>
+        <h3 class="mt-2 text-xl font-extrabold tracking-tight text-white">First-time setup</h3>
+        <p class="mt-4 leading-relaxed text-ink">The clock starts a WiFi network named <span class="kbd">clk-setup-XXXX</span>. The password is shown on the clock's screen.
+        Join it and a setup page opens, where you choose your WiFi (2.4&nbsp;GHz only), timezone and ZIP code for weather.</p>
+        <p class="mt-4 leading-relaxed text-ink">To re-enter setup later, hold <span class="kbd">BOOT</span> for 3 seconds while the clock is running.</p>
+      </div>
     </div>
   </section>
 
-  <footer class="mt-14 text-center">
-    <a class="glass inline-flex items-center gap-2 rounded-full px-5 py-2 font-mono text-sm text-white"
-       href="https://github.com/blakenoll/hackable-desktop-clock">Source on GitHub →</a>
+  <footer class="mt-20 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-8 text-sm text-dim">
+    <p>An open source tinkering project.</p>
+    <a class="font-semibold text-ink transition hover:text-white" href="https://github.com/blakenoll/hackable-desktop-clock">Source on GitHub →</a>
   </footer>
 </main>
 <script>
-  // Make the ESP Web Tools dialog stand out: its Material Web internals have no ::part hooks,
+  // Dark, flat ESP Web Tools dialog: its Material Web internals have no ::part hooks,
   // so add a stylesheet to the open shadow root when the dialog appears.
   const dialogCss = new CSSStyleSheet();
   dialogCss.replaceSync(`
-    .scrim { opacity: .38 !important; backdrop-filter: blur(10px) saturate(1.3); -webkit-backdrop-filter: blur(10px) saturate(1.3); }
-    .container {
-      background: radial-gradient(120% 100% at 10% 0%, rgb(255 255 255 / .16), rgb(255 255 255 / 0) 55%), linear-gradient(180deg, rgb(255 255 255 / .06), rgb(255 255 255 / .02)) !important;
-      backdrop-filter: blur(24px) saturate(1.8) brightness(1.06);
-      -webkit-backdrop-filter: blur(24px) saturate(1.8) brightness(1.06);
-      border: 0;
-      box-shadow:
-        inset 2px 2px 0 rgb(255 255 255 / .6),
-        inset -1.5px -1.5px 0 rgb(255 255 255 / .25),
-        inset 0 0 0 1px rgb(255 255 255 / .12),
-        inset 0 0 50px rgb(255 255 255 / .07),
-        0 30px 80px rgb(0 0 0 / .55);
-    }
+    .scrim { opacity: .7 !important; }
+    .container { background: #0c0e11 !important; border: 1px solid #1c2026; box-shadow: 0 40px 100px rgb(0 0 0 / .7); }
   `);
   new MutationObserver(() => {
     const d = document.querySelector('ewt-install-dialog');
@@ -344,75 +324,45 @@
       const md = d.shadowRoot && d.shadowRoot.querySelector('ew-dialog');
       if (!md || !md.shadowRoot) return requestAnimationFrame(tryStyle);
       md.shadowRoot.adoptedStyleSheets = [...md.shadowRoot.adoptedStyleSheets, dialogCss];
-      const box = md.shadowRoot.querySelector('.container');
-      if (box) refract(box, { blur: 3, ca: 3, depthMax: 18, strength: 60 });
       d.dataset.themed = '1';
     };
     tryStyle();
   }).observe(document.body, { childList: true });
 
-  // Refractive liquid glass (technique from ekino's "Liquid glass in CSS and SVG"): a per-element SVG
-  // displacement map bends the backdrop at the edges via backdrop-filter: url(#filter). Chromium only;
-  // other browsers keep the plain blur glass from the stylesheet.
-  const refractive = (() => {
-    const t = document.createElement('div');
-    t.style.cssText = 'backdrop-filter: url(#test)';
-    return t.style.backdropFilter === 'url(#test)' || t.style.backdropFilter === 'url("#test")';
-  })();
-  const svgUri = svg => 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-  function displacementMap(w, h, r, depth) {
-    const px = Math.ceil(r / h * 15), py = Math.ceil(r / w * 15);
-    return svgUri(`<svg height="${h}" width="${w}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <style>.mix{mix-blend-mode:screen}</style>
-      <defs>
-        <linearGradient id="Y" x1="0" x2="0" y1="${px}%" y2="${Math.floor(100 - r / h * 15)}%"><stop offset="0%" stop-color="#0F0"/><stop offset="100%" stop-color="#000"/></linearGradient>
-        <linearGradient id="X" x1="${py}%" x2="${Math.floor(100 - r / w * 15)}%" y1="0" y2="0"><stop offset="0%" stop-color="#F00"/><stop offset="100%" stop-color="#000"/></linearGradient>
-      </defs>
-      <rect width="${w}" height="${h}" fill="#808080"/>
-      <g filter="blur(2px)">
-        <rect width="${w}" height="${h}" fill="#000080"/>
-        <rect width="${w}" height="${h}" fill="url(#Y)" class="mix"/>
-        <rect width="${w}" height="${h}" fill="url(#X)" class="mix"/>
-        <rect x="${depth}" y="${depth}" width="${w - 2 * depth}" height="${h - 2 * depth}" fill="#808080" rx="${r}" ry="${r}" filter="blur(${depth}px)"/>
-      </g></svg>`);
+  // Hero clock: 60 ticks like the firmware's seconds ring (dim base, 12-tick blue-grey
+  // comet tail with squared falloff, red current second), showing the visitor's local time.
+  const ring = document.getElementById('ring');
+  const NS = 'http://www.w3.org/2000/svg', TAIL = 12;
+  const ticks = Array.from({ length: 60 }, (_, i) => {
+    const a = (i * 6 - 90) * Math.PI / 180, r1 = 104, r2 = i % 5 ? 112 : 114;
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1', 120 + r1 * Math.cos(a)); l.setAttribute('y1', 120 + r1 * Math.sin(a));
+    l.setAttribute('x2', 120 + r2 * Math.cos(a)); l.setAttribute('y2', 120 + r2 * Math.sin(a));
+    l.setAttribute('stroke-width', 2.2); l.setAttribute('stroke-linecap', 'round');
+    l.style.transition = 'stroke .4s ease';
+    ring.appendChild(l);
+    return l;
+  });
+  const mix = (a, b, t) => '#' + [0, 2, 4].map(k => Math.round(parseInt(a.substr(k, 2), 16) * (1 - t) + parseInt(b.substr(k, 2), 16) * t).toString(16).padStart(2, '0')).join('');
+  const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  function tick() {
+    const now = new Date(), s = now.getSeconds();
+    ticks.forEach((l, i) => {
+      const back = (s - i + 60) % 60;
+      let c = '2a3138';
+      if (back === 0) c = 'ff3030';
+      else if (back <= TAIL) c = mix('2a3138', '8595a8', ((TAIL + 1 - back) / (TAIL + 1)) ** 2);
+      l.setAttribute('stroke', c[0] === '#' ? c : '#' + c);
+    });
+    const h = now.getHours() % 12 || 12, m = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('hc-time').textContent = `${h}:${m}`;
+    document.getElementById('hc-ampm').textContent = now.getHours() < 12 ? 'AM' : 'PM';
+    document.getElementById('hc-day').textContent = DAYS[now.getDay()];
+    document.getElementById('hc-date').textContent = `${MONTHS[now.getMonth()]} ${now.getDate()}`;
+    setTimeout(tick, 1000 - now.getMilliseconds() + 5);
   }
-  function displacementFilter(w, h, r, depth, strength, ca) {
-    const ch = (scale, m, res) => `<feDisplacementMap in="SourceGraphic" in2="map" scale="${scale}" xChannelSelector="R" yChannelSelector="G"/>
-      <feColorMatrix type="matrix" values="${m}" result="${res}"/>`;
-    return svgUri(`<svg height="${h}" width="${w}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><defs>
-      <filter id="displace" color-interpolation-filters="sRGB">
-        <feImage x="0" y="0" height="${h}" width="${w}" href="${displacementMap(w, h, r, depth)}" result="map"/>
-        ${ch(strength + ca * 2, '1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0', 'R')}
-        ${ch(strength + ca, '0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0', 'G')}
-        ${ch(strength, '0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0', 'B')}
-        <feBlend in="R" in2="G" mode="screen"/><feBlend in2="B" mode="screen"/>
-      </filter></defs></svg>`) + '#displace';
-  }
-  function refract(el, { blur = 2, ca = 0, depthMax = 10, strength, saturate = 1.5, brightness = 1.1, layer = false } = {}) {
-    if (!refractive) return;
-    let t, target = el;
-    if (layer) { // as in nikdelvin/liquid-glass: a dedicated filter layer between the tint and the content
-      target = document.createElement('span');
-      target.className = 'lg-layer';
-      el.prepend(target);
-      el.classList.add('lg');
-    }
-    const apply = () => {
-      const w = Math.round(el.offsetWidth), h = Math.round(el.offsetHeight);
-      if (w < 8 || h < 8) return;
-      const r = Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, w / 2, h / 2);
-      const depth = Math.max(3, Math.min(depthMax, Math.round(Math.min(w, h) * .25)));
-      const str = strength ?? Math.min(100, Math.round(Math.min(w, h) * 1.1));
-      const f = `blur(${blur / 2}px) url('${displacementFilter(w, h, r, depth, str, ca)}') blur(${blur}px) brightness(${brightness}) saturate(${saturate})`;
-      target.style.backdropFilter = target.style.webkitBackdropFilter = f;
-    };
-    apply();
-    new ResizeObserver(() => { clearTimeout(t); t = setTimeout(apply, 60); }).observe(el);
-  }
-  document.querySelectorAll('.glass').forEach(el =>
-    refract(el, el.classList.contains('install-btn')
-      ? { blur: 0, ca: 2, layer: true, saturate: 1.2, brightness: 2 }
-      : { blur: 0, ca: 2, layer: true }));
+  tick();
 
   document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => {
     document.getElementById('faces').dataset.mode = b.dataset.mode;
