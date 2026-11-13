@@ -44,7 +44,7 @@
     --md-sys-color-outline: #3a4654;
     --md-sys-color-outline-variant: #263140;
     --md-sys-color-scrim: #000;
-    --md-dialog-container-color: #121a24;
+    --md-dialog-container-color: #151f2b;
     --md-dialog-headline-color: #ffffff;
     --md-dialog-supporting-text-color: #c3ccd8;
     --md-dialog-container-shape: 24px;
@@ -117,11 +117,11 @@
         <esp-web-install-button manifest="manifest.json">
           <button slot="activate" class="install-btn" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
-            Connect &amp; install
+            Flash
           </button>
           <span slot="unsupported" class="text-sm text-amber-400">Web Serial isn't available in this browser.</span>
         </esp-web-install-button>
-        <p class="mt-4 text-sm text-ink">Plug in your clock, click the button, then pick the port in your browser's popup.</p>
+        <p class="mt-4 text-sm text-ink">Plug in your clock, click Flash, then pick the port in your browser's popup.</p>
       </div>
       <div id="unsupported" class="mt-6 hidden rounded-xl border border-amber-500/60 bg-amber-500/10 p-4 text-sm text-amber-200">
         Your browser doesn't support Web Serial. Use desktop <strong>Chrome</strong>, <strong>Edge</strong> or <strong>Opera</strong>
@@ -160,7 +160,7 @@
       <ol class="mt-3 list-decimal space-y-2 pl-5 text-ink">
         <li>Wire the display as shown in the <a class="text-cyan-brand underline-offset-4 hover:underline" href="https://github.com/blakenoll/hackable-desktop-clock#readme">README</a>. The firmware assumes that exact pinout.</li>
         <li>Plug the board into your computer with a USB <em>data</em> cable.</li>
-        <li>Click <strong class="text-white">Connect &amp; install</strong> and, in the popup, pick the port named <strong class="text-white">USB JTAG/serial debug unit</strong> (<code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">usbmodem…</code> on Mac, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">COM…</code> on Windows, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">ttyACM…</code> on Linux). Ignore entries like <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">Bluetooth-Incoming-Port</code>, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">debug-console</code> or <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">wlan-debug</code>.</li>
+        <li>Click <strong class="text-white">Flash</strong> and, in the popup, pick the port named <strong class="text-white">USB JTAG/serial debug unit</strong> (<code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">usbmodem…</code> on Mac, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">COM…</code> on Windows, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">ttyACM…</code> on Linux). Ignore entries like <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">Bluetooth-Incoming-Port</code>, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">debug-console</code> or <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">wlan-debug</code>.</li>
       </ol>
       <p class="mt-3 text-sm text-ink">Your saved WiFi and settings are kept when you update.</p>
     </div>
@@ -169,7 +169,7 @@
       <p class="font-mono text-sm text-cyan-brand">02</p>
       <h2 class="mt-1 text-xl font-extrabold text-white">If it can't connect</h2>
       <p class="mt-3 text-ink">Auto-reset is sometimes unreliable. Unplug USB, hold the <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">BOOT</code> button, plug in while holding, keep holding
-      for a few seconds, then click Connect &amp; install and choose the port.</p>
+      for a few seconds, then click Flash and choose the port.</p>
       <p class="mt-3 text-ink">No driver is needed: the clock's chip has USB built in. If the clock isn't listed, try another cable. On Linux your user must be allowed to use the port
       (usually the <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">dialout</code> group, then log out and back in).</p>
     </div>
@@ -189,6 +189,28 @@
   </footer>
 </main>
 <script>
+  // Make the ESP Web Tools dialog stand out: its Material Web internals have no ::part hooks,
+  // so add a stylesheet to the open shadow root when the dialog appears.
+  const dialogCss = new CSSStyleSheet();
+  dialogCss.replaceSync(`
+    .scrim { opacity: .78 !important; backdrop-filter: blur(10px) saturate(.8); -webkit-backdrop-filter: blur(10px) saturate(.8); }
+    .container {
+      border: 1px solid rgb(54 214 240 / .45);
+      box-shadow: 0 0 0 1px rgb(255 255 255 / .04), 0 0 70px rgb(54 214 240 / .28), 0 30px 90px rgb(0 0 0 / .8);
+    }
+  `);
+  new MutationObserver(() => {
+    const d = document.querySelector('ewt-install-dialog');
+    if (!d || d.dataset.themed) return;
+    const tryStyle = () => {
+      const md = d.shadowRoot && d.shadowRoot.querySelector('ew-dialog');
+      if (!md || !md.shadowRoot) return requestAnimationFrame(tryStyle);
+      md.shadowRoot.adoptedStyleSheets = [...md.shadowRoot.adoptedStyleSheets, dialogCss];
+      d.dataset.themed = '1';
+    };
+    tryStyle();
+  }).observe(document.body, { childList: true });
+
   if (!('serial' in navigator)) document.getElementById('unsupported').classList.remove('hidden');
 </script>
 </body>
