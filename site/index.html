@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="bg-[#050607]">
+<html lang="en" class="bg-[#131518]">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,7 +8,7 @@
 <meta name="keywords" content="ESP32-C3, GC9A01, LVGL, desktop clock, round display, web flasher, ESP Web Tools, open source, PlatformIO">
 <meta name="author" content="Blake Noll">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#050607">
+<meta name="theme-color" content="#131518">
 <link rel="canonical" href="https://blakenoll.github.io/hackable-desktop-clock/">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -36,13 +36,13 @@
   @theme {
     --font-sans: Manrope, ui-sans-serif, system-ui, sans-serif;
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    --color-bg: #050607;
-    --color-panel: #0c0e11;
-    --color-line: #1c2026;
+    --color-bg: #131518;
+    --color-panel: #1b1e22;
+    --color-line: #2a2f36;
     --color-accent: #ff3b30;
     --color-tick: #8595a8;
-    --color-ink: #8b939d;
-    --color-dim: #5b636d;
+    --color-ink: #9aa2ac;
+    --color-dim: #7d8691;
   }
   body {
     background:
@@ -63,25 +63,25 @@
     --md-sys-color-primary-container: #3a1210;
     --md-sys-color-on-primary-container: #ffd2cf;
     --md-sys-color-secondary: #8595a8;
-    --md-sys-color-secondary-container: #161a20;
+    --md-sys-color-secondary-container: #23272d;
     --md-sys-color-on-secondary-container: #e6e9ee;
-    --md-sys-color-surface: #0c0e11;
-    --md-sys-color-surface-container: #0c0e11;
-    --md-sys-color-surface-container-high: #0c0e11;
-    --md-sys-color-surface-container-highest: #161a20;
-    --md-sys-color-surface-variant: #161a20;
+    --md-sys-color-surface: #1b1e22;
+    --md-sys-color-surface-container: #1b1e22;
+    --md-sys-color-surface-container-high: #1b1e22;
+    --md-sys-color-surface-container-highest: #23272d;
+    --md-sys-color-surface-variant: #23272d;
     --md-sys-color-on-surface: #eef1f4;
-    --md-sys-color-on-surface-variant: #8b939d;
-    --md-sys-color-outline: #2a3038;
-    --md-sys-color-outline-variant: #1c2026;
+    --md-sys-color-on-surface-variant: #9aa2ac;
+    --md-sys-color-outline: #3a414a;
+    --md-sys-color-outline-variant: #2a2f36;
     --md-sys-color-scrim: #000;
-    --md-dialog-container-color: #0c0e11;
+    --md-dialog-container-color: #1b1e22;
     --md-dialog-headline-color: #ffffff;
     --md-dialog-supporting-text-color: #b4bbc4;
     --md-dialog-container-shape: 24px;
     --md-list-container-color: transparent;
     --md-list-item-label-text-color: #eef1f4;
-    --md-list-item-supporting-text-color: #8b939d;
+    --md-list-item-supporting-text-color: #9aa2ac;
     --md-list-item-leading-icon-color: #ff3b30;
     --md-list-item-hover-state-layer-color: #ffffff;
     --md-list-item-pressed-state-layer-color: #ffffff;
@@ -106,25 +106,41 @@
     font-family: Manrope, system-ui, sans-serif; color-scheme: dark;
   }
 
-  /* Each face is cropped out of the repo's docs/faces montage (4 columns, 240px circles, 8px padding) */
+  /* Each face is cropped out of the repo's docs/faces montage (4 columns, 240px circles, 8px padding).
+     The 9px border is a brushed bezel: the face crop is clipped to the padding box (so the
+     montage maths are unchanged) and a grey gradient fills the border box behind it. A soft
+     glow in the picked theme / night colour (--glow, set by showFaces()) sits behind it. */
   .face {
-    aspect-ratio: 1; width: min(100%, 200px); border-radius: 9999px;
+    aspect-ratio: 1; width: min(100%, 220px); border-radius: 9999px;
+    border: 9px solid transparent;
+    background:
+      var(--img, url(faces/day.png)) padding-box no-repeat,
+      linear-gradient(170deg, #4a5059 0%, #2a2e34 38%, #15171a 72%, #23262b 100%) border-box;
     background-color: #000;
-    background-image: var(--img, url(faces/day.png));
-    background-repeat: no-repeat;
-    background-size: 416.667% auto;
+    background-size: 416.667% auto, 100% 100%;
     background-position:
-      calc((8 + var(--c) * 248) / 760 * 100%)
-      calc((8 + var(--r) * 248) / 512 * 100%);
-    box-shadow: 0 0 0 1px #1c2026, 0 0 0 6px #0a0c0e, 0 0 0 7px #1c2026, 0 24px 48px -18px rgb(0 0 0 / .9);
+      calc((8 + var(--c) * 248) / 760 * 100%) calc((8 + var(--r) * 248) / 512 * 100%),
+      0 0;
+    box-shadow:
+      inset 0 0 0 1px #000, inset 0 3px 10px rgb(0 0 0 / .85),
+      0 0 0 1px #0b0c0e, 0 -1px 0 1px rgb(255 255 255 / .05),
+      0 0 64px -6px var(--glow, transparent),
+      0 26px 44px -18px rgb(0 0 0 / .9);
     transition: transform .25s ease, box-shadow .25s ease;
   }
-  .picker select option { background: #0c0e11; color: #eef1f4; }
-  .face-card:hover .face { transform: translateY(-4px); box-shadow: 0 0 0 1px #2a3038, 0 0 0 6px #0a0c0e, 0 0 0 7px rgb(255 59 48 / .55), 0 28px 56px -18px rgb(0 0 0 / .95); }
+  .picker select option { background: #1b1e22; color: #eef1f4; }
+  .face-card:hover .face {
+    transform: translateY(-4px);
+    box-shadow:
+      inset 0 0 0 1px #000, inset 0 3px 10px rgb(0 0 0 / .85),
+      0 0 0 1px #0b0c0e, 0 -1px 0 1px rgb(255 255 255 / .05),
+      0 0 80px 0 var(--glow, transparent),
+      0 32px 52px -18px rgb(0 0 0 / .95);
+  }
   .face-card:hover figcaption { color: #fff; }
 
   .mode { color: #8b939d; transition: background .2s ease, color .2s ease; }
-  .mode[aria-pressed="true"] { background: #1c2026; color: #fff; }
+  .mode[aria-pressed="true"] { background: #2a2f36; color: #fff; }
   .mode[data-mode="night"][aria-pressed="true"] { background: rgb(255 59 48 / .16); color: #ff6a61; }
 
   .install-btn {
@@ -149,11 +165,11 @@
 
 <header class="mx-auto flex max-w-6xl items-center justify-between px-5 pt-6">
   <a href="#" class="flex items-center gap-2.5 text-sm font-extrabold tracking-tight text-white">
-    <svg viewBox="0 0 24 24" class="h-6 w-6" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="none" stroke="#2a3038" stroke-width="1.5"/><path d="M12 12V6.5M12 12l3.5 2" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="1.4" fill="#ff3b30"/></svg>
+    <svg viewBox="0 0 24 24" class="h-6 w-6" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="none" stroke="#3a414a" stroke-width="1.5"/><path d="M12 12V6.5M12 12l3.5 2" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="1.4" fill="#ff3b30"/></svg>
     hackable clock
   </a>
   <a href="https://github.com/blakenoll/hackable-desktop-clock"
-     class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-1.5 text-sm font-semibold text-ink transition hover:border-[#2a3038] hover:text-white">
+     class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-1.5 text-sm font-semibold text-ink transition hover:border-[#3a414a] hover:text-white">
     <svg viewBox="0 0 16 16" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
     GitHub
   </a>
@@ -196,7 +212,7 @@
     <!-- Live clock drawn like the Polished face: dim ticks, blue-grey comet tail, red second -->
     <div class="relative mx-auto aspect-square w-72 sm:w-80 md:w-[26rem]" aria-hidden="true">
       <div class="absolute inset-[8%] rounded-full bg-accent/10 blur-3xl"></div>
-      <div class="absolute inset-0 rounded-full bg-gradient-to-b from-[#24282e] to-[#0d0f12] p-[2.5%] shadow-[0_40px_80px_-30px_rgb(0_0_0/.9)]">
+      <div class="absolute inset-0 rounded-full bg-gradient-to-b from-[#4a5059] via-[#2a2e34] to-[#15171a] p-[2.5%] shadow-[0_40px_80px_-30px_rgb(0_0_0/.9)]">
         <div class="relative h-full w-full rounded-full bg-black shadow-[inset_0_0_0_1px_#000,inset_0_2px_12px_rgb(0_0_0/.9)]">
           <svg id="ring" viewBox="0 0 240 240" class="absolute inset-0 h-full w-full"></svg>
           <div class="absolute inset-0 grid place-items-center text-center">
@@ -227,7 +243,7 @@
         <p class="mt-3 max-w-xl text-ink">Tap the <span class="kbd">BOOT</span> button to cycle faces; double-tap it to change the colour theme. Every face switches to a dim night palette after sunset, in the night colour you pick on the setup page.</p>
       </div>
       <div class="flex flex-wrap items-center gap-3">
-      <label class="picker relative inline-flex items-center rounded-full border border-line bg-panel text-sm font-bold text-slate-200 transition hover:border-[#2a3038]">
+      <label class="picker relative inline-flex items-center rounded-full border border-line bg-panel text-sm font-bold text-slate-200 transition hover:border-[#3a414a]">
         <span id="swatch" class="pointer-events-none absolute left-3.5 h-3 w-3 rounded-full" style="background:#ff3030"></span>
         <span id="picker-label" class="sr-only">Colour theme</span>
         <select id="theme" aria-labelledby="picker-label" class="cursor-pointer appearance-none rounded-full bg-transparent py-2 pl-9 pr-9 outline-none focus-visible:ring-2 focus-visible:ring-accent/60"></select>
@@ -342,7 +358,7 @@
   const dialogCss = new CSSStyleSheet();
   dialogCss.replaceSync(`
     .scrim { opacity: .7 !important; }
-    .container { background: #0c0e11 !important; border: 1px solid #1c2026; box-shadow: 0 40px 100px rgb(0 0 0 / .7); }
+    .container { background: #1b1e22 !important; border: 1px solid #2a2f36; box-shadow: 0 40px 100px rgb(0 0 0 / .7); }
   `);
   new MutationObserver(() => {
     const d = document.querySelector('ewt-install-dialog');
@@ -405,6 +421,7 @@
     faces.dataset.mode = mode;
     faces.style.setProperty('--img', `url(faces/themes/${mode}-${i}.png)`);
     document.getElementById('swatch').style.background = PALETTES[mode].options[i][1];
+    faces.style.setProperty('--glow', PALETTES[mode].options[i][1] + (mode === 'day' ? '24' : '1c'));
   }
   function fillSelect() {
     const p = PALETTES[mode];
