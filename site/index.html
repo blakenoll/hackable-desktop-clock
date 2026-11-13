@@ -124,6 +124,10 @@
       inset 0 -8px 14px -8px rgb(255 255 255 / .18),
       0 12px 30px -10px rgb(0 0 0 / .5);
   }
+  /* Refractive mode (Chromium): the filter lives on an inner layer, tint stays on the element. */
+  .glass.lg { isolation: isolate; background: rgb(255 255 255 / .1); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 8px 24px -10px rgb(0 0 0 / .45); }
+  .glass.lg.glass-cyan { background: rgb(255 255 255 / .24); box-shadow: 0 12px 30px -10px rgb(0 0 0 / .5); }
+  .lg-layer { position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 4px 0 rgb(250 250 250 / .5); }
   button.glass, a.glass { transition: transform .15s ease, background .2s ease; }
   button.glass:hover, a.glass:hover { background: radial-gradient(120% 140% at 15% 0%, rgb(255 255 255 / .28), rgb(255 255 255 / .04) 60%), linear-gradient(180deg, rgb(255 255 255 / .12), rgb(255 255 255 / .05)); }
 
@@ -350,9 +354,11 @@
   // Refractive liquid glass (technique from ekino's "Liquid glass in CSS and SVG"): a per-element SVG
   // displacement map bends the backdrop at the edges via backdrop-filter: url(#filter). Chromium only;
   // other browsers keep the plain blur glass from the stylesheet.
-  const refractive = !!(navigator.userAgentData
-    ? navigator.userAgentData.brands.some(b => /Chromium/.test(b.brand))
-    : window.chrome);
+  const refractive = (() => {
+    const t = document.createElement('div');
+    t.style.cssText = 'backdrop-filter: url(#test)';
+    return t.style.backdropFilter === 'url(#test)' || t.style.backdropFilter === 'url("#test")';
+  })();
   const svgUri = svg => 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   function displacementMap(w, h, r, depth) {
     const px = Math.ceil(r / h * 15), py = Math.ceil(r / w * 15);
@@ -382,23 +388,31 @@
         <feBlend in="R" in2="G" mode="screen"/><feBlend in2="B" mode="screen"/>
       </filter></defs></svg>`) + '#displace';
   }
-  function refract(el, { blur = 2, ca = 0, depthMax = 10, strength } = {}) {
+  function refract(el, { blur = 2, ca = 0, depthMax = 10, strength, saturate = 1.5, brightness = 1.1, layer = false } = {}) {
     if (!refractive) return;
-    let t;
+    let t, target = el;
+    if (layer) { // as in nikdelvin/liquid-glass: a dedicated filter layer between the tint and the content
+      target = document.createElement('span');
+      target.className = 'lg-layer';
+      el.prepend(target);
+      el.classList.add('lg');
+    }
     const apply = () => {
       const w = Math.round(el.offsetWidth), h = Math.round(el.offsetHeight);
       if (w < 8 || h < 8) return;
       const r = Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, w / 2, h / 2);
       const depth = Math.max(3, Math.min(depthMax, Math.round(Math.min(w, h) * .25)));
       const str = strength ?? Math.min(100, Math.round(Math.min(w, h) * 1.1));
-      const f = `blur(${blur / 2}px) url('${displacementFilter(w, h, r, depth, str, ca)}') blur(${blur}px) brightness(1.1) saturate(1.5)`;
-      el.style.backdropFilter = el.style.webkitBackdropFilter = f;
+      const f = `blur(${blur / 2}px) url('${displacementFilter(w, h, r, depth, str, ca)}') blur(${blur}px) brightness(${brightness}) saturate(${saturate})`;
+      target.style.backdropFilter = target.style.webkitBackdropFilter = f;
     };
     apply();
     new ResizeObserver(() => { clearTimeout(t); t = setTimeout(apply, 60); }).observe(el);
   }
   document.querySelectorAll('.glass').forEach(el =>
-    refract(el, el.classList.contains('install-btn') ? { blur: 2, ca: 4 } : { blur: 1.5 }));
+    refract(el, el.classList.contains('install-btn')
+      ? { blur: 0, ca: 2, layer: true, saturate: 1.2, brightness: 2 }
+      : { blur: 0, ca: 2, layer: true }));
 
   document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => {
     document.getElementById('faces').dataset.mode = b.dataset.mode;
