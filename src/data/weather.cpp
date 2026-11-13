@@ -187,6 +187,7 @@ static bool refresh(const ClockConfig &cfg0) {
       config_save_geo(cfg.city, lat, lon);
       cfg.lat = lat;
       cfg.lon = lon;
+      cfg.geocity = cfg.city;  // tide_refresh() checks this; without it tides wait a full cycle after first setup
       haveCoords = true;
     } else if (g == Geo::NotFound) {
       publishError(cfg.units, "ZIP not found");
