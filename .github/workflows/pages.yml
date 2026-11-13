@@ -33,6 +33,9 @@ jobs:
           B=.pio/build/lolin_c3_mini
           cp $B/bootloader.bin $B/partitions.bin $B/firmware.bin site/
           cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin site/
+          mkdir -p site/faces
+          cp docs/faces/faces.png site/faces/day.png
+          cp docs/faces/night.png site/faces/night.png
           ls -l site
       - uses: actions/upload-pages-artifact@v3
         with:

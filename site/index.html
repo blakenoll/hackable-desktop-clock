@@ -44,7 +44,7 @@
     --md-sys-color-outline: #3a4654;
     --md-sys-color-outline-variant: #263140;
     --md-sys-color-scrim: #000;
-    --md-dialog-container-color: #121a24;
+    --md-dialog-container-color: #151f2b;
     --md-dialog-headline-color: #ffffff;
     --md-dialog-supporting-text-color: #c3ccd8;
     --md-dialog-container-shape: 24px;
@@ -62,7 +62,36 @@
     --text-color: #e6edf3;
     --danger-color: #ff6b6b;
   }
+  ewt-install-dialog {
+    --text-color: #e6edf3;
+    --danger-color: #ff6b6b;
+    --md-icon-button-icon-color: #e6edf3;
+    --md-icon-button-hover-icon-color: #ffffff;
+    --md-icon-button-focus-icon-color: #ffffff;
+    --md-icon-button-pressed-icon-color: #ffffff;
+    --md-icon-button-hover-state-layer-color: #36D6F0;
+    --md-icon-button-pressed-state-layer-color: #36D6F0;
+    --md-icon-button-icon-size: 26px;
+  }
   ewt-install-dialog { font-family: Manrope, system-ui, sans-serif; color-scheme: dark; }
+
+  /* Each face is cropped out of the repo's docs/faces montage (4 columns, 240px circles, 8px padding) */
+  .face {
+    --s: 100%;
+    aspect-ratio: 1; width: min(100%, 220px); border-radius: 9999px;
+    background-image: var(--img, url(faces/day.png));
+    background-repeat: no-repeat;
+    background-size: 416.667% auto;
+    background-position:
+      calc((8 + var(--c) * 248) / 760 * 100%)
+      calc((8 + var(--r) * 248) / 512 * 100%);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / .08), 0 18px 40px -12px rgb(0 0 0 / .8);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  #faces[data-mode="night"] .face { --img: url(faces/night.png); }
+  figure:hover .face { transform: scale(1.05); box-shadow: 0 0 0 1px rgb(54 214 240 / .5), 0 0 40px rgb(54 214 240 / .25); }
+  .mode[aria-pressed="true"] { background: #36D6F0; color: #0b0f14; font-weight: 700; }
+  .mode[aria-pressed="false"] { color: #9aa4b2; }
 
   .install-btn {
     position: relative; display: inline-flex; align-items: center; gap: .75rem;
@@ -106,11 +135,11 @@
         <esp-web-install-button manifest="manifest.json">
           <button slot="activate" class="install-btn" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
-            Connect &amp; install
+            Flash
           </button>
           <span slot="unsupported" class="text-sm text-amber-400">Web Serial isn't available in this browser.</span>
         </esp-web-install-button>
-        <p class="mt-4 text-sm text-ink">Plug in your clock, click the button, then pick the port in your browser's popup.</p>
+        <p class="mt-4 text-sm text-ink">Plug in your clock, click Flash, then pick the port in your browser's popup.</p>
       </div>
       <div id="unsupported" class="mt-6 hidden rounded-xl border border-amber-500/60 bg-amber-500/10 p-4 text-sm text-amber-200">
         Your browser doesn't support Web Serial. Use desktop <strong>Chrome</strong>, <strong>Edge</strong> or <strong>Opera</strong>
@@ -142,6 +171,67 @@
     </div>
   </section>
 
+  <section class="mt-20">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm uppercase tracking-[.2em] text-cyan-brand">Nine faces</p>
+        <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-white">Pick a look. Change it any time.</h2>
+        <p class="mt-2 max-w-xl text-ink">Tap the <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">BOOT</code> button to cycle faces; double-tap it to change the colour theme. Every face switches to a dim night palette after sunset.</p>
+      </div>
+      <div class="inline-flex rounded-full border border-white/10 bg-white/[.04] p-1 font-mono text-sm" role="group" aria-label="Day or night">
+        <button type="button" data-mode="day" class="mode rounded-full px-4 py-1.5" aria-pressed="true">Day</button>
+        <button type="button" data-mode="night" class="mode rounded-full px-4 py-1.5" aria-pressed="false">Night</button>
+      </div>
+    </div>
+    <div id="faces" data-mode="day" class="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3">
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:0;--r:0" role="img" aria-label="Polished face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Polished</figcaption>
+        <p class="text-sm text-ink">Default: seconds ring, weather, range bar</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:1;--r:0" role="img" aria-label="Arc face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Arc</figcaption>
+        <p class="text-sm text-ink">Seconds as a sweeping arc</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:2;--r:0" role="img" aria-label="Stacked face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Stacked</figcaption>
+        <p class="text-sm text-ink">Big stacked hours and minutes</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:3;--r:0" role="img" aria-label="Analog face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Analog</figcaption>
+        <p class="text-sm text-ink">Classic hands and a date window</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:0;--r:1" role="img" aria-label="Zen face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Zen</figcaption>
+        <p class="text-sm text-ink">Quiet and minimal</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:1;--r:1" role="img" aria-label="Forecast face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Forecast</figcaption>
+        <p class="text-sm text-ink">Wind compass and hourly rain</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:2;--r:1" role="img" aria-label="Retro face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Retro</figcaption>
+        <p class="text-sm text-ink">Seven-segment, red LCD look</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:3;--r:1" role="img" aria-label="Daylight face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Daylight</figcaption>
+        <p class="text-sm text-ink">Sunrise-to-sunset dial</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:0;--r:2" role="img" aria-label="Tide face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Tide</figcaption>
+        <p class="text-sm text-ink">NOAA tide chart and water temp</p>
+      </figure>
+    </div>
+  </section>
+
   <section class="mt-16 grid gap-5 md:grid-cols-3">
     <div class="rounded-2xl border border-white/10 bg-white/[.04] p-6 backdrop-blur">
       <p class="font-mono text-sm text-cyan-brand">01</p>
@@ -149,7 +239,7 @@
       <ol class="mt-3 list-decimal space-y-2 pl-5 text-ink">
         <li>Wire the display as shown in the <a class="text-cyan-brand underline-offset-4 hover:underline" href="https://github.com/blakenoll/hackable-desktop-clock#readme">README</a>. The firmware assumes that exact pinout.</li>
         <li>Plug the board into your computer with a USB <em>data</em> cable.</li>
-        <li>Click <strong class="text-white">Connect &amp; install</strong> and, in the popup, pick the port named <strong class="text-white">USB JTAG/serial debug unit</strong> (<code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">usbmodem…</code> on Mac, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">COM…</code> on Windows, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">ttyACM…</code> on Linux). Ignore entries like <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">Bluetooth-Incoming-Port</code>, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">debug-console</code> or <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">wlan-debug</code>.</li>
+        <li>Click <strong class="text-white">Flash</strong> and, in the popup, pick the port named <strong class="text-white">USB JTAG/serial debug unit</strong> (<code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">usbmodem…</code> on Mac, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">COM…</code> on Windows, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">ttyACM…</code> on Linux). Ignore entries like <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">Bluetooth-Incoming-Port</code>, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">debug-console</code> or <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">wlan-debug</code>.</li>
       </ol>
       <p class="mt-3 text-sm text-ink">Your saved WiFi and settings are kept when you update.</p>
     </div>
@@ -158,7 +248,7 @@
       <p class="font-mono text-sm text-cyan-brand">02</p>
       <h2 class="mt-1 text-xl font-extrabold text-white">If it can't connect</h2>
       <p class="mt-3 text-ink">Auto-reset is sometimes unreliable. Unplug USB, hold the <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">BOOT</code> button, plug in while holding, keep holding
-      for a few seconds, then click Connect &amp; install and choose the port.</p>
+      for a few seconds, then click Flash and choose the port.</p>
       <p class="mt-3 text-ink">No driver is needed: the clock's chip has USB built in. If the clock isn't listed, try another cable. On Linux your user must be allowed to use the port
       (usually the <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">dialout</code> group, then log out and back in).</p>
     </div>
@@ -178,6 +268,33 @@
   </footer>
 </main>
 <script>
+  // Make the ESP Web Tools dialog stand out: its Material Web internals have no ::part hooks,
+  // so add a stylesheet to the open shadow root when the dialog appears.
+  const dialogCss = new CSSStyleSheet();
+  dialogCss.replaceSync(`
+    .scrim { opacity: .78 !important; backdrop-filter: blur(10px) saturate(.8); -webkit-backdrop-filter: blur(10px) saturate(.8); }
+    .container {
+      border: 1px solid rgb(54 214 240 / .45);
+      box-shadow: 0 0 0 1px rgb(255 255 255 / .04), 0 0 70px rgb(54 214 240 / .28), 0 30px 90px rgb(0 0 0 / .8);
+    }
+  `);
+  new MutationObserver(() => {
+    const d = document.querySelector('ewt-install-dialog');
+    if (!d || d.dataset.themed) return;
+    const tryStyle = () => {
+      const md = d.shadowRoot && d.shadowRoot.querySelector('ew-dialog');
+      if (!md || !md.shadowRoot) return requestAnimationFrame(tryStyle);
+      md.shadowRoot.adoptedStyleSheets = [...md.shadowRoot.adoptedStyleSheets, dialogCss];
+      d.dataset.themed = '1';
+    };
+    tryStyle();
+  }).observe(document.body, { childList: true });
+
+  document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => {
+    document.getElementById('faces').dataset.mode = b.dataset.mode;
+    document.querySelectorAll('.mode').forEach(o => o.setAttribute('aria-pressed', o === b));
+  }));
+
   if (!('serial' in navigator)) document.getElementById('unsupported').classList.remove('hidden');
 </script>
 </body>
