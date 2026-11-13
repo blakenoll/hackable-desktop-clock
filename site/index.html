@@ -25,7 +25,7 @@
 <meta name="twitter:title" content="Hackable Desktop Clock">
 <meta name="twitter:description" content="An open source round ESP32 clock with weather, tides, night mode and nine faces. Flash it from your browser.">
 <meta name="twitter:image" content="https://blakenoll.github.io/hackable-desktop-clock/og.png">
-<script type="module" src="https://unpkg.com/esp-web-tools@10.0.1/dist/web/install-button.js?module"></script>
+<script>if (!('serial' in navigator)) document.documentElement.classList.add('no-serial');</script>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,57 +54,43 @@
   .kbd { @apply rounded-md border border-line bg-white/[.04] px-1.5 py-0.5 font-mono text-[.85em] text-slate-200; }
   .card { @apply rounded-3xl border border-line bg-panel p-7; }
 
-  /* ESP Web Tools dialog + spinner (Material Web) pick these up through CSS variables */
-  :root {
-    --md-ref-typeface-brand: Manrope, system-ui, sans-serif;
-    --md-ref-typeface-plain: Manrope, system-ui, sans-serif;
-    --md-sys-color-primary: #ff3b30;
-    --md-sys-color-on-primary: #ffffff;
-    --md-sys-color-primary-container: #3a1210;
-    --md-sys-color-on-primary-container: #ffd2cf;
-    --md-sys-color-secondary: #8595a8;
-    --md-sys-color-secondary-container: #23272d;
-    --md-sys-color-on-secondary-container: #e6e9ee;
-    --md-sys-color-surface: #1b1e22;
-    --md-sys-color-surface-container: #1b1e22;
-    --md-sys-color-surface-container-high: #1b1e22;
-    --md-sys-color-surface-container-highest: #23272d;
-    --md-sys-color-surface-variant: #23272d;
-    --md-sys-color-on-surface: #eef1f4;
-    --md-sys-color-on-surface-variant: #9aa2ac;
-    --md-sys-color-outline: #3a414a;
-    --md-sys-color-outline-variant: #2a2f36;
-    --md-sys-color-scrim: #000;
-    --md-dialog-container-color: #1b1e22;
-    --md-dialog-headline-color: #ffffff;
-    --md-dialog-supporting-text-color: #b4bbc4;
-    --md-dialog-container-shape: 24px;
-    --md-list-container-color: transparent;
-    --md-list-item-label-text-color: #eef1f4;
-    --md-list-item-supporting-text-color: #9aa2ac;
-    --md-list-item-leading-icon-color: #ff3b30;
-    --md-list-item-hover-state-layer-color: #ffffff;
-    --md-list-item-pressed-state-layer-color: #ffffff;
-    --md-list-item-hover-state-layer-opacity: .05;
-    --md-list-item-pressed-state-layer-opacity: .1;
-    --md-circular-progress-active-indicator-color: #ff3b30;
-    --mdc-theme-primary: #ff3b30;
-    --mdc-theme-secondary: #8595a8;
-    --text-color: #eef1f4;
-    --danger-color: #ff6b6b;
+  :root { font-family: Manrope, system-ui, sans-serif; color-scheme: dark; }
+
+  /* Flash buttons swap for a browser note when Web Serial is missing (class set in <head>) */
+  .no-serial .needs-serial, html:not(.no-serial) .no-serial-only { display: none !important; }
+
+  /* Flash drawer: a native <dialog> (focus trap, Esc) that slides in from the right */
+  .flasher {
+    position: fixed; inset: 0 0 0 auto; margin: 0; padding: 0;
+    width: min(30rem, 100vw); height: 100dvh; max-width: none; max-height: none;
+    border: 0; border-left: 1px solid #2a2f36; background: #1b1e22; color: inherit;
+    box-shadow: -40px 0 100px rgb(0 0 0 / .55);
+    transform: translateX(100%);
+    transition: transform .38s cubic-bezier(.2, .8, .2, 1), overlay .38s allow-discrete, display .38s allow-discrete;
   }
-  ewt-install-dialog {
-    --text-color: #eef1f4;
-    --danger-color: #ff6b6b;
-    --md-icon-button-icon-color: #eef1f4;
-    --md-icon-button-hover-icon-color: #ffffff;
-    --md-icon-button-focus-icon-color: #ffffff;
-    --md-icon-button-pressed-icon-color: #ffffff;
-    --md-icon-button-hover-state-layer-color: #ffffff;
-    --md-icon-button-pressed-state-layer-color: #ffffff;
-    --md-icon-button-icon-size: 26px;
-    font-family: Manrope, system-ui, sans-serif; color-scheme: dark;
+  .flasher[open] { transform: none; }
+  @starting-style { .flasher[open] { transform: translateX(100%); } }
+  .flasher::backdrop {
+    background: rgb(5 6 7 / 0); backdrop-filter: blur(0);
+    transition: background .38s, backdrop-filter .38s, overlay .38s allow-discrete, display .38s allow-discrete;
   }
+  .flasher[open]::backdrop { background: rgb(5 6 7 / .6); backdrop-filter: blur(3px); }
+  @starting-style { .flasher[open]::backdrop { background: rgb(5 6 7 / 0); backdrop-filter: blur(0); } }
+  @media (prefers-reduced-motion: reduce) { .flasher, .flasher::backdrop { transition: none; } }
+
+  /* Progress steps: pending ring, spinning accent ring, filled check */
+  .step { display: flex; gap: .9rem; }
+  .step .dot {
+    display: grid; place-items: center; flex-shrink: 0; width: 1.5rem; height: 1.5rem;
+    border-radius: 9999px; border: 2px solid #3a414a; color: #fff;
+  }
+  .step .dot svg { width: .85rem; height: .85rem; opacity: 0; }
+  .step .label { color: #7d8691; font-weight: 700; transition: color .2s; }
+  .step[data-state="active"] .dot { border-color: rgb(255 59 48 / .25); border-top-color: #ff3b30; animation: spin .8s linear infinite; }
+  .step[data-state="done"] .dot { background: #ff3b30; border-color: #ff3b30; }
+  .step[data-state="done"] .dot svg { opacity: 1; }
+  .step[data-state="active"] .label, .step[data-state="done"] .label { color: #fff; }
+  @keyframes spin { to { transform: rotate(1turn); } }
 
   /* Each face is cropped out of the repo's docs/faces montage (4 columns, 240px circles, 8px padding).
      The 9px border is a brushed bezel: the face crop is clipped to the padding box (so the
@@ -154,6 +140,9 @@
   .install-btn:hover { transform: translateY(-1px); background: #f1f3f5; }
   .install-btn:active { transform: scale(.98); }
   .install-btn svg { width: 1.25rem; height: 1.25rem; }
+  .install-btn-sm { padding: .8rem 1.5rem; font-size: 1rem; animation: none; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   @keyframes flash-ring {
     0%       { box-shadow: 0 0 0 0 rgb(255 59 48 / .45), 0 12px 32px -12px rgb(255 59 48 / .5); }
     70%, 100% { box-shadow: 0 0 0 16px rgb(255 59 48 / 0), 0 12px 32px -12px rgb(255 59 48 / .5); }
@@ -177,7 +166,7 @@
 
 <main class="mx-auto max-w-6xl px-5 pb-16 pt-10 md:pt-16">
 
-  <section class="grid items-center gap-14 md:grid-cols-[1.05fr_1fr]">
+  <section class="grid items-center gap-10 md:grid-cols-[1.05fr_1fr] md:gap-14">
     <div>
       <p class="eyebrow text-accent">Open source · ESP32-C3</p>
       <h1 class="mt-5 text-5xl font-extrabold leading-[1.02] tracking-[-.035em] text-white md:text-7xl">
@@ -187,30 +176,29 @@
         A pocket-size round clock with weather, a seconds ring, night mode and phone-based setup.
         Flash the firmware straight from your browser.
       </p>
-      <div class="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
-        <esp-web-install-button manifest="manifest.json">
-          <button slot="activate" class="install-btn" type="button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
-            Flash firmware
-          </button>
-          <span slot="unsupported" class="text-sm text-amber-400">Web Serial isn't available in this browser.</span>
-        </esp-web-install-button>
-        <p class="max-w-[16rem] text-sm leading-snug text-dim">Plug in your clock, click Flash, then pick the port in the browser popup.</p>
-      </div>
-      <div id="unsupported" class="mt-6 hidden rounded-2xl border border-amber-500/40 bg-amber-500/[.07] p-4 text-sm text-amber-200">
-        Your browser doesn't support Web Serial. Use desktop <strong>Chrome</strong>, <strong>Edge</strong> or <strong>Opera</strong>
-        (not Firefox, Safari or mobile).
-      </div>
-      <ul class="mt-10 flex flex-wrap gap-x-5 gap-y-2 font-mono text-xs text-dim">
-        <li>ESP32-C3</li><li class="text-line">/</li>
-        <li>GC9A01 240×240</li><li class="text-line">/</li>
-        <li>LVGL 9</li><li class="text-line">/</li>
+      <ul class="mt-6 flex flex-wrap gap-x-4 gap-y-2 sm:gap-x-5 font-mono text-xs text-dim">
+        <li>ESP32-C3</li><li class="text-line max-sm:hidden">/</li>
+        <li>GC9A01 240×240</li><li class="text-line max-sm:hidden">/</li>
+        <li>LVGL 9</li><li class="text-line max-sm:hidden">/</li>
         <li>PlatformIO</li>
       </ul>
+      <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+        <button type="button" data-flash class="install-btn needs-serial">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+          Flash firmware
+        </button>
+        <p class="no-serial-only inline-flex items-center gap-3 rounded-2xl border border-line bg-panel py-3 pl-4 pr-5 text-sm leading-snug text-ink">
+          <svg viewBox="0 0 24 24" class="h-5 w-5 shrink-0 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+          <span>Flashing needs desktop <strong class="text-slate-200">Chrome</strong>, <strong class="text-slate-200">Edge</strong> or <strong class="text-slate-200">Opera</strong>.</span>
+        </p>
+        <a href="#install" class="group inline-flex items-center gap-1.5 text-sm font-semibold text-ink transition hover:text-white">
+          How to install
+          <svg viewBox="0 0 24 24" class="h-4 w-4 transition group-hover:translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14m0 0l-5-5m5 5l5-5"/></svg>
+        </a>      </div>
     </div>
 
     <!-- Live clock drawn like the Polished face: dim ticks, blue-grey comet tail, red second -->
-    <div class="relative mx-auto aspect-square w-72 sm:w-80 md:w-[26rem]" aria-hidden="true">
+    <div class="relative order-first mx-auto aspect-square w-72 sm:w-80 md:order-none md:w-[26rem]" aria-hidden="true">
       <div class="absolute inset-[8%] rounded-full bg-accent/10 blur-3xl"></div>
       <div class="absolute inset-0 rounded-full bg-gradient-to-b from-[#4a5059] via-[#2a2e34] to-[#15171a] p-[2.5%] shadow-[0_40px_80px_-30px_rgb(0_0_0/.9)]">
         <div class="relative h-full w-full rounded-full bg-black shadow-[inset_0_0_0_1px_#000,inset_0_2px_12px_rgb(0_0_0/.9)]">
@@ -246,7 +234,7 @@
       <label class="picker relative inline-flex items-center rounded-full border border-line bg-panel text-sm font-bold text-slate-200 transition hover:border-[#3a414a]">
         <span id="swatch" class="pointer-events-none absolute left-3.5 h-3 w-3 rounded-full" style="background:#ff3030"></span>
         <span id="picker-label" class="sr-only">Colour theme</span>
-        <select id="theme" aria-labelledby="picker-label" class="cursor-pointer appearance-none rounded-full bg-transparent py-2 pl-9 pr-9 outline-none focus-visible:ring-2 focus-visible:ring-accent/60"></select>
+        <select id="theme" aria-labelledby="picker-label" class="w-40 cursor-pointer appearance-none rounded-full bg-transparent py-2 pl-9 pr-9 outline-none focus-visible:ring-2 focus-visible:ring-accent/60"></select>
         <svg viewBox="0 0 24 24" class="pointer-events-none absolute right-3 h-4 w-4 text-dim" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
       </label>
       <div class="inline-flex rounded-full border border-line bg-panel p-1 text-sm font-bold" role="group" aria-label="Day or night">
@@ -306,40 +294,83 @@
     </div>
   </section>
 
-  <section class="mt-28">
+  <section id="parts" class="mt-28 scroll-mt-8">
+    <p class="eyebrow text-accent">What you need</p>
+    <h2 class="mt-3 text-3xl font-extrabold tracking-[-.025em] text-white md:text-4xl">Two parts and seven wires.</h2>
+    <div class="mt-10 grid gap-5 md:grid-cols-[1.4fr_1fr]">
+      <ul class="flex flex-col divide-y divide-line rounded-3xl border border-line bg-panel px-7 py-2">
+        <li class="flex flex-1 flex-col justify-center py-5"><div class="flex gap-4">
+          <span class="pt-0.5 font-mono text-sm text-accent">A</span>
+          <div><p class="font-extrabold text-white">ESP32-C3 SuperMini</p>
+          <p class="mt-1 text-sm leading-relaxed text-ink">4&nbsp;MB flash, USB built in. Other ESP32-C3 boards should work with the same pins.</p></div>
+        </div></li>
+        <li class="flex flex-1 flex-col justify-center py-5"><div class="flex gap-4">
+          <span class="pt-0.5 font-mono text-sm text-accent">B</span>
+          <div><p class="font-extrabold text-white">GC9A01 round display</p>
+          <p class="mt-1 text-sm leading-relaxed text-ink">The common 1.28&Prime; 240×240 SPI module.</p></div>
+        </div></li>
+        <li class="flex flex-1 flex-col justify-center py-5"><div class="flex gap-4">
+          <span class="pt-0.5 font-mono text-sm text-accent">C</span>
+          <div><p class="font-extrabold text-white">USB data cable and jumper wires</p>
+          <p class="mt-1 text-sm leading-relaxed text-ink">Charge-only cables won't show up as a port.</p></div>
+        </div></li>
+      </ul>
+      <div class="card">
+        <p class="font-extrabold text-white">Wiring</p>
+        <table class="mt-4 w-full font-mono text-sm">
+          <thead><tr class="text-left text-xs text-dim"><th class="pb-2 font-normal">Display</th><th class="pb-2 text-right font-normal">C3 GPIO</th></tr></thead>
+          <tbody class="text-ink [&_td]:border-t [&_td]:border-line [&_td]:py-1.5">
+            <tr><td>VCC</td><td class="text-right">3V3</td></tr>
+            <tr><td>GND</td><td class="text-right">GND</td></tr>
+            <tr><td>SCL</td><td class="text-right text-white">10</td></tr>
+            <tr><td>SDA</td><td class="text-right text-white">4</td></tr>
+            <tr><td>CS</td><td class="text-right text-white">5</td></tr>
+            <tr><td>DC</td><td class="text-right text-white">1</td></tr>
+            <tr><td>RST</td><td class="text-right text-white">0</td></tr>
+          </tbody>
+        </table>
+        <p class="mt-4 text-sm text-dim">BLK is optional. <a class="font-semibold text-white underline decoration-accent/60 underline-offset-4 hover:decoration-accent" href="https://github.com/blakenoll/hackable-desktop-clock#wiring">Wiring diagram</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" class="mt-28 scroll-mt-8">
     <p class="eyebrow text-accent">Install guide</p>
     <h2 class="mt-3 text-3xl font-extrabold tracking-[-.025em] text-white md:text-4xl">Three steps to a running clock.</h2>
-    <div class="mt-10 grid gap-5 md:grid-cols-3">
+    <div class="mt-10 grid items-start gap-5 md:grid-cols-3">
       <div class="card">
         <p class="font-mono text-sm text-accent">01</p>
-        <h3 class="mt-2 text-xl font-extrabold tracking-tight text-white">Before you start</h3>
-        <ol class="mt-4 list-decimal space-y-3 pl-5 leading-relaxed text-ink marker:font-mono marker:text-dim">
-          <li>Wire the display as shown in the <a class="font-semibold text-white underline decoration-accent/60 underline-offset-4 hover:decoration-accent" href="https://github.com/blakenoll/hackable-desktop-clock#readme">README</a>. The firmware assumes that exact pinout.</li>
-          <li>Plug the board into your computer with a USB <em>data</em> cable.</li>
-          <li>Click <strong class="text-white">Flash</strong>. Your browser opens a list of serial ports. Choose the one called <strong class="text-white">USB JTAG/serial debug unit</strong>; that is the clock.
-            <div class="my-4 overflow-hidden rounded-xl border border-line bg-black font-mono text-xs" aria-hidden="true">
-              <div class="px-3 py-2 text-dim">cu.Bluetooth-Incoming-Port</div>
-              <div class="px-3 py-2 text-dim">cu.debug-console</div>
-              <div class="flex items-center justify-between gap-2 border-y border-accent/40 bg-accent/10 px-3 py-2 text-white"><span>USB JTAG/serial debug unit</span><span class="shrink-0 text-accent">← this one</span></div>
-              <div class="px-3 py-2 text-dim">cu.wlan-debug</div>
-            </div>
-            <span class="text-sm">The name after it varies by computer (<span class="kbd">usbmodem…</span> on Mac, <span class="kbd">COM…</span> on Windows, <span class="kbd">ttyACM…</span> on Linux). Ignore the Bluetooth, debug-console and wlan entries.</span></li>
-        </ol>
-        <p class="mt-4 border-t border-line pt-4 text-sm text-dim">Your saved WiFi and settings are kept when you update.</p>
+        <h3 class="mt-2 text-xl font-extrabold tracking-tight text-white">Connect</h3>
+        <p class="mt-4 leading-relaxed text-ink">Wire the display as shown <a class="font-semibold text-white underline decoration-accent/60 underline-offset-4 hover:decoration-accent" href="#parts">above</a>. The firmware assumes that exact pinout.</p>
+        <p class="mt-4 leading-relaxed text-ink">Plug the board into your computer with a USB <em>data</em> cable. No driver is needed: the chip has USB built in.</p>
       </div>
 
       <div class="card">
         <p class="font-mono text-sm text-accent">02</p>
-        <h3 class="mt-2 text-xl font-extrabold tracking-tight text-white">If it can't connect</h3>
-        <p class="mt-4 leading-relaxed text-ink">Auto-reset is sometimes unreliable. Unplug USB, hold the <span class="kbd">BOOT</span> button, plug in while holding, keep holding
-        for a few seconds, then click Flash and choose the port.</p>
-        <p class="mt-4 leading-relaxed text-ink">No driver is needed: the clock's chip has USB built in. If the clock isn't listed, try another cable. On Linux your user must be allowed to use the port
-        (usually the <span class="kbd">dialout</span> group, then log out and back in).</p>
+        <h3 class="mt-2 text-xl font-extrabold tracking-tight text-white">Flash</h3>
+        <p class="mt-4 leading-relaxed text-ink">Click Flash and pick your clock in the browser's port list. It's called <strong class="text-white">USB JTAG/serial debug unit</strong>, and is usually the only entry.</p>
+        <p class="mt-4 leading-relaxed text-ink">Progress shows in a panel on the right. It takes about a minute.</p>
+        <button type="button" data-flash class="install-btn install-btn-sm needs-serial mt-6">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+          Flash firmware
+        </button>
+        <p class="no-serial-only mt-6 text-sm leading-snug text-amber-300">Open this page in desktop Chrome, Edge or Opera to flash.</p>
+        <details class="group mt-5 border-t border-line pt-4">
+          <summary class="flex cursor-pointer list-none items-center justify-between text-sm font-bold text-slate-200 [&::-webkit-details-marker]:hidden">
+            Can't connect?
+            <svg viewBox="0 0 24 24" class="h-4 w-4 text-dim transition group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="mt-3 space-y-3 text-sm leading-relaxed text-ink">
+            <p>Auto-reset is sometimes unreliable. Unplug USB, hold <span class="kbd">BOOT</span>, plug in while holding, keep holding for a few seconds, then click Flash.</p>
+            <p>Clock not listed? Try another cable. On Linux your user needs access to the port (usually the <span class="kbd">dialout</span> group, then log out and back in).</p>
+          </div>
+        </details>
+        <p class="mt-4 border-t border-line pt-4 text-sm text-dim">Updating? Your saved WiFi and settings are kept.</p>
       </div>
 
       <div class="card">
         <p class="font-mono text-sm text-accent">03</p>
-        <h3 class="mt-2 text-xl font-extrabold tracking-tight text-white">First-time setup</h3>
+        <h3 class="mt-2 text-xl font-extrabold tracking-tight text-white">Set up</h3>
         <p class="mt-4 leading-relaxed text-ink">The clock starts a WiFi network named <span class="kbd">clk-setup-XXXX</span>. The password is shown on the clock's screen.
         Join it and a setup page opens, where you choose your WiFi (2.4&nbsp;GHz only), timezone and ZIP code for weather.</p>
         <p class="mt-4 leading-relaxed text-ink">To re-enter setup later, hold <span class="kbd">BOOT</span> for 3 seconds while the clock is running.</p>
@@ -352,26 +383,187 @@
     <a class="font-semibold text-ink transition hover:text-white" href="https://github.com/blakenoll/hackable-desktop-clock">Source on GitHub →</a>
   </footer>
 </main>
-<script>
-  // Dark, flat ESP Web Tools dialog: its Material Web internals have no ::part hooks,
-  // so add a stylesheet to the open shadow root when the dialog appears.
-  const dialogCss = new CSSStyleSheet();
-  dialogCss.replaceSync(`
-    .scrim { opacity: .7 !important; }
-    .container { background: #1b1e22 !important; border: 1px solid #2a2f36; box-shadow: 0 40px 100px rgb(0 0 0 / .7); }
-  `);
-  new MutationObserver(() => {
-    const d = document.querySelector('ewt-install-dialog');
-    if (!d || d.dataset.themed) return;
-    const tryStyle = () => {
-      const md = d.shadowRoot && d.shadowRoot.querySelector('ew-dialog');
-      if (!md || !md.shadowRoot) return requestAnimationFrame(tryStyle);
-      md.shadowRoot.adoptedStyleSheets = [...md.shadowRoot.adoptedStyleSheets, dialogCss];
-      d.dataset.themed = '1';
-    };
-    tryStyle();
-  }).observe(document.body, { childList: true });
+<dialog id="flasher" class="flasher" aria-labelledby="fl-title">
+  <div class="flex h-full flex-col">
+    <header class="flex items-start justify-between gap-4 border-b border-line px-7 pb-6 pt-7">
+      <div>
+        <p class="eyebrow text-accent">Flash firmware</p>
+        <h2 id="fl-title" tabindex="-1" autofocus class="mt-2 outline-none text-2xl font-extrabold tracking-[-.02em] text-white">Choose your clock</h2>
+      </div>
+      <button id="fl-close" type="button" aria-label="Close" class="-mr-2 rounded-full p-2 text-dim transition hover:bg-white/5 hover:text-white disabled:pointer-events-none disabled:opacity-30">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
 
+    <div class="flex-1 overflow-y-auto px-7 py-7 leading-relaxed text-ink">
+      <section data-view="pick">
+        <p>Pick your clock in the browser's list. It's called <strong class="text-white">USB JTAG/serial debug unit</strong>.</p>
+        <div class="my-6 overflow-hidden rounded-xl border border-line bg-black font-mono text-xs" aria-hidden="true">
+          <div class="flex items-center justify-between gap-2 bg-accent/10 px-3 py-2.5 text-white"><span>USB JTAG/serial debug unit (usbmodem1101)</span></div>
+        </div>
+        <p class="text-sm text-dim">Not there? Check that it's plugged into this computer with a USB <em>data</em> cable.</p>
+      </section>
+
+      <section data-view="noport" hidden>
+        <p>If the clock wasn't in the list:</p>
+        <ul class="mt-4 list-disc space-y-3 pl-5 marker:text-dim">
+          <li>Plug it into <em>this</em> computer with a cable that carries data. Charge-only cables don't show up.</li>
+          <li>Unplug it, hold <span class="kbd">BOOT</span>, plug it back in while holding, and keep holding for a few seconds.</li>
+          <li data-os="linux" hidden>Your user needs access to serial ports: <code class="kbd">sudo usermod -aG dialout $USER</code>, then log out and back in.</li>
+        </ul>
+        <p class="mt-6 text-sm text-dim">Using a different ESP32-C3 board? <button type="button" id="fl-all" class="font-semibold text-white underline decoration-accent/60 underline-offset-4 hover:decoration-accent">Show all ports</button></p>
+      </section>
+
+      <section data-view="work" hidden>
+        <ol class="space-y-6">
+          <li class="step" data-step="connect" data-state="pending">
+            <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+            <div class="min-w-0 flex-1"><p class="label">Connect to the clock</p><p id="fl-chip" class="text-sm text-dim"></p></div>
+          </li>
+          <li class="step" data-step="download" data-state="pending">
+            <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+            <div class="min-w-0 flex-1"><p class="label">Download firmware</p></div>
+          </li>
+          <li class="step" data-step="write" data-state="pending">
+            <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+            <div class="min-w-0 flex-1"><p class="label">Write firmware</p><div class="mt-3 flex items-center gap-3"><div class="h-1.5 flex-1 overflow-hidden rounded-full bg-line"><div id="fl-bar" class="h-full w-0 rounded-full bg-accent transition-[width] duration-300"></div></div><span id="fl-pct" class="w-10 text-right font-mono text-xs text-dim">0%</span></div></div>
+          </li>
+          <li class="step" data-step="restart" data-state="pending">
+            <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+            <div class="min-w-0 flex-1"><p class="label">Restart</p></div>
+          </li>
+        </ol>
+        <p class="mt-8 flex items-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/[.06] px-4 py-3 text-sm text-amber-200">
+          <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+          Keep the clock plugged in until this finishes.
+        </p>
+      </section>
+
+      <section data-view="done" hidden>
+        <p>The clock is restarting with the new firmware. Your saved WiFi and settings are kept.</p>
+        <div class="mt-6 rounded-2xl border border-line bg-black/30 p-5">
+          <p class="font-extrabold text-white">First install?</p>
+          <p class="mt-2 text-sm">The clock starts a WiFi network named <span class="kbd">clk-setup-XXXX</span>, with the password on its screen. Join it from your phone to choose your WiFi, timezone and ZIP code.</p>
+        </div>
+      </section>
+
+      <section data-view="error" hidden>
+        <p id="fl-err" class="text-white"></p>
+        <ul class="mt-4 list-disc space-y-3 pl-5 marker:text-dim">
+          <li>Close anything else using the port, like a serial monitor or the Arduino IDE.</li>
+          <li>Unplug the clock, hold <span class="kbd">BOOT</span>, plug it back in while holding, keep holding for a few seconds, then try again.</li>
+        </ul>
+        <p id="fl-detail" class="mt-6 break-words rounded-xl border border-line bg-black px-3 py-2.5 font-mono text-xs text-dim"></p>
+      </section>
+    </div>
+
+    <footer data-view="pick noport error done" class="flex items-center justify-end gap-3 border-t border-line px-7 py-5">
+      <button type="button" data-view="pick noport error" data-act="pick" class="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-extrabold text-[#050607] transition hover:bg-[#f1f3f5] active:scale-[.98]" hidden>Choose port</button>
+      <button type="button" data-view="done" data-act="close" class="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-extrabold text-[#050607] transition hover:bg-[#f1f3f5] active:scale-[.98]" hidden>Done</button>
+    </footer>
+  </div>
+</dialog>
+
+<script type="module">
+  // Flash drawer. The flashing itself is ESP Web Tools' flash() routine (esptool-js underneath),
+  // which reports progress as state events; this page only draws them.
+  const FLASH_JS = 'https://esm.sh/esp-web-tools@10.0.1/dist/flash.js?deps=esptool-js@0.4.7';
+  // USB-serial chips an ESP32-C3 board shows up as: Espressif native USB, WCH CH34x, Silicon Labs CP210x, FTDI.
+  const FILTERS = [0x303a, 0x1a86, 0x10c4, 0x0403].map(usbVendorId => ({ usbVendorId }));
+  const TITLES = { pick: 'Choose your clock', noport: 'No port selected', work: 'Flashing…', done: 'All done', error: "Couldn't flash" };
+  const ERRORS = {
+    failed_initialize: "Couldn't talk to the clock.",
+    not_supported: "That board isn't an ESP32-C3.",
+    failed_firmware_download: "Couldn't download the firmware. Check your connection and try again.",
+    write_failed: 'Writing stopped partway. The clock is fine: plug it back in and flash again.',
+  };
+
+  const dlg = document.getElementById('flasher');
+  const $ = id => document.getElementById(id);
+  let busy = false, view = 'pick', flashMod;
+
+  function show(v) {
+    view = v;
+    $('fl-title').textContent = TITLES[v];
+    dlg.querySelectorAll('[data-view]').forEach(el => { el.hidden = !el.dataset.view.split(' ').includes(v); });
+    $('fl-close').disabled = busy;
+    dlg.querySelector('[data-act="pick"]').textContent = v === 'pick' ? 'Choose port' : 'Try again';
+  }
+  function stepState(key, state) { dlg.querySelector(`[data-step="${key}"]`).dataset.state = state; }
+  function progress(pct) { $('fl-bar').style.width = pct + '%'; $('fl-pct').textContent = pct + '%'; }
+  function fail(code, detail) {
+    busy = false;
+    $('fl-err').textContent = ERRORS[code] || 'Something went wrong.';
+    $('fl-detail').textContent = detail ? String(detail.message || detail) : '';
+    $('fl-detail').hidden = !detail;
+    show('error');
+  }
+
+  async function pick(filtered = true) {
+    flashMod ??= import(FLASH_JS);   // load while the visitor picks a port
+    show('pick');
+    let port;
+    try {
+      port = await navigator.serial.requestPort(filtered ? { filters: FILTERS } : {});
+    } catch (err) {
+      if (err.name === 'NotFoundError') return show('noport');
+      return fail('', err);
+    }
+    run(port);
+  }
+
+  async function run(port) {
+    busy = true;
+    ['connect', 'download', 'write', 'restart'].forEach(k => stepState(k, 'pending'));
+    $('fl-chip').textContent = '';
+    progress(0);
+    show('work');
+    let flash, manifest;
+    try {
+      [{ flash }, manifest] = await Promise.all([flashMod, fetch('manifest.json').then(r => r.json())]);
+    } catch (err) {
+      flashMod = undefined;
+      return fail('failed_firmware_download', err);
+    }
+    try { await flash(e => {
+      const done = e.details && e.details.done;
+      if (e.state === 'initializing') {
+        stepState('connect', done ? 'done' : 'active');
+        if (done) $('fl-chip').textContent = `Found ${e.chipFamily}`;
+      } else if (e.state === 'preparing') {
+        stepState('download', done ? 'done' : 'active');
+      } else if (e.state === 'writing') {
+        stepState('write', 'active');
+        progress(e.details.percentage);
+        if (e.details.percentage >= 100) { stepState('write', 'done'); stepState('restart', 'active'); }
+      } else if (e.state === 'finished') {
+        stepState('write', 'done'); stepState('restart', 'done');
+        busy = false;
+        setTimeout(() => show('done'), 500);
+      } else if (e.state === 'error') {
+        const code = e.details.error;
+        fail(code, code === 'not_supported' ? `Found ${e.details.details}` : e.details.details);
+      }
+    }, port, 'manifest.json', manifest, false); }
+    catch (err) { fail('write_failed', err); }
+  }
+
+  if (navigator.userAgent.includes('Linux') && !navigator.userAgent.includes('Android'))
+    dlg.querySelector('[data-os="linux"]').hidden = false;
+  document.querySelectorAll('[data-flash]').forEach(b => b.addEventListener('click', () => {
+    if (!dlg.open) dlg.showModal();
+    if (!busy) pick();
+  }));
+  dlg.querySelector('[data-act="pick"]').addEventListener('click', () => pick());
+  dlg.querySelector('[data-act="close"]').addEventListener('click', () => dlg.close());
+  $('fl-all').addEventListener('click', () => pick(false));
+  $('fl-close').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('cancel', e => { if (busy) e.preventDefault(); });           // Esc
+  dlg.addEventListener('close', () => { if (busy) dlg.showModal(); });              // Chrome lets a repeated Esc through
+  dlg.addEventListener('click', e => { if (e.target === dlg && !busy) dlg.close(); }); // backdrop
+  addEventListener('beforeunload', e => { if (busy) e.preventDefault(); });
+</script>
+<script>
   // Hero clock: 60 ticks like the firmware's seconds ring (dim base, 12-tick blue-grey
   // comet tail with squared falloff, red current second), showing the visitor's local time.
   const ring = document.getElementById('ring');
@@ -440,7 +632,6 @@
   addEventListener('load', () => Object.entries(PALETTES).forEach(([m, p]) =>
     p.options.forEach((_, i) => { new Image().src = `faces/themes/${m}-${i}.png`; })));
 
-  if (!('serial' in navigator)) document.getElementById('unsupported').classList.remove('hidden');
 </script>
 </body>
 </html>
