@@ -75,6 +75,24 @@
   }
   ewt-install-dialog { font-family: Manrope, system-ui, sans-serif; color-scheme: dark; }
 
+  /* Each face is cropped out of the repo's docs/faces montage (4 columns, 240px circles, 8px padding) */
+  .face {
+    --s: 100%;
+    aspect-ratio: 1; width: min(100%, 220px); border-radius: 9999px;
+    background-image: var(--img, url(faces/day.png));
+    background-repeat: no-repeat;
+    background-size: 416.667% auto;
+    background-position:
+      calc((8 + var(--c) * 248) / 760 * 100%)
+      calc((8 + var(--r) * 248) / 512 * 100%);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / .08), 0 18px 40px -12px rgb(0 0 0 / .8);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  #faces[data-mode="night"] .face { --img: url(faces/night.png); }
+  figure:hover .face { transform: scale(1.05); box-shadow: 0 0 0 1px rgb(54 214 240 / .5), 0 0 40px rgb(54 214 240 / .25); }
+  .mode[aria-pressed="true"] { background: #36D6F0; color: #0b0f14; font-weight: 700; }
+  .mode[aria-pressed="false"] { color: #9aa4b2; }
+
   .install-btn {
     position: relative; display: inline-flex; align-items: center; gap: .75rem;
     padding: 1.1rem 2.25rem; border: 0; border-radius: 9999px; cursor: pointer;
@@ -153,6 +171,67 @@
     </div>
   </section>
 
+  <section class="mt-20">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm uppercase tracking-[.2em] text-cyan-brand">Nine faces</p>
+        <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-white">Pick a look. Change it any time.</h2>
+        <p class="mt-2 max-w-xl text-ink">Tap the <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm">BOOT</code> button to cycle faces; double-tap it to change the colour theme. Every face switches to a dim night palette after sunset.</p>
+      </div>
+      <div class="inline-flex rounded-full border border-white/10 bg-white/[.04] p-1 font-mono text-sm" role="group" aria-label="Day or night">
+        <button type="button" data-mode="day" class="mode rounded-full px-4 py-1.5" aria-pressed="true">Day</button>
+        <button type="button" data-mode="night" class="mode rounded-full px-4 py-1.5" aria-pressed="false">Night</button>
+      </div>
+    </div>
+    <div id="faces" data-mode="day" class="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3">
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:0;--r:0" role="img" aria-label="Polished face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Polished</figcaption>
+        <p class="text-sm text-ink">Default: seconds ring, weather, range bar</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:1;--r:0" role="img" aria-label="Arc face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Arc</figcaption>
+        <p class="text-sm text-ink">Seconds as a sweeping arc</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:2;--r:0" role="img" aria-label="Stacked face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Stacked</figcaption>
+        <p class="text-sm text-ink">Big stacked hours and minutes</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:3;--r:0" role="img" aria-label="Analog face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Analog</figcaption>
+        <p class="text-sm text-ink">Classic hands and a date window</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:0;--r:1" role="img" aria-label="Zen face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Zen</figcaption>
+        <p class="text-sm text-ink">Quiet and minimal</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:1;--r:1" role="img" aria-label="Forecast face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Forecast</figcaption>
+        <p class="text-sm text-ink">Wind compass and hourly rain</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:2;--r:1" role="img" aria-label="Retro face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Retro</figcaption>
+        <p class="text-sm text-ink">Seven-segment, red LCD look</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:3;--r:1" role="img" aria-label="Daylight face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Daylight</figcaption>
+        <p class="text-sm text-ink">Sunrise-to-sunset dial</p>
+      </figure>
+      <figure class="group text-center">
+        <div class="face mx-auto" style="--c:0;--r:2" role="img" aria-label="Tide face"></div>
+        <figcaption class="mt-3 font-extrabold text-white">Tide</figcaption>
+        <p class="text-sm text-ink">NOAA tide chart and water temp</p>
+      </figure>
+    </div>
+  </section>
+
   <section class="mt-16 grid gap-5 md:grid-cols-3">
     <div class="rounded-2xl border border-white/10 bg-white/[.04] p-6 backdrop-blur">
       <p class="font-mono text-sm text-cyan-brand">01</p>
@@ -210,6 +289,11 @@
     };
     tryStyle();
   }).observe(document.body, { childList: true });
+
+  document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => {
+    document.getElementById('faces').dataset.mode = b.dataset.mode;
+    document.querySelectorAll('.mode').forEach(o => o.setAttribute('aria-pressed', o === b));
+  }));
 
   if (!('serial' in navigator)) document.getElementById('unsupported').classList.remove('hidden');
 </script>
