@@ -3,7 +3,7 @@
 #ifndef LV_CONF_H
 #define LV_CONF_H
 
-#define LV_COLOR_DEPTH 16
+#define LV_COLOR_FORMAT_DEFAULT LV_COLOR_FORMAT_RGB565  // replaces the deprecated LV_COLOR_DEPTH 16
 #define LV_USE_STDLIB_MALLOC LV_STDLIB_BUILTIN
 #define LV_MEM_SIZE (64 * 1024)
 
