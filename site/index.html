@@ -43,7 +43,7 @@
     <ol>
       <li>Wire the display as shown in the <a href="https://github.com/blakenoll/hackable-desktop-clock#readme">README</a>. The firmware assumes that exact pinout.</li>
       <li>Plug the board into your computer with a USB data cable.</li>
-      <li>Click <strong>Install</strong>, pick the board's serial port and confirm.</li>
+      <li>Click <strong>Install</strong> and pick the port named <strong>USB JTAG/serial debug unit</strong> (<code>usbmodem…</code> on Mac, <code>COM…</code> on Windows, <code>ttyACM…</code> on Linux). Ignore entries like <code>Bluetooth-Incoming-Port</code>, <code>debug-console</code> or <code>wlan-debug</code>. If the clock isn't listed, try another USB cable (it must carry data) or the BOOT-button steps below.</li>
     </ol>
     <p>Your saved WiFi and settings are kept when you update.</p>
   </div>
@@ -52,6 +52,8 @@
     <h2>If it can't connect</h2>
     <p>Auto-reset is sometimes unreliable. Unplug USB, hold the <code>BOOT</code> button, plug in while holding, keep holding
     for a few seconds, then click Install and choose the port.</p>
+    <p>No driver is needed: the clock's chip has USB built in. On Linux your user must be allowed to use the port
+    (usually membership of the <code>dialout</code> group, then log out and back in).</p>
   </div>
 
   <div class="card">
