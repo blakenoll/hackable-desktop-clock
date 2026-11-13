@@ -4,3 +4,6 @@
 .vscode/launch.json
 include/secrets.h
 .claude/settings.local.json
+
+# web flasher build outputs (copied in by CI)
+site/*.bin
