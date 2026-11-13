@@ -109,6 +109,32 @@ int main(int argc, char **argv) {
     shot(out + "/stale-" + names[f]);
     ui_set_weather_stale(false); run(1000);
   }
+  // 5. every face in every colour theme, same time/weather as section 1 (web flasher's theme picker)
+  for (int th = 0; th < 7; th++) {
+    weather(false);
+    for (int f = 0; f < FACE_COUNT; f++) {
+      UiOptions v; v.face = f; v.theme = th;
+      ui_set_options(v);
+      if (f == FACE_FORECAST) weather(true);
+      t = mk(10, 47, 38); ui_update(t);
+      run(1500);
+      shot(out + "/theme" + std::to_string(th) + "-" + names[f]);
+    }
+  }
+  // 6. every face at night in each night colour (web flasher's night picker)
+  for (int nc = 0; nc < 3; nc++) {
+    for (int f = 0; f < FACE_COUNT; f++) {
+      UiOptions v; v.face = f; v.nightColor = nc;
+      ui_set_options(v);
+      ui_set_night(true);
+      run(46000);
+      t = mk(21, 30, 12); ui_update(t);
+      run(1500);
+      shot(out + "/nightc" + std::to_string(nc) + "-" + names[f]);
+      ui_set_night(false);
+      run(46000);
+    }
+  }
   lv_mem_monitor(&mon);
   printf("final used %u max %u\n", (unsigned)(mon.total_size - mon.free_size), (unsigned)mon.max_used);
   return 0;

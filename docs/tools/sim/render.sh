@@ -28,4 +28,12 @@ python3 "$HERE/montage.py" "$ROOT/docs/faces/faces.png" 4 $(for n in $N; do echo
 python3 "$HERE/montage.py" "$ROOT/docs/faces/night.png" 4 $(for n in $N; do echo night-$n; done)
 python3 "$HERE/montage.py" "$ROOT/docs/faces/options.png" 4 $(for n in $N; do echo opt-$n; done)
 python3 "$HERE/montage.py" "$ROOT/docs/faces/states.png" 3 load-polished msg-polished stale-polished load-stacked msg-stacked stale-stacked load-forecast msg-forecast stale-forecast
-echo "wrote docs/faces/*.png"
+# Per-theme / per-night-colour montages for the web flasher's pickers (same 4-column layout as faces.png).
+mkdir -p "$ROOT/docs/faces/themes"
+for th in 0 1 2 3 4 5 6; do
+  python3 "$HERE/montage.py" "$ROOT/docs/faces/themes/day-$th.png" 4 $(for n in $N; do echo theme$th-$n; done)
+done
+for nc in 0 1 2; do
+  python3 "$HERE/montage.py" "$ROOT/docs/faces/themes/night-$nc.png" 4 $(for n in $N; do echo nightc$nc-$n; done)
+done
+echo "wrote docs/faces/*.png and docs/faces/themes/*.png"

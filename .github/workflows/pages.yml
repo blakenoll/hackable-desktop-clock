@@ -36,6 +36,7 @@ jobs:
           mkdir -p site/faces
           cp docs/faces/faces.png site/faces/day.png
           cp docs/faces/night.png site/faces/night.png
+          cp -r docs/faces/themes site/faces/themes
           ls -l site
       - uses: actions/upload-pages-artifact@v3
         with:
