@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install the Desktop Clock</title>
+<script type="module" src="https://unpkg.com/esp-web-tools@10.0.1/dist/web/install-button.js?module"></script>
+<style>
+  :root { --bg:#0e1116; --fg:#e6e9ef; --muted:#9aa4b2; --card:#171b22; --accent:#5aa9ff; }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f6f7f9; --fg:#14181f; --muted:#5b6574; --card:#fff; --accent:#1769e0; }
+  }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui,sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:32px 16px 64px; }
+  h1 { margin:0 0 4px; font-size:1.7rem; }
+  p.lead { color:var(--muted); margin-top:0; }
+  .card { background:var(--card); border-radius:12px; padding:20px; margin:20px 0; }
+  ol { padding-left:1.2em; } li { margin:6px 0; }
+  a { color:var(--accent); }
+  .center { text-align:center; }
+  #unsupported { display:none; border:1px solid #d9822b; border-radius:8px; padding:12px; margin:16px 0; }
+  code { background:rgba(127,127,127,.18); padding:1px 5px; border-radius:4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Desktop Clock installer</h1>
+  <p class="lead">Flash the ESP32-C3 + round GC9A01 clock firmware straight from your browser.</p>
+
+  <div id="unsupported">
+    Your browser doesn't support Web Serial. Use desktop <strong>Chrome</strong>, <strong>Edge</strong> or <strong>Opera</strong>
+    (not Firefox, Safari or mobile).
+  </div>
+
+  <div class="card center">
+    <esp-web-install-button manifest="manifest.json">
+      <span slot="unsupported">Web Serial isn't available in this browser.</span>
+    </esp-web-install-button>
+  </div>
+
+  <div class="card">
+    <h2>Before you start</h2>
+    <ol>
+      <li>Wire the display as shown in the <a href="https://github.com/blakenoll/hackable-desktop-clock#readme">README</a>. The firmware assumes that exact pinout.</li>
+      <li>Plug the board into your computer with a USB data cable.</li>
+      <li>Click <strong>Install</strong>, pick the board's serial port and confirm.</li>
+    </ol>
+    <p>Your saved WiFi and settings are kept when you update.</p>
+  </div>
+
+  <div class="card">
+    <h2>If it can't connect</h2>
+    <p>Auto-reset is sometimes unreliable. Unplug USB, hold the <code>BOOT</code> button, plug in while holding, keep holding
+    for a few seconds, then click Install and choose the port.</p>
+  </div>
+
+  <div class="card">
+    <h2>First-time setup</h2>
+    <p>The clock starts a WiFi network named <code>clk-setup-XXXX</code>. The password is shown on the clock's screen.
+    Join it and a setup page opens, where you choose your WiFi (2.4&nbsp;GHz only), timezone and ZIP code for weather.
+    To re-enter setup later, hold <code>BOOT</code> for 3 seconds while the clock is running.</p>
+  </div>
+
+  <p class="center"><a href="https://github.com/blakenoll/hackable-desktop-clock">Source on GitHub</a></p>
+</main>
+<script>
+  if (!('serial' in navigator)) document.getElementById('unsupported').style.display = 'block';
+</script>
+</body>
+</html>
