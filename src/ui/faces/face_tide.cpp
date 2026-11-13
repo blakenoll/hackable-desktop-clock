@@ -2,7 +2,8 @@
 
 namespace ui {
 
-// Tide chart in the centre: the tide from 6 h ago to 12 h ahead as a filled curve, a dot at "now", the highs
+// Tide chart in the centre: the tide from 6 h ago to 12 h ahead as a filled curve, a ringed marker and a thin
+// vertical line at "now" (so it can't be mistaken for the plain turn dots), the highs
 // and lows marked with their times; the current height, rising / falling and the next turn below.
 // Data: ui_set_tide() (NOAA high / low predictions, see tide.cpp); the curve between two turns is a half cosine,
 // the usual way tide tables are interpolated.
@@ -14,7 +15,7 @@ static constexpr int COLS = 36, COL_PITCH = (GX1 - GX0) / COLS, COL_W = 3;  // w
 static constexpr int MAX_EXT = 4;                                // highs / lows visible at once
 static constexpr int TIDE_MAX = 16;
 
-static lv_obj_t *pastLine, *futLine, *cols[COLS], *nowDot, *extDot[MAX_EXT], *extLbl[MAX_EXT];
+static lv_obj_t *pastLine, *futLine, *cols[COLS], *nowDot, *nowRing, *nowLine, *extDot[MAX_EXT], *extLbl[MAX_EXT];
 static lv_obj_t *heightLabel, *trendLabel, *nextLabel, *stationLabel, *msgLabel;
 static lv_point_precise_t pastPts[NPTS + 1], futPts[NPTS + 1];  // must outlive the line objects
 static int colPast[COLS];                                        // 1 = column is left of "now" (dimmer)
@@ -62,8 +63,10 @@ static void tidePaint() {
   lv_obj_set_style_line_color(futLine, mixDN(0x6FB6FF, nightC(60)), 0);
   lv_obj_set_style_line_color(pastLine, mixDN(0x34506E, nightC(25)), 0);
   for (int i = 0; i < COLS; i++) bgc(cols[i], colPast[i] ? mixDN(0x121C28, nightC(7)) : mixDN(0x1A3550, nightC(13)));
-  bgc(nowDot, mixDN(0xFFFFFF, nightC(100)));
   const Theme &T = THEMES[opt.theme];
+  bgc(nowDot, mixDN(0xFFFFFF, nightC(100)));
+  if (nowRing) lv_obj_set_style_border_color(nowRing, mixDN(T.accent, nightC(80)), 0);
+  bgc(nowLine, mixDN(scaleHex(T.accent, 55), nightC(30)));
   for (int i = 0; i < MAX_EXT; i++) {
     bgc(extDot[i], mixDN(0xCFE6FF, nightC(55)));
     tc(extLbl[i], mixDN(T.sub, nightC(55)));
@@ -79,7 +82,7 @@ static void tideUpdate() {
   if (!futLine || !haveTm) return;
   bool have = turnN >= 2;
   setHidden(msgLabel, have);
-  for (lv_obj_t *o : {pastLine, futLine, nowDot, heightLabel, trendLabel, nextLabel, stationLabel}) setHidden(o, !have);
+  for (lv_obj_t *o : {pastLine, futLine, nowDot, nowRing, nowLine, heightLabel, trendLabel, nextLabel, stationLabel}) setHidden(o, !have);
   for (int i = 0; i < COLS; i++) setHidden(cols[i], !have);
   for (int i = 0; i < MAX_EXT; i++) { setHidden(extDot[i], true); setHidden(extLbl[i], true); }
   if (!have) {
@@ -129,7 +132,12 @@ static void tideUpdate() {
     lv_obj_set_size(cols[i], COL_W, h);
     colPast[i] = cx < nowX;
   }
-  lv_obj_set_pos(nowDot, (int)lroundf(nowX) - 5, (int)lroundf(nowY) - 5);
+  int nx = (int)lroundf(nowX), ny = (int)lroundf(nowY);
+  lv_obj_set_pos(nowDot, nx - 3, ny - 3);
+  lv_obj_set_pos(nowRing, nx - 6, ny - 6);
+  lv_obj_set_pos(nowLine, nx, ny + 6);
+  lv_obj_set_size(nowLine, 1, GY1 - ny - 6 > 0 ? GY1 - ny - 6 : 0);
+  setHidden(nowLine, GY1 - ny - 6 < 2);
 
   // Highs and lows in the window: a dot and the time, inside the curve (under a high, over a low).
   int shown = 0, next = -1;
@@ -139,7 +147,7 @@ static void tideUpdate() {
     if (x < GX0 + 2 || x > GX1 - 2 || shown >= MAX_EXT) continue;
     float y = yOf(turnH[k]);
     lv_obj_set_pos(extDot[shown], (int)lroundf(x) - 3, (int)lroundf(y) - 3);
-    setHidden(extDot[shown], fabsf(x - nowX) < 8);  // the now dot covers it
+    setHidden(extDot[shown], fabsf(x - nowX) < 9);  // the now dot covers it
     char buf[12];
     fmtClock(turnT[k], buf, sizeof(buf), false);  // short: the chart is narrow
     lv_label_set_text(extLbl[shown], buf);
@@ -196,10 +204,15 @@ static void build() {
     extDot[i] = mkDisc(content, 7);
     extLbl[i] = mkLabel(content, &manrope_caps_12);
   }
-  nowDot = mkDisc(content, 11);
-  lv_obj_set_style_border_width(nowDot, 2, 0);  // black outline lifts it off the line
-  lv_obj_set_style_border_color(nowDot, lv_color_black(), 0);
-  lv_obj_set_style_border_opa(nowDot, LV_OPA_COVER, 0);
+  // "Now": a thin accent line down to the floor, then a target marker on the curve: a black disc (hides the line
+  // under it) with an accent ring, and a small white core. The turns are plain 7 px dots.
+  nowLine = box(content);
+  lv_obj_set_style_bg_opa(nowLine, LV_OPA_COVER, 0);
+  nowRing = mkDisc(content, 13);
+  lv_obj_set_style_bg_color(nowRing, lv_color_black(), 0);
+  lv_obj_set_style_border_width(nowRing, 2, 0);
+  lv_obj_set_style_border_opa(nowRing, LV_OPA_COVER, 0);
+  nowDot = mkDisc(content, 7);
   msgLabel = mkLabelAt(&manrope_caps_12, 1, 0, -5);
 
   lv_obj_t *row = mkRow(content, 200, 0, 46, 7);
