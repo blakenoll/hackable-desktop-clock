@@ -148,6 +148,27 @@
     70%, 100% { box-shadow: 0 0 0 16px rgb(255 59 48 / 0), 0 12px 32px -12px rgb(255 59 48 / .5); }
   }
   @media (prefers-reduced-motion: reduce) { .install-btn { animation: none; } }
+
+  /* Hero clock in 3D (driven by the hero script; everything stays flat under reduced motion). */
+  #hero-clock { perspective: 1100px; }
+  .hc-body, .hc-3d { transform-style: preserve-3d; }
+  .hc-body { transform: rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg)); }
+  .hc-edge { position: absolute; inset: 0; border-radius: 9999px; background: var(--e); transform: translateZ(var(--z)); }
+  .hc-ring { transform: translateZ(4px); }
+  .hc-text { transform: translateZ(12px); }
+  /* Cover-glass reflection: a soft highlight that slides against the tilt (--gx/--gy, percent).
+     Inset 1% because translateZ makes it render slightly larger than the glass. */
+  .hc-glare {
+    position: absolute; inset: 1%; border-radius: 9999px; pointer-events: none;
+    transform: translateZ(16px);
+    background:
+      radial-gradient(circle at calc(var(--gx, 34) * 1%) calc(var(--gy, 18) * 1%), rgb(255 255 255 / .085), rgb(255 255 255 / .025) 30%, transparent 58%),
+      linear-gradient(160deg, rgb(255 255 255 / .03), transparent 45%);
+  }
+  .hc-glow { transform: translate(calc(var(--ry, 0) * -1.6px), calc(var(--rx, 0) * 1.6px)); }
+  .hc-enter { animation: hc-in .8s ease-out both; }
+  @keyframes hc-in { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .hc-enter { animation: none; } }
 </style>
 </head>
 <body class="min-h-screen font-sans text-slate-200 antialiased selection:bg-accent/40">
@@ -198,12 +219,21 @@
     </div>
 
     <!-- Live clock drawn like the Polished face: dim ticks, blue-grey comet tail, red second -->
-    <div class="relative order-first mx-auto aspect-square w-72 sm:w-80 md:order-none md:w-[26rem]" aria-hidden="true">
-      <div class="absolute inset-[8%] rounded-full bg-accent/10 blur-3xl"></div>
-      <div class="absolute inset-0 rounded-full bg-gradient-to-b from-[#4a5059] via-[#2a2e34] to-[#15171a] p-[2.5%] shadow-[0_40px_80px_-30px_rgb(0_0_0/.9)]">
-        <div class="relative h-full w-full rounded-full bg-black shadow-[inset_0_0_0_1px_#000,inset_0_2px_12px_rgb(0_0_0/.9)]">
-          <svg id="ring" viewBox="0 0 240 240" class="absolute inset-0 h-full w-full"></svg>
-          <div class="absolute inset-0 grid place-items-center text-center">
+    <!-- 3D: #hero-clock holds the perspective; .hc-body is tilted by JS (--rx/--ry, degrees) and
+         keeps its children in 3D, so the stacked .hc-edge discs give the case a visible thickness,
+         and ring / text / glare sit at small depths for parallax under the "cover glass". -->
+    <div id="hero-clock" class="relative order-first mx-auto aspect-square w-72 sm:w-80 md:order-none md:w-[26rem]" aria-hidden="true">
+      <div class="hc-glow absolute inset-[8%] rounded-full bg-accent/10 blur-3xl"></div>
+      <div class="hc-body hc-enter absolute inset-0">
+      <div class="hc-edge" style="--z:-2px;--e:#202328"></div>
+      <div class="hc-edge" style="--z:-4px;--e:#1a1c20"></div>
+      <div class="hc-edge" style="--z:-6px;--e:#15171a"></div>
+      <div class="hc-edge" style="--z:-8px;--e:#101114"></div>
+      <div class="hc-edge" style="--z:-10px;--e:#0b0c0e"></div>
+      <div class="hc-3d absolute inset-0 rounded-full bg-gradient-to-b from-[#4a5059] via-[#2a2e34] to-[#15171a] p-[2.5%] shadow-[0_40px_80px_-30px_rgb(0_0_0/.9)]">
+        <div class="hc-3d relative h-full w-full rounded-full bg-black shadow-[inset_0_0_0_1px_#000,inset_0_2px_12px_rgb(0_0_0/.9)]">
+          <svg id="ring" viewBox="0 0 240 240" class="hc-ring absolute inset-0 h-full w-full"></svg>
+          <div class="hc-text absolute inset-0 grid place-items-center text-center">
             <div>
               <p class="text-[.95rem] font-bold tracking-[.14em] md:text-lg"><span id="hc-day" class="text-[#ff4d4d]">TUE</span> <span id="hc-date" class="text-[#a0a0a0]">NOV 10</span></p>
               <p class="mt-1 flex items-start justify-center font-medium leading-none tracking-tight text-white">
@@ -218,7 +248,9 @@
               <p class="mt-2 text-[.65rem] font-bold tracking-[.16em] text-[#8b939d] md:text-xs">40% RAIN</p>
             </div>
           </div>
+          <div class="hc-glare"></div>
         </div>
+      </div>
       </div>
     </div>
   </section>
@@ -581,8 +613,8 @@
   const mix = (a, b, t) => '#' + [0, 2, 4].map(k => Math.round(parseInt(a.substr(k, 2), 16) * (1 - t) + parseInt(b.substr(k, 2), 16) * t).toString(16).padStart(2, '0')).join('');
   const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-  function tick() {
-    const now = new Date(), s = now.getSeconds();
+  let splashing = false;
+  function paintRing(s) {
     ticks.forEach((l, i) => {
       const back = (s - i + 60) % 60;
       let c = '2a3138';
@@ -590,6 +622,10 @@
       else if (back <= TAIL) c = mix('2a3138', '8595a8', ((TAIL + 1 - back) / (TAIL + 1)) ** 2);
       l.setAttribute('stroke', c[0] === '#' ? c : '#' + c);
     });
+  }
+  function tick() {
+    const now = new Date();
+    if (!splashing) paintRing(now.getSeconds());
     const h = now.getHours() % 12 || 12, m = String(now.getMinutes()).padStart(2, '0');
     document.getElementById('hc-time').textContent = `${h}:${m}`;
     document.getElementById('hc-ampm').textContent = now.getHours() < 12 ? 'AM' : 'PM';
@@ -597,7 +633,66 @@
     document.getElementById('hc-date').textContent = `${MONTHS[now.getMonth()]} ${now.getDate()}`;
     setTimeout(tick, 1000 - now.getMilliseconds() + 5);
   }
+
+  const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Boot splash like ui_boot_splash(): a comet head runs once round the ring from 12 o'clock,
+  // its tail draining off the end, then the normal second display takes over.
+  function splash() {
+    splashing = true;
+    const START = performance.now(), MS = 1100, STEPS = 60 + TAIL + 2;
+    ticks.forEach(l => { l.style.transition = 'none'; l.setAttribute('stroke', '#2a3138'); });
+    (function frame(t) {
+      const step = Math.min(STEPS, ((t - START) / MS) * STEPS) | 0;
+      ticks.forEach((l, i) => {
+        const back = step - i;
+        let c = '#2a3138';
+        if (back === 0) c = '#ff3030';
+        else if (back > 0 && back <= TAIL) c = mix('2a3138', '8595a8', ((TAIL + 1 - back) / (TAIL + 1)) ** 2);
+        l.setAttribute('stroke', c);
+      });
+      if (step < STEPS) return requestAnimationFrame(frame);
+      ticks.forEach(l => { l.style.transition = 'stroke .4s ease'; });
+      splashing = false;
+      paintRing(new Date().getSeconds());
+    })(START);
+  }
+  if (!REDUCE) splash();
   tick();
+
+  // 3D tilt: the face turns a few degrees to look at the pointer (anywhere on the page), eased so
+  // it feels heavy; with no pointer (touch, or the pointer left) it sways slowly instead. It
+  // starts turned edge-on and settles flat as the entrance. Paused while scrolled out of view.
+  if (!REDUCE) {
+    const box = document.getElementById('hero-clock');
+    const MAX = 7, FINE = matchMedia('(hover: hover) and (pointer: fine)').matches;
+    let rx = 10, ry = -58, aimX = 0, aimY = 0, pointer = false, last = 0, running = false, visible = true;
+    if (FINE) {
+      addEventListener('pointermove', e => {
+        const r = box.getBoundingClientRect(), reach = Math.max(innerWidth / 2, 520);
+        const clamp = v => Math.max(-1, Math.min(1, v));
+        aimY = clamp((e.clientX - (r.left + r.width / 2)) / reach) * MAX;
+        aimX = -clamp((e.clientY - (r.top + r.height / 2)) / reach) * MAX;
+        pointer = true;
+      }, { passive: true });
+      document.documentElement.addEventListener('pointerleave', () => { pointer = false; aimX = aimY = 0; });
+    }
+    function frame(t) {
+      const dt = last ? Math.min(t - last, 64) : 16.7; last = t;
+      const k = 1 - Math.pow(1 - 0.055, dt / 16.7);              // frame-rate independent ease
+      const sway = pointer ? 0.25 : 1;
+      const tx = aimX + Math.sin(t / 2300) * 1.6 * sway, ty = aimY + Math.sin(t / 3100 + 1) * 2.4 * sway;
+      rx += (tx - rx) * k; ry += (ty - ry) * k;
+      box.style.setProperty('--rx', rx.toFixed(3));               // read by .hc-body and .hc-glow
+      box.style.setProperty('--ry', ry.toFixed(3));
+      box.style.setProperty('--gx', (34 - ry * 2.2).toFixed(2));  // reflection slides against the tilt
+      box.style.setProperty('--gy', (18 + rx * 2.2).toFixed(2));
+      if (visible && !document.hidden) requestAnimationFrame(frame); else running = false;
+    }
+    const start = () => { if (!running) { running = true; last = 0; requestAnimationFrame(frame); } };
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) start(); }).observe(box);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && visible) start(); });
+    start();
+  }
 
   // Face gallery: colour theme (day) or night colour (night). Montages come from docs/tools/sim/render.sh
   // (docs/faces/themes/day-N.png = THEMES[N], night-N.png = NIGHTS[N] in src/ui/theme.cpp).
