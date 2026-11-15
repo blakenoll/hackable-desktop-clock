@@ -5,12 +5,12 @@
 namespace ui {
 
 extern const FaceDef faceDefPolished, faceDefArc, faceDefStacked, faceDefAnalog, faceDefZen, faceDefForecast,
-    faceDefRetro, faceDefDaylight, faceDefTide;
+    faceDefRetro, faceDefDaylight, faceDefTide, faceDefRadar;
 
 const FaceDef *const FACES[FACE_COUNT] = {
     &faceDefPolished, &faceDefArc, &faceDefStacked, &faceDefAnalog,
     &faceDefZen,      &faceDefForecast, &faceDefRetro, &faceDefDaylight,
-    &faceDefTide,
+    &faceDefTide,     &faceDefRadar,
 };
 
 const FaceDef &face() { return *FACES[opt.face < FACE_COUNT ? opt.face : 0]; }

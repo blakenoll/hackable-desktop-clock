@@ -5,6 +5,7 @@
 #include <math.h>
 #include <string>
 #include "ui/ui.h"
+#include "data/aircraft.h"
 static uint32_t now_ms = 1000;
 uint32_t millis() { return now_ms; }
 void delay(uint32_t ms) { now_ms += ms; }
@@ -46,6 +47,20 @@ static void weather(bool rainy) {
   }
   ui_set_tide_info("CHARLESTON", 68.7f);
   ui_set_tide(tt, th, hi, 8, 'F', nullptr);
+  // A handful of aircraft around home, nearest first (NM east / north, knots, degrees, ft).
+  static const struct { float x, y, gs, trk; int alt; const char *id, *type; } P[] = {
+      {-2.1f, 1.6f, 160, 25, 1800, "JBU106", "A320"},   {5.8f, -3.9f, 244, 282, 4950, "UAL2609", "B39M"},
+      {-7.5f, -6.0f, 420, 60, 23000, "DAL1192", "A321"}, {9.5f, 8.0f, 300, 200, 11000, "AAL871", "B738"},
+      {-11.0f, 9.5f, 120, 90, 2500, "N512CK", "C172"},   {3.0f, 15.5f, 450, 170, 35000, "SWA221", "B737"},
+      {14.0f, -10.5f, 380, 330, 18000, "FDX12", "B763"}, {-15.5f, -9.0f, 0, 0, 0, "RCH431", "C17"}};
+  static Aircraft ac[8];
+  for (int k = 0; k < 8; k++) {
+    ac[k] = Aircraft();
+    ac[k].x = P[k].x; ac[k].y = P[k].y; ac[k].gs = P[k].gs; ac[k].track = P[k].trk; ac[k].alt = P[k].alt;
+    snprintf(ac[k].flight, sizeof(ac[k].flight), "%s", P[k].id);
+    snprintf(ac[k].type, sizeof(ac[k].type), "%s", P[k].type);
+  }
+  ui_set_aircraft(ac, 8, 23, millis(), RADAR_NM, nullptr);
 }
 int main(int argc, char **argv) {
   std::string out = argc > 1 ? argv[1] : ".";
@@ -59,7 +74,7 @@ int main(int argc, char **argv) {
   ui_set_options(o);
   ui_set_night(false);
   ui_boot_splash();
-  static const char *names[] = {"polished", "arc", "stacked", "analog", "zen", "forecast", "retro", "daylight", "tide"};
+  static const char *names[] = {"polished", "arc", "stacked", "analog", "zen", "forecast", "retro", "daylight", "tide", "radar"};
   lv_mem_monitor_t mon;
   // 1. every face by day, switched in place like the BOOT button does
   tm t = mk(10, 47, 37);

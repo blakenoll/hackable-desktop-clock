@@ -26,6 +26,7 @@ enum Face {
   FACE_RETRO,     // seven-segment LCD
   FACE_DAYLIGHT,  // 24 h dial with the sunrise-to-sunset arc
   FACE_TIDE,      // tide chart (sea level, 6 h back to 12 h ahead) with the next high / low
+  FACE_RADAR,     // radar scope with live aircraft nearby (ADS-B from adsb.fi)
   FACE_COUNT
 };
 
@@ -79,6 +80,11 @@ void ui_set_wind(int fromDeg, const char *text, const char *feels);
 void ui_set_tide(const time_t *t, const float *h, const bool *high, int n, char unit, const char *msg);
 // Station name under the chart ("CHARLESTON", uppercase) and the water temperature (NAN hides it).
 void ui_set_tide_info(const char *station, float water);
+
+// Aircraft for the Radar face (data/aircraft.h): `n` nearest first, `total` in range, positions as of millis()
+// `at` (the face dead-reckons from there), scope range in NM. msg non-null (and n = 0) shows it instead ("SCANNING").
+struct Aircraft;
+void ui_set_aircraft(const Aircraft *ac, int n, int total, uint32_t at, int rangeNm, const char *msg);
 
 // Small line under the weather row, e.g. "40% rain" or "Feels 65°"; "" fades it away.
 void ui_set_weather_detail(const char *text);

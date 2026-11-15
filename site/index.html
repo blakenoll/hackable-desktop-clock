@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hackable Desktop Clock · Flash from your browser</title>
-<meta name="description" content="An open source round desktop clock (ESP32-C3 + GC9A01, LVGL 9) with weather, tides, night mode and nine faces. Flash the firmware straight from your browser, no tools needed.">
+<meta name="description" content="An open source round desktop clock (ESP32-C3 + GC9A01, LVGL 9) with weather, tides, night mode and ten faces. Flash the firmware straight from your browser, no tools needed.">
 <meta name="keywords" content="ESP32-C3, GC9A01, LVGL, desktop clock, round display, web flasher, ESP Web Tools, open source, PlatformIO">
 <meta name="author" content="Blake Noll">
 <meta name="color-scheme" content="dark">
@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Hackable Desktop Clock">
 <meta property="og:title" content="Hackable Desktop Clock">
-<meta property="og:description" content="An open source round ESP32 clock with weather, tides, night mode and nine faces. Flash it from your browser.">
+<meta property="og:description" content="An open source round ESP32 clock with weather, tides, night mode and ten faces. Flash it from your browser.">
 <meta property="og:url" content="https://blakenoll.github.io/hackable-desktop-clock/">
 <meta property="og:image" content="https://blakenoll.github.io/hackable-desktop-clock/og.png">
 <meta property="og:image:width" content="1200">
@@ -23,7 +23,7 @@
 <meta property="og:image:alt" content="A round black clock face showing the time, date and weather beside the words hackable desktop clock">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Hackable Desktop Clock">
-<meta name="twitter:description" content="An open source round ESP32 clock with weather, tides, night mode and nine faces. Flash it from your browser.">
+<meta name="twitter:description" content="An open source round ESP32 clock with weather, tides, night mode and ten faces. Flash it from your browser.">
 <meta name="twitter:image" content="https://blakenoll.github.io/hackable-desktop-clock/og.png">
 <script>if (!('serial' in navigator)) document.documentElement.classList.add('no-serial');</script>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -258,7 +258,7 @@
   <section class="mt-28">
     <div class="flex flex-wrap items-end justify-between gap-6">
       <div>
-        <p class="eyebrow text-accent">Nine faces</p>
+        <p class="eyebrow text-accent">Ten faces</p>
         <h2 class="mt-3 text-3xl font-extrabold tracking-[-.025em] text-white md:text-4xl">Pick a look. Change it any time.</h2>
         <p class="mt-3 max-w-xl text-ink">Tap the <span class="kbd">BOOT</span> button to cycle faces; double-tap it to change the colour theme. Every face switches to a dim night palette after sunset, in the night colour you pick on the setup page.</p>
       </div>
@@ -322,6 +322,11 @@
         <div class="face mx-auto" style="--c:0;--r:2" role="img" aria-label="Tide face"></div>
         <figcaption class="mt-5 font-extrabold text-slate-200 transition">Tide</figcaption>
         <p class="mt-0.5 text-sm text-dim">NOAA tide chart and water temp</p>
+      </figure>
+      <figure class="face-card text-center">
+        <div class="face mx-auto" style="--c:1;--r:2" role="img" aria-label="Radar face"></div>
+        <figcaption class="mt-5 font-extrabold text-slate-200 transition">Radar</figcaption>
+        <p class="mt-0.5 text-sm text-dim">Live planes overhead, from <a class="underline decoration-dotted underline-offset-2 hover:text-white" href="https://adsb.fi">adsb.fi</a></p>
       </figure>
     </div>
   </section>
@@ -411,7 +416,7 @@
   </section>
 
   <footer class="mt-20 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-8 text-sm text-dim">
-    <p>An open source tinkering project.</p>
+    <p>An open source tinkering project. Aircraft data: <a class="text-ink transition hover:text-white" href="https://adsb.fi">adsb.fi</a>.</p>
     <a class="font-semibold text-ink transition hover:text-white" href="https://github.com/blakenoll/hackable-desktop-clock">Source on GitHub →</a>
   </footer>
 </main>
