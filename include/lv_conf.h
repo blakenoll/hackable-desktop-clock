@@ -9,6 +9,9 @@
 
 #define LV_USE_OS LV_OS_NONE
 #define LV_DEF_REFR_PERIOD 33
+// Dirty areas tracked per frame (LVGL default 32). Past that LVGL redraws the whole screen; the Radar face's
+// once-a-second blip moves (two areas per blip) plus the sweep used to overflow it, a visible hitch every second.
+#define LV_INV_BUF_SIZE 64
 
 #define LV_FONT_MONTSERRAT_14 1
 

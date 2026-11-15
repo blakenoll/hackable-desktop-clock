@@ -140,12 +140,17 @@ static String nightFields(const ClockConfig &cur) {
 }
 
 static String weatherFields(const ClockConfig &cur) {
-  return "<label>ZIP code for weather <small>(optional, US 5-digit)</small></label>"
-         "<input name=city inputmode=numeric pattern=\"[0-9]{5}\" maxlength=5 title=\"5-digit US ZIP code\" value=\"" + esc(cur.city) + "\">" +
+  // Address above ZIP, the way addresses are written. Street only: the ZIP already fixes the city and state.
+  return "<label>Street address <small>(optional, e.g. 123 Main St; with the ZIP below, pins weather, tides and radar to your "
+         "house instead of the middle of the ZIP; looked up once via the US Census geocoder)</small></label>"
+         "<input name=addr maxlength=100 autocomplete=address-line1 value=\"" + esc(cur.addr) + "\">" +
+         "<label>ZIP code for weather <small>(optional, US 5-digit)</small></label>"
+         "<input name=city inputmode=numeric autocomplete=postal-code pattern=\"[0-9]{5}\" maxlength=5 title=\"5-digit US ZIP code\" value=\"" +
+         esc(cur.city) + "\">" +
          field("Temperature units", "units", String("<option value=F") + (cur.units == 'F' ? " selected" : "") + ">Fahrenheit</option><option value=C" +
                                                  (cur.units == 'C' ? " selected" : "") + ">Celsius</option>") +
          "<label>NOAA tide station <small>(optional, station ID for the Tide face, e.g. 8665530; blank = nearest" +
-         (cur.tideGeo == cur.city && cur.tideAuto.length() ? ", now " + esc(cur.tideAuto) + " " + esc(cur.tideName) : String("")) +
+         (cur.tideGeo == config_geo_key(cur) && cur.tideAuto.length() ? ", now " + esc(cur.tideAuto) + " " + esc(cur.tideName) : String("")) +
          ")</small></label><input name=tidestn pattern=\"[A-Za-z0-9]{4,10}\" maxlength=10 title=\"NOAA station ID from tidesandcurrents.noaa.gov\" value=\"" +
          esc(cur.tideStation) + "\">";
 }
@@ -194,6 +199,8 @@ static void parseForm(WebServer &server, ClockConfig &n) {
   n.tz = server.arg("tz");
   n.city = server.arg("city");
   n.city.trim();
+  n.addr = server.arg("addr");
+  n.addr.trim();
   n.units = server.arg("units") == "C" ? 'C' : 'F';
   n.tideStation = server.arg("tidestn");
   n.tideStation.trim();

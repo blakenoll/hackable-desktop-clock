@@ -2,6 +2,7 @@
 #include "../config.h"
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include "net.h"
 #include <HTTPClient.h>
 #include <freertos/semphr.h>
 #include <math.h>
@@ -170,8 +171,12 @@ class AcParser : public Stream {
   }
 };
 
-// Returns the HTTP status (or a negative HTTPClient error); fills `d` on 200.
+static constexpr int NET_BUSY = -100;  // another task's HTTPS session is open: skip this poll, not an error
+
+// Returns the HTTP status (or a negative HTTPClient error, or NET_BUSY); fills `d` on 200.
 static int fetch(float lat, float lon, AircraftData &d) {
+  NetLock net(pdMS_TO_TICKS(2000));  // first, so it is released after the TLS client frees its buffers
+  if (!net.held()) return NET_BUSY;
   WiFiClientSecure client;
   client.setInsecure();  // public, read-only data (same reasoning as weather.cpp)
   HTTPClient http;
@@ -198,13 +203,17 @@ static int fetch(float lat, float lon, AircraftData &d) {
 
 static void radarTask(void *) {
   for (;;) {
-    if (!g_active || WiFi.status() != WL_CONNECTED) {
+    if (!g_active) {  // another face is showing: sleep until aircraft_set_active(true), no polling at all
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+      continue;
+    }
+    if (WiFi.status() != WL_CONNECTED) {
       ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000));
       continue;
     }
     ClockConfig cfg;
     config_load(cfg);
-    if (!cfg.city.length() || cfg.geocity != cfg.city || (cfg.lat == 0 && cfg.lon == 0)) {
+    if (!cfg.city.length() || cfg.geocity != config_geo_key(cfg) || (cfg.lat == 0 && cfg.lon == 0)) {
       // No ZIP, or the weather task has not geocoded it yet.
       const char *msg = cfg.city.length() ? "LOCATING" : "SET A ZIP FOR RADAR";
       if (strcmp(aircraft_get().error, msg) != 0) publishError(msg);
@@ -216,6 +225,8 @@ static void radarTask(void *) {
     uint32_t wait = POLL_MS;
     if (status == HTTP_CODE_OK) {
       publish(d);
+    } else if (status == NET_BUSY) {
+      wait = 3000;  // weather/tides are downloading (minutes, for the tide station list); planes keep dead-reckoning
     } else {
       Serial.printf("radar: fetch failed (%d)\n", status);
       AircraftData old = aircraft_get();
@@ -233,6 +244,8 @@ void aircraft_set_active(bool on) {
   if (!on) return;
   if (!g_mu) {
     g_mu = xSemaphoreCreateMutex();
+    // Priority 1, same as loop(). Not 0: below the busy Radar face a ~1 s TLS handshake took ~22 s and adsb.fi
+    // reset the connection (MBEDTLS_ERR_NET_CONN_RESET) on almost every poll.
     xTaskCreate(radarTask, "radar", 10240, nullptr, 1, &g_task);
   }
   AircraftData d = aircraft_get();

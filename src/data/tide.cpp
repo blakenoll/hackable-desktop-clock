@@ -1,6 +1,7 @@
 #include "tide.h"
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include "net.h"
 #include <HTTPClient.h>
 #include <freertos/semphr.h>
 #include <math.h>
@@ -125,6 +126,7 @@ class StationFinder : public Stream {
 enum class Find { Ok, None, NetError };
 
 static Find findStation(float lat, float lon, String &id, String &name) {
+  NetLock net;  // first, so it is released after the TLS client frees its buffers
   WiFiClientSecure client;
   client.setInsecure();  // public, read-only data (same reasoning as weather.cpp)
   HTTPClient http;
@@ -157,6 +159,7 @@ static time_t utcEpoch(int y, int mo, int d, int h, int mi) {  // days-from-civi
 enum class Fetch { Ok, BadStation, NetError };
 
 static bool httpsGet(const String &url, String &body) {
+  NetLock net;
   WiFiClientSecure client;
   client.setInsecure();  // public, read-only data (same reasoning as weather.cpp)
   HTTPClient http;
@@ -263,12 +266,13 @@ void tide_refresh(const ClockConfig &cfg0) {
     }
     name = namedAs;
   } else {
-    if (cfg.tideGeo != cfg.city) {  // ZIP changed (or first run): find the nearest station once
-      if (cfg.geocity != cfg.city || (cfg.lat == 0 && cfg.lon == 0)) return;  // coordinates not known yet
+    String key = config_geo_key(cfg);
+    if (cfg.tideGeo != key) {  // ZIP/address changed (or first run): find the nearest station once
+      if (cfg.geocity != key || (cfg.lat == 0 && cfg.lon == 0)) return;  // coordinates not known yet
       String id, nm;
       Find f = findStation(cfg.lat, cfg.lon, id, nm);
       if (f == Find::NetError) return;  // retry on the next refresh
-      config_save_tide_auto(cfg.city, id, nm);
+      config_save_tide_auto(key, id, nm);
       cfg.tideAuto = id;
       cfg.tideName = nm;
     }

@@ -56,6 +56,8 @@
 
 **`ZIP not found`.** Only US 5-digit ZIP codes are supported. Double-check the digits.
 
+**Radar/tides seem centred in the wrong place.** Without a street address the clock uses the middle of the ZIP area, which can be miles away. Add your street address on the setup page. If the Census geocoder can't match it, the clock falls back to the ZIP centre and prints `Weather: address not found, using ZIP centre` on serial. Try the form `123 Main St`, without a unit number.
+
 **`No weather`.** The weather request failed and there's nothing cached yet (WiFi/internet problem, or Open-Meteo unreachable). It retries every 60 seconds. After the first success, a later failure keeps showing the last reading.
 
 **The weather skeleton pulses forever.** WiFi dropped before the first fetch finished, or the request is hanging. It resolves to data or an error message once a request completes.

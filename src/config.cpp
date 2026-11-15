@@ -18,6 +18,7 @@ bool config_load(ClockConfig &cfg) {
   cfg.pass = p.getString("pass", "");
   cfg.tz = p.getString("tz", DEFAULT_TZ);
   cfg.city = p.getString("city", "");
+  cfg.addr = p.getString("addr", "");
   cfg.units = p.getString("units", "F")[0] == 'C' ? 'C' : 'F';
   cfg.h24 = p.getBool("h24", false);
   cfg.dateFmt = p.getUChar("datefmt", 0) == 1 ? 1 : 0;
@@ -47,6 +48,7 @@ void config_save(const ClockConfig &cfg) {
   p.putString("pass", cfg.pass);
   p.putString("tz", cfg.tz);
   p.putString("city", cfg.city);
+  p.putString("addr", cfg.addr);
   p.putString("units", String(cfg.units));
   p.putBool("h24", cfg.h24);
   p.putUChar("datefmt", cfg.dateFmt);
@@ -60,6 +62,10 @@ void config_save(const ClockConfig &cfg) {
   p.putBool("detail", cfg.detail);
   p.putBool("secs", cfg.seconds);
   p.putString("tidestn", cfg.tideStation);
+}
+
+String config_geo_key(const ClockConfig &cfg) {
+  return cfg.addr.length() ? cfg.city + "|" + cfg.addr : cfg.city;
 }
 
 void config_save_geo(const String &city, float lat, float lon) {
