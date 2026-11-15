@@ -7,6 +7,7 @@
 #include "display.h"
 #include "provisioning.h"
 #include "ui/ui.h"
+#include "data/aircraft.h"
 #include "data/tide.h"
 #include "data/weather.h"
 #include "data/weather_format.h"
@@ -181,6 +182,22 @@ static void updateTide() {
   else ui_set_tide(nullptr, nullptr, nullptr, 0, d.unit, !g_cfg.city.length() ? "SET A ZIP FOR TIDES" : d.error[0] ? d.error : "LOADING TIDES");
 }
 
+// Polls aircraft only while the Radar face is showing, and pushes them to it.
+static void updateRadar() {
+  bool on = g_cfg.face == FACE_RADAR;
+  aircraft_set_active(on);
+  if (!on) return;
+  static uint32_t shownVersion = UINT32_MAX;
+  static bool shownStale = false;
+  AircraftData d = aircraft_get();
+  bool stale = d.valid && millis() - d.fetchedAt > 2 * 60 * 1000UL;  // fetches keep failing: don't show guesses
+  if (d.version == shownVersion && stale == shownStale) return;
+  shownVersion = d.version;
+  shownStale = stale;
+  if (d.valid && !stale) ui_set_aircraft(d.ac, d.n, d.total, d.fetchedAt, RADAR_NM, d.n ? nullptr : "");
+  else ui_set_aircraft(nullptr, 0, 0, 0, RADAR_NM, stale ? "NO RADAR DATA" : d.error[0] ? d.error : "SCANNING");
+}
+
 void loop() {
   handleButton();
   static int lastSec = -1;
@@ -192,6 +209,7 @@ void loop() {
     updateOffline();
     updateWeather();
     updateTide();
+    updateRadar();
   }
   lv_timer_handler();
   delay(5);

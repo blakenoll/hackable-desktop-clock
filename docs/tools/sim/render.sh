@@ -15,14 +15,14 @@ CF="-O1 -w -DLV_CONF_INCLUDE_SIMPLE -I$B/conf -I$HERE/stub -I$LV -I$LV/src -I$RO
 find "$LV/src" -name '*.c' | while read -r f; do
   o="$B/obj/$(echo "$f" | cksum | cut -d' ' -f1).o"
   [ -f "$o" ] || echo "$f $o"
-done | xargs -P 8 -n 2 sh -c 'gcc '"$CF"' -c "$0" -o "$1"'
+done | xargs -r -P 8 -n 2 sh -c 'gcc '"$CF"' -c "$0" -o "$1"'
 for f in "$ROOT"/src/ui/fonts/*.c; do gcc $CF -c "$f" -o "$B/font_$(basename "$f" .c).o"; done
 rm -f "$B"/ui_*.o
 for f in "$ROOT"/src/ui/*.cpp "$ROOT"/src/ui/faces/*.cpp; do g++ $CF -std=gnu++17 -c "$f" -o "$B/ui_$(basename "$f" .cpp).o"; done
 g++ $CF -std=gnu++17 -c "$HERE/sim.cpp" -o "$B/sim.o"
 g++ -o "$B/sim" "$B/sim.o" "$B"/ui_*.o "$B"/font_*.o "$B"/obj/*.o -lm
 "$B/sim" "$B/out"
-N="polished arc stacked analog zen forecast retro daylight tide"
+N="polished arc stacked analog zen forecast retro daylight tide radar"
 cd "$B/out"
 python3 "$HERE/montage.py" "$ROOT/docs/faces/faces.png" 4 $(for n in $N; do echo day-$n; done)
 python3 "$HERE/montage.py" "$ROOT/docs/faces/night.png" 4 $(for n in $N; do echo night-$n; done)

@@ -8,7 +8,7 @@ A digital desk clock for an ESP32-C3 and a 240x240 round GC9A01 display, built w
 - A 60-tick **seconds ring** around the rim
 - **Weather** from [Open-Meteo](https://open-meteo.com/) (no API key): icon, temperature and the day's high/low, refreshed every 10 minutes
 - **Night mode**: everything turns dim red after sunset
-- **Nine clock faces**: Polished (default), Arc, Stacked, Analog, Zen, Forecast, Retro LCD, Daylight and Tide (high/low tide chart from NOAA predictions for the nearest US tide station, or one you pick on the setup page). Tap the BOOT button to switch; themes, ring style and night colour are on the setup page
+- **Ten clock faces**: Polished (default), Arc, Stacked, Analog, Zen, Forecast, Retro LCD, Daylight, Tide (high/low tide chart from NOAA predictions for the nearest US tide station, or one you pick on the setup page) and Radar (a radar scope with the live aircraft within 20 NM of your ZIP, from [adsb.fi](https://adsb.fi) ADS-B data; polled every 10 s only while the face is showing). Tap the BOOT button to switch; themes, ring style and night colour are on the setup page
 - **No secrets in the firmware**: WiFi, timezone, time/date format, clock face, colour theme, ZIP code and units are set from your phone through a captive-portal setup page on the clock itself
 
 ## What you need
@@ -73,9 +73,9 @@ Settings are stored in flash and survive reboots and reflashing. To change them 
 
 ## Faces
 
-<p align="center"><img src="docs/faces/faces.png" alt="The eight clock faces" width="100%"></p>
+<p align="center"><img src="docs/faces/faces.png" alt="The clock faces" width="100%"></p>
 
-Top row: Polished, Arc, Stacked, Analog. Middle row: Zen, Forecast, Retro LCD, Daylight. Bottom: Tide. **Tap BOOT** to step through them, **double-tap** to cycle colour themes (both saved), or pick one on the setup page. The setup page also has colour themes, seconds as digits, the hourly chime and the weather detail line. Night versions and option examples: [night](docs/faces/night.png), [options](docs/faces/options.png), [states](docs/faces/states.png). These images are rendered from the real UI code by `sh docs/tools/sim/render.sh`.
+Top row: Polished, Arc, Stacked, Analog. Middle row: Zen, Forecast, Retro LCD, Daylight. Bottom: Tide, Radar. **Tap BOOT** to step through them, **double-tap** to cycle colour themes (both saved), or pick one on the setup page. The setup page also has colour themes, seconds as digits, the hourly chime and the weather detail line. Night versions and option examples: [night](docs/faces/night.png), [options](docs/faces/options.png), [states](docs/faces/states.png). These images are rendered from the real UI code by `sh docs/tools/sim/render.sh`.
 
 ## Make it yours
 
@@ -100,7 +100,7 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 | `src/main.cpp` | Boot flow and main loop |
 | `src/display.cpp` | TFT_eSPI → LVGL glue |
 | `src/ui/` | The UI behind `ui.h`: `faces/face_*.cpp` (one file per clock face), `faces.cpp` (the face table), `ring.cpp` (seconds ring, chime), `weather_view.cpp`, `theme.cpp` (colour themes, night colours), `boot_screens.cpp` (connecting / syncing / scanning / setup screens), `core.cpp` (theming, rebuild). See the comment atop `src/ui/ui_internal.h` |
-| `src/data/` | `weather.cpp` (Open-Meteo geocoding + forecast in a background task), `weather_format.cpp` (icons and text for the data), `tide.cpp` (NOAA tides) |
+| `src/data/` | `weather.cpp` (Open-Meteo geocoding + forecast in a background task), `weather_format.cpp` (icons and text for the data), `tide.cpp` (NOAA tides), `aircraft.cpp` (adsb.fi aircraft for the Radar face) |
 | `src/config.cpp`, `src/config.h` | Saved settings (NVS) |
 | `src/button.cpp` | BOOT button: short / double / long press |
 | `src/provisioning.cpp` | Setup AP + captive portal + web form |
@@ -113,7 +113,7 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 
 ## Credits
 
-Weather icons: [Weather Icons](https://github.com/erikflowers/weather-icons) by Erik Flowers, font licensed under the SIL Open Font License 1.1. `src/ui/fonts/font_weather.c` is a subset of it generated with `lv_font_conv`. Text font: [Manrope](https://github.com/sharanda/manrope), SIL Open Font License 1.1; `src/ui/fonts/font_manrope_*.c` are subsets generated with `lv_font_conv`. Weather data: [Open-Meteo](https://open-meteo.com/) (free for non-commercial use; see their terms).
+Weather icons: [Weather Icons](https://github.com/erikflowers/weather-icons) by Erik Flowers, font licensed under the SIL Open Font License 1.1. `src/ui/fonts/font_weather.c` is a subset of it generated with `lv_font_conv`. Text font: [Manrope](https://github.com/sharanda/manrope), SIL Open Font License 1.1; `src/ui/fonts/font_manrope_*.c` are subsets generated with `lv_font_conv`. Weather data: [Open-Meteo](https://open-meteo.com/) (free for non-commercial use; see their terms). Aircraft data: [adsb.fi](https://adsb.fi) open data API ([terms](https://github.com/adsbfi/opendata): personal, non-commercial use, with attribution).
 
 ## License
 
