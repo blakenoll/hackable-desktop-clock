@@ -1,5 +1,6 @@
 #include "../ui_internal.h"
 #include "../../data/aircraft.h"
+#include <climits>
 
 namespace ui {
 
@@ -14,8 +15,9 @@ static constexpr int MAXP = AircraftData::MAX;
 static constexpr int TAGS = 3;             // nearest aircraft that get a callsign
 static constexpr int BOX = 29, MID = 14;   // blip container (leader line + dot) and its centre
 static constexpr float LEAD = 12;          // track leader length from the dot's centre, px
-static constexpr uint32_t SWEEP_MS = 4000; // one revolution
-static constexpr int TRAIL = 4;            // sweep afterglow segments
+static constexpr uint32_t SWEEP_MS = RADAR_POLL_MS;  // one revolution per fetch (tuning.h)
+static constexpr uint32_t SWEEP_MAX_DT = 100; // ms: largest step of the beam per frame
+static constexpr int TRAIL = 2;            // sweep afterglow segments (each costs two redraw slivers per frame)
 static constexpr uint32_t PHOSPHOR = 0x2EE59D;
 
 static lv_obj_t *rings[RINGS], *crossH, *crossV, *home, *sweepBox, *sweep[TRAIL];
@@ -24,9 +26,12 @@ static lv_obj_t *nearLabel, *infoLabel, *countLabel, *msgLabel;
 static lv_point_precise_t leadPts[MAXP][2];  // must outlive the line objects
 static int blipX[MAXP], blipY[MAXP];            // dot centres on screen
 static bool blipOn[MAXP];
+static int blipPX[MAXP], blipPY[MAXP];          // last pixel position pushed to LVGL (INT_MIN = none)
 static float blipDeg[MAXP];                  // bearing of each shown blip (for the sweep brightness)
 static lv_opa_t blipOpa[MAXP];
 static float sweepDeg = 0;
+static uint32_t sweepAt = 0;                 // millis() of the previous sweep step
+static bool tagsDirty = true;                // data or layout changed: re-place the callsign tags
 
 // Cached data (survives rebuilds).
 static Aircraft planes[MAXP];
@@ -37,8 +42,9 @@ static char radarMsg[24] = "SCANNING";
 static bool quiet() { return nightMix == 255; }  // fully night: nothing animates
 
 // ---- Sweep -----------------------------------------------------------------------------------------
-// The beam is a few wedge-shaped arcs (arc width = radius): a bright narrow head, then wider, dimmer trail.
-static const struct { float from, to; lv_opa_t opa; } SEG[TRAIL] = {{0, 3, 120}, {3, 12, 64}, {12, 30, 32}, {30, 60, 14}};
+// The beam is two wedge-shaped arcs (arc width = radius): a bright narrow head, then a wider, dimmer trail. Fewer
+// segments = fewer dirty rectangles per frame; four cost ~60 ms a frame on the C3.
+static const struct { float from, to; lv_opa_t opa; } SEG[TRAIL] = {{0, 5, 110}, {5, 40, 30}};
 
 static lv_opa_t blipBright(float behindDeg) {  // 0 = the beam is on it, 360 = about to be hit again
   int o = 255 - (int)(behindDeg * (255 - 100) / 360);  // floor 100: leaders stay readable between passes
@@ -52,9 +58,15 @@ static void applyBlipOpa(int i, lv_opa_t o) {
   if (i < TAGS) lv_obj_set_style_opa(tag[i], o, 0);
 }
 
-static void sweepExec(void *, int32_t v) {
+static void sweepExec(void *, int32_t) {
   if (!sweepBox || quiet()) return;
-  sweepDeg = v / 10.0f;
+  // Advance by the elapsed time, but at most SWEEP_MAX_DT: after a stall (the HTTPS fetch starves the UI for ~2 s)
+  // the beam just slows down instead of jumping ahead to where the clock says it should be.
+  uint32_t now = millis();
+  uint32_t dt = now - sweepAt;
+  sweepAt = now;
+  if (dt > SWEEP_MAX_DT) dt = SWEEP_MAX_DT;
+  sweepDeg = fmodf(sweepDeg + dt * 360.0f / SWEEP_MS, 360.0f);
   for (int k = 0; k < TRAIL; k++) {
     // lv_arc angles: 0 = 3 o'clock, clockwise; rotation 270 makes 0 = 12 o'clock. The wedge trails the beam.
     int a1 = (int)lroundf(sweepDeg - SEG[k].from), a0 = (int)lroundf(sweepDeg - SEG[k].to);
@@ -76,6 +88,7 @@ static void sweepRun(bool on) {
     for (int i = 0; i < MAXP; i++) applyBlipOpa(i, LV_OPA_COVER);
     return;
   }
+  sweepAt = millis();
   lv_anim_t a;
   lv_anim_init(&a);
   lv_anim_set_var(&a, sweepBox);  // deleted along with sweepBox when the face is torn down
@@ -110,6 +123,10 @@ static void radarPaint() {
   sweepRun(!quiet());
 }
 
+static void setTextIf(lv_obj_t *o, const char *t) {  // label updates that invalidate only when the text changes
+  if (o && strcmp(lv_label_get_text(o), t) != 0) lv_label_set_text(o, t);
+}
+
 static void fmtThousands(int v, char *out, size_t n) {  // 12500 -> "12,500"
   if (v >= 1000) snprintf(out, n, "%d,%03d", v / 1000, v % 1000);
   else snprintf(out, n, "%d", v);
@@ -123,7 +140,7 @@ static void placeTags() {
   for (int i = 0; i < TAGS; i++) {
     bool shown = false;
     if (blipOn[i]) {
-      setText(tag[i], planes[i].flight);
+      setTextIf(tag[i], planes[i].flight);
       lv_obj_update_layout(tag[i]);
       int w = lv_obj_get_width(tag[i]), h = 12;
       int bx = blipX[i], by = blipY[i];
@@ -161,18 +178,19 @@ static void placeTags() {
 static void radarUpdate() {
   if (!sweepBox) return;
   bool have = planeN > 0;
-  setText(msgLabel, planeN ? "" : radarMsg[0] ? radarMsg : "NO AIRCRAFT IN RANGE");
+  setTextIf(msgLabel, planeN ? "" : radarMsg[0] ? radarMsg : "NO AIRCRAFT IN RANGE");
   setHidden(msgLabel, have);
   for (lv_obj_t *o : {nearLabel, infoLabel, target}) setHidden(o, !have);
   char buf[40];
   snprintf(buf, sizeof(buf), "%d AIRCRAFT \xC2\xB7 %d NM", planeTotal, rangeNm);
-  setText(countLabel, buf);
+  setTextIf(countLabel, buf);
   setHidden(countLabel, radarMsg[0] != 0);
 
   // Dead reckoning since the fetch (capped: past a minute the guess is worse than the old fix).
   float age = (millis() - planesAt) / 1000.0f;
   if (age > 60) age = 60;
   float scale = R / rangeNm;
+  bool moved = tagsDirty;
   for (int i = 0; i < MAXP; i++) {
     bool on = i < planeN;
     float px = 0, py = 0;
@@ -186,7 +204,13 @@ static void radarUpdate() {
       blipDeg[i] = fmodf(atan2f(px, -py) * 180 / (float)M_PI + 360, 360);
       // Move first, then the leader: its redraw then falls inside the box's own (deduplicated by LVGL), so a
       // second's update costs ~2 dirty areas per blip instead of 4 (see LV_INV_BUF_SIZE in lv_conf.h).
-      lv_obj_set_pos(blip[i], (int)lroundf(RING_CENTER + px) - MID, (int)lroundf(RING_CENTER + py) - MID);
+      int sx = (int)lroundf(RING_CENTER + px), sy = (int)lroundf(RING_CENTER + py);
+      if (sx != blipPX[i] || sy != blipPY[i]) {  // slow planes move a pixel only every few seconds: leave them alone
+        blipPX[i] = sx;
+        blipPY[i] = sy;
+        moved = true;
+        lv_obj_set_pos(blip[i], sx - MID, sy - MID);
+      }
       // Leader: LEAD px along the track (from the dot's centre), none when stationary. Unchanged -> left alone.
       float L = a.gs > 30 ? LEAD : 0;
       lv_point_precise_t end = {(lv_value_precise_t)lroundf(MID + L * sinf(t)), (lv_value_precise_t)lroundf(MID - L * cosf(t))};
@@ -196,6 +220,7 @@ static void radarUpdate() {
         lv_line_set_points(blipLead[i], leadPts[i], 2);
       }
     }
+    if (on != blipOn[i]) moved = true;
     setHidden(blip[i], !on);
     blipX[i] = (int)lroundf(RING_CENTER + px);
     blipY[i] = (int)lroundf(RING_CENTER + py);
@@ -206,24 +231,28 @@ static void radarUpdate() {
     if (i == 0) setHidden(target, !on);
   }
 
-  placeTags();
+  if (moved) {
+    placeTags();
+    tagsDirty = false;
+  }
 
   if (have) {  // "UAL2609 · B39M", then "4,950 FT · 3.2 NM"
     const Aircraft &a = planes[0];
     snprintf(buf, sizeof(buf), "%s%s%s", a.flight, a.type[0] ? " \xC2\xB7 " : "", a.type);
-    setText(nearLabel, buf);
+    setTextIf(nearLabel, buf);
     char alt[16] = "";
     if (a.alt > 0) { fmtThousands(a.alt, alt, sizeof(alt)); strlcat(alt, " FT", sizeof(alt)); }
     float t = a.track * (float)M_PI / 180, d = a.gs * age / 3600;
     float dist = hypotf(a.x + d * sinf(t), a.y + d * cosf(t));
     snprintf(buf, sizeof(buf), "%s%s%.1f NM", alt, alt[0] ? " \xC2\xB7 " : "", dist);
-    setText(infoLabel, buf);
+    setTextIf(infoLabel, buf);
   }
 }
 
 static void build() {
-  mkDateRow(-90, 5, 1);
-  mkTime(-66, &manrope_34);
+  tagsDirty = true;
+  for (int i = 0; i < MAXP; i++) blipPX[i] = blipPY[i] = INT_MIN;
+  mkTime(-92, &manrope_20);  // small and tucked at the top so the scope gets the face; no date
   mkOffline(-66, -66);
 
   for (int i = 0; i < RINGS; i++) {
@@ -301,7 +330,6 @@ static FaceDef make() {
   f.name = "Radar";
   f.ring = K_NONE;  // the scope is the face
   f.build = build;
-  f.date = dateQuietLine;
   f.palette = palette;
   f.paint = paint;
   f.onTime = onTime;
@@ -322,5 +350,6 @@ void ui_set_aircraft(const Aircraft *ac, int n, int total, uint32_t at, int rang
   planesAt = at;
   rangeNm = range > 0 ? range : RADAR_NM;
   snprintf(radarMsg, sizeof(radarMsg), "%s", msg ? msg : "");
+  tagsDirty = true;
   if (face().onData) face().onData();  // only the active face's hook runs, so no stale pointers are touched
 }

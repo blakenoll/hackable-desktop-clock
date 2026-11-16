@@ -36,7 +36,7 @@ static constexpr uint32_t WATER_REFRESH_MS = 30UL * 60 * 1000;     // water temp
 static constexpr float TIDE_MAX_STATION_KM = 60;                   // nearest station farther than this: "no tides here"
 
 // ---- Radar (src/data/aircraft.cpp) ------------------------------------------------------------------------
-static constexpr int RADAR_NM = 20;                            // query radius and the scope's outer ring, nautical miles
+static constexpr int RADAR_NM = 10;                            // query radius and the scope's outer ring, nautical miles
 static constexpr uint32_t RADAR_POLL_MS = 10UL * 1000;         // adsb.fi allows 1 request/s; the face dead-reckons between
 static constexpr uint32_t RADAR_BACKOFF_MS = 60UL * 1000;      // after an HTTP error (4xx responses count toward an IP ban)
 static constexpr uint32_t RADAR_STALE_MS = 2UL * 60 * 1000;    // fetches failing this long -> "NO RADAR DATA"
