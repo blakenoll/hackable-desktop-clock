@@ -1,20 +1,21 @@
 #pragma once
 #include <Arduino.h>
 
-// Everything the user can set, persisted in NVS (flash) via Preferences, namespace `clock`.
-// The setup page (provisioning.cpp) writes it; main.cpp and weather.cpp read it.
+// Everything the user can set, persisted in NVS (flash) via Preferences, namespace `clock`. The NVS keys,
+// defaults and ranges are in config_fields.h (start there to add a setting). The setup page (setup/) writes it;
+// main.cpp and the data tasks read it.
 struct ClockConfig {
   String ssid, pass, tz;
   String city;           // 5-digit US ZIP code for weather ("" = weather off)
   String addr;           // optional street address within the ZIP, for exact coordinates ("" = ZIP centre)
   char units = 'F';      // 'F' or 'C'
   bool h24 = false;      // 24-hour clock (default 12-hour with AM/PM)
-  uint8_t dateFmt = 0;   // 0 = "Fri Nov 6", 1 = "Fri 6 Nov"
+  uint8_t dateFmt = 0;   // 0 = "Nov 6", 1 = "6 Nov" (month/day order)
   uint8_t accent = 0;    // colour theme: index into THEMES[] (src/ui/theme.cpp), 0 = red
   uint8_t face = 0;      // clock face (enum Face in ui.h); also changed by a short BOOT press
   uint8_t nightMode = 0; // 0 = after sunset (needs a ZIP), 1 = fixed hours, 2 = never
   uint8_t nightStart = 22, nightEnd = 7;  // fixed hours: night from nightStart:00 to nightEnd:00
-  uint8_t nightColor = 0;  // 0 red, 1 amber, 2 dim white
+  uint8_t nightColor = 0;  // index into NIGHTS[] (src/ui/theme.cpp): 0 red, 1 amber, 2 dim white
   bool chime = true;     // hourly comet lap
   bool detail = true;    // rain chance / feels-like line
   bool seconds = false;  // seconds as digits

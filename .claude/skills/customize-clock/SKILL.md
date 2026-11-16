@@ -1,29 +1,34 @@
 ---
 name: customize-clock
-description: Change how the ESP32 desktop clock looks or behaves - time/date format, colors, layout, fonts, seconds ring, night mode, weather fields or icons, timezone list, setup-page settings. Use when the user wants to tweak, restyle or extend the clock firmware.
+description: Change how the ESP32 desktop clock looks or behaves - time/date format, colors, themes, layout, faces, fonts, seconds ring, night mode, weather fields or icons, refresh intervals, timezone list, setup-page settings. Use when the user wants to tweak, restyle or extend the clock firmware.
 ---
 
 # Customizing the clock
 
-Start from `docs/CUSTOMIZING.md`: it lists the exact file and function for each common change (12/24-hour, date format, colors table, layout offsets, ring constants, timezone presets, weather refresh and fields, adding a setup-page setting, regenerating the icon font). `docs/HARDWARE.md` covers pins/displays and `CLAUDE.md` has project facts.
+## Find the place
+
+1. Check whether it's already a **setup-page option** (12/24 h, date order, face, theme, seconds digits, chime, detail line, night mode and colour, units, tide station). If it is, tell the user; no code change is needed.
+2. Look the change up in the **"Where to change what"** table in `docs/CUSTOMIZING.md` (or the shorter map in `CLAUDE.md`). It names the file and function.
+3. For background, read the doc the table links: `docs/FACES.md` (faces, rings, `FaceDef` hooks), `docs/ARCHITECTURE.md` (threads, the rebuild model, night mode, motion), `docs/DATA.md` (weather / tides / radar), `src/ui/fonts/README.md` (fonts, icons).
+
+The quick map: timings and thresholds are in `src/tuning.h`; settings in `src/config_fields.h`; the setup page in `src/setup/`; one file per face in `src/ui/faces/`; themes in `src/ui/theme.cpp`; weather text and icons in `src/data/weather_format.cpp`.
 
 ## Workflow
 
-1. Make the change in the file named in the doc. Keep it small and in the existing style (the UI is `src/ui/`, one file per face in `src/ui/faces/`; weather is `src/data/weather.cpp`, shown via `src/data/weather_format.cpp`; saved settings are `src/config.cpp`; the setup page is `src/provisioning.cpp`).
-2. `pio run` (see the `flash-clock` skill for PATH and Rosetta notes). Report the flash-usage line.
-3. Ask before flashing; use the `flash-clock` skill to do it.
-4. **You can't see the screen.** Tell the user what to check and ask how it looks; expect a round or two of nudging offsets/sizes.
-5. Update `README.md` / `docs/` if behavior or settings changed.
+1. Make the change in the place the doc names, small and in the existing style.
+2. `pio run` (see the `flash-clock` skill for PATH and Rosetta). Report the flash-usage line.
+3. For anything visual, run `sh docs/tools/sim/render.sh` and look at `docs/faces/*.png` yourself before asking the user to flash. It renders the real UI code.
+4. Ask before flashing; use the `flash-clock` skill to do it. You can't see the real screen, so tell the user what to check and expect a round or two of nudging.
+5. Update the doc that describes what you changed (and `PALETTES` in `site/index.html` for theme changes), then run `python3 docs/tools/check.py`.
 
-## Constraints to respect
+## Constraints
 
-- **Round bezel.** Content near the corners is clipped. Usable width at vertical offset `y` from center is about `2*sqrt(120^2 - y^2)` px; the seconds ring occupies the outer ~12 px.
-- **Only the main loop calls LVGL.** The weather task communicates through `weather_get()` (mutex-protected struct). Never call `lv_*` from another task.
-- **Loading states** (WiFi glyph, weather skeleton) are animated by LVGL timers/anims, so any blocking wait must keep calling `lv_timer_handler()`. Their colours need night variants too.
-- **macOS tooling.** `sed -i` needs `sed -i ''`; for multi-line edits prefer the Edit tool or `python3`. Symbols like `LV_SYMBOL_UP` aren't in custom fonts, so give a custom font `.fallback = &lv_font_montserrat_14`.
-- **Night mode parity.** Every day color needs a red-tone night counterpart in `ui_set_night()` / `styleTick()`; avoid blue/green at night. The setup screen is intentionally excluded.
-- **Fonts cost flash.** Fonts are generated Manrope files in `src/ui/fonts/font_manrope_*.c` (see `docs/CUSTOMIZING.md`); a new size means generating a new file. Budget: firmware ~1.29 MB of a 3 MB partition.
-- **Icon font changes** need the `lv_font_conv` procedure in `docs/CUSTOMIZING.md`. Download the source font into a new empty folder outside the repo, run tools from elsewhere, and keep the SIL OFL credit in the README.
-- **Settings added to the setup page** touch four places in `src/provisioning.*` (struct, load, save, form + `/save` handler); see the doc.
-- **Don't remove `fix_tft.py`** or bump the pinned platform/library versions in `platformio.ini` without verifying the display initializes (see `docs/HARDWARE.md`).
-- Never commit or print saved credentials; they live in the board's flash, not in the repo.
+The rules in `CLAUDE.md` apply. The ones customizations hit most:
+
+- **Round bezel:** the usable width at offset `y` is about `2*sqrt(120² - y²)` px.
+- **Night parity:** every day colour needs a night value via `mixDN(day, nightC(pct))`.
+- **Font subsets:** a glyph outside a font's range doesn't render. `manrope_caps_12` is uppercase-only.
+- **Faces:** shared code doesn't branch on `opt.face`, and pointers may be null.
+- **LVGL:** only the main loop calls it.
+- **Downloads:** put downloaded fonts in a new, empty folder outside the repo.
+- Never print saved credentials or the street address.

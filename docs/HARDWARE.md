@@ -16,7 +16,7 @@ All in `platformio.ini`:
 | `-DARDUINO_USB_CDC_ON_BOOT=1` | Route `Serial` over the C3's built-in USB |
 | `board_build.partitions = huge_app.csv` | ~3 MB app partition, no OTA slot. Needs a 4 MB flash chip. |
 
-The BOOT-button pin used for re-entering setup is `BOOT_PIN` (GPIO 9) in `src/provisioning.cpp`.
+Code that touches the hardware is in `src/hw/`: `display.cpp` (TFT_eSPI init and the LVGL flush) and `button.cpp` (the BOOT button, `BOOT_PIN` = GPIO 9).
 
 ## Different wiring (same board and display)
 
@@ -25,15 +25,15 @@ Change the `-DTFT_*` pin flags and rewire to match. On the C3, avoid GPIO 2, 8 a
 ## A different display
 
 1. In `platformio.ini`, replace `-DGC9A01_DRIVER=1` with your controller's TFT_eSPI define (`ST7789_DRIVER`, `ILI9341_DRIVER`, …) and set `TFT_WIDTH` / `TFT_HEIGHT`. See TFT_eSPI's `User_Setup.h` for the list and for options such as color order and inversion (`TFT_RGB_ORDER`, `TFT_INVERSION_ON`) if colors look wrong. These were not needed on the tested module.
-2. In `src/main.cpp`, update `W` and `H` and the `drawBuf` size (a 40-line partial render buffer).
+2. In `src/hw/display.cpp`, update `W` and `H` (the `drawBuf` partial render buffer is 40 lines of `W`).
 3. **The UI assumes a 240x240 round screen.** For other sizes or square panels, adjust in `src/ui/`: `RING_CENTER` (`ui_internal.h`), the radii in `tickGeo()` / `mkRingArc()` (`ring.cpp`) and the tick lengths (or remove the ring), the ±58 px label offsets, and the weather row width (190). On a square screen you can use the corners that the round bezel hides.
 4. Other color depths are not supported: LVGL runs in RGB565 and `flushCb` byte-swaps for the SPI bus.
 
 ## A different ESP32 board
 
-- Change `board =` and the pin flags. Boards with fewer than 4 MB of flash can't use `huge_app.csv`; the firmware is ~1.39 MB, which is larger than the default 1.3 MB app slot, so you would have to trim it (subset the 56 pt font, disable unused LVGL features, drop the weather icons) or pick a smaller partition scheme.
+- Change `board =` and the pin flags. Boards with fewer than 4 MB of flash can't use `huge_app.csv`; the firmware (size printed by `pio run`) is larger than the default 1.3 MB app slot, so you would have to trim it (drop faces or fonts you don't use, disable unused LVGL features) or pick another partition scheme.
 - `-DARDUINO_USB_CDC_ON_BOOT=1` is for chips with native USB (C3, S3). Remove it for boards with a UART bridge chip.
-- The BOOT button is usually GPIO 0 on classic ESP32/S3 boards; change `BOOT_PIN`.
+- The BOOT button is usually GPIO 0 on classic ESP32/S3 boards; change `BOOT_PIN` in `src/hw/button.cpp`.
 - `fix_tft.py` only does anything for the ESP32-C3 header; on other chips it silently does nothing.
 - Only the ESP32-C3 has been tested.
 
@@ -47,7 +47,6 @@ Change the `-DTFT_*` pin flags and rewire to match. On the C3, avoid GPIO 2, 8 a
 
 ## Flash and memory
 
-- Firmware is ~1.39 MB of the 3 MB partition; the weather/TLS code alone is ~158 KB.
-- The 56 pt Manrope time font is already subset to `0-9` and `:`.
-- RAM use is ~41%. `LV_MEM_SIZE` is 64 KB in `include/lv_conf.h`.
-- Saved settings (WiFi, timezone, ZIP, units, last day/night state) live in the NVS partition at `0x9000`, which the `huge_app` table keeps in the same place as the default table, so they survive a reflash. `pio run -t erase` wipes them.
+- `pio run` prints flash and RAM use. Firmware is well under the 3 MB partition; the weather/TLS code alone is ~158 KB, and fonts are the next biggest cost (all are subset; see `src/ui/fonts/README.md`).
+- `LV_MEM_SIZE` is 64 KB in `include/lv_conf.h`. TFT_eSPI's own fonts are not loaded: LVGL draws all text.
+- Saved settings (WiFi, timezone, ZIP, address, display options, last day/night state) live in the NVS partition at `0x9000`, which the `huge_app` table keeps in the same place as the default table, so they survive a reflash. `pio run -t erase` wipes them.

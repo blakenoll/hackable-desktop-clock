@@ -1,17 +1,16 @@
 #pragma once
 #include <stdint.h>
+#include "../tuning.h"  // RADAR_NM, RADAR_POLL_MS
 
 // Live aircraft around the ZIP's coordinates from adsb.fi's open data API (opendata.adsb.fi, no key; personal,
 // non-commercial use, attribution to adsb.fi required; 1 request/s limit). Only polled while the Radar face is
-// showing (aircraft_set_active), every POLL_MS.
-static constexpr int RADAR_NM = 20;  // query radius and the scope's outer ring, nautical miles
+// showing (aircraft_set_active), every RADAR_POLL_MS.
 
 struct Aircraft {
   float x = 0, y = 0;     // NM east / north of home, at AircraftData::fetchedAt
   float gs = 0;           // ground speed, knots (0 if unknown)
   float track = 0;        // degrees clockwise from true north
   int alt = -1;           // barometric altitude, ft; -1 = unknown (aircraft on the ground are left out)
-  int rate = 0;           // vertical rate, ft/min
   char flight[9] = "";    // callsign ("UAL2609"), else the registration, else the hex code
   char type[5] = "";      // ICAO type ("B39M"), "" if unknown
 };

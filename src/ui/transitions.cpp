@@ -1,3 +1,5 @@
+// Text transitions: swapText() fades a label out, swaps its text and fades it back in (the minute change and
+// weather updates); a hidden label just fades in.
 #include "ui_internal.h"
 
 namespace ui {

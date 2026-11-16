@@ -1,3 +1,6 @@
+// Radar face data: polls adsb.fi for aircraft around the saved coordinates (only while the Radar face shows),
+// stream-parses the JSON with AcParser keeping the nearest AircraftData::MAX, and publishes an AircraftData
+// snapshot (aircraft_get()). Its own task; never touches LVGL.
 #include "aircraft.h"
 #include "../config.h"
 #include <WiFi.h>
@@ -6,9 +9,8 @@
 #include <HTTPClient.h>
 #include <freertos/semphr.h>
 #include <math.h>
+#include "../tuning.h"
 
-static constexpr uint32_t POLL_MS = 10UL * 1000;      // well under adsb.fi's 1 request/s; the face dead-reckons in between
-static constexpr uint32_t BACKOFF_MS = 60UL * 1000;   // after an HTTP error (4xx responses count against the IP)
 
 static AircraftData g_data;
 static SemaphoreHandle_t g_mu;
@@ -93,7 +95,7 @@ class AcParser : public Stream {
  private:
   struct Cur {
     float dst = NAN, dir = NAN, gs = 0, track = NAN, seen = 0;
-    int alt = -1, rate = 0;
+    int alt = -1;
     char flight[9] = "", reg[9] = "", hex[9] = "", type[5] = "";
   } cur;
   int depth = 0;
@@ -135,7 +137,6 @@ class AcParser : public Stream {
     else if (!strcmp(k, "dir")) cur.dir = atof(val);
     else if (!strcmp(k, "gs")) cur.gs = atof(val);
     else if (!strcmp(k, "track")) cur.track = atof(val);
-    else if (!strcmp(k, "baro_rate")) cur.rate = atoi(val);
     else if (!strcmp(k, "seen_pos")) cur.seen = atof(val);
   }
   void commit() {
@@ -164,7 +165,6 @@ class AcParser : public Stream {
     a.gs = cur.gs;
     a.track = track;
     a.alt = cur.alt;
-    a.rate = cur.rate;
     strlcpy(a.flight, cur.flight[0] ? cur.flight : cur.reg[0] ? cur.reg : cur.hex, sizeof(a.flight));
     for (char *p = a.flight; *p; p++) *p = (char)toupper((unsigned char)*p);  // the hex code comes lowercase
     strlcpy(a.type, cur.type, sizeof(a.type));
@@ -222,7 +222,7 @@ static void radarTask(void *) {
     }
     AircraftData d;
     int status = fetch(cfg.lat, cfg.lon, d);
-    uint32_t wait = POLL_MS;
+    uint32_t wait = RADAR_POLL_MS;
     if (status == HTTP_CODE_OK) {
       publish(d);
     } else if (status == NET_BUSY) {
@@ -231,7 +231,7 @@ static void radarTask(void *) {
       Serial.printf("radar: fetch failed (%d)\n", status);
       AircraftData old = aircraft_get();
       if (!old.valid) publishError("NO RADAR DATA");  // keep showing (dead-reckoned) planes for a while otherwise
-      if (status >= 400) wait = BACKOFF_MS;
+      if (status >= 400) wait = RADAR_BACKOFF_MS;
     }
     // Woken early by aircraft_set_active(true) only after a pause, so switching faces can't beat the rate limit.
     vTaskDelay(pdMS_TO_TICKS(wait));
@@ -249,7 +249,7 @@ void aircraft_set_active(bool on) {
     xTaskCreate(radarTask, "radar", 10240, nullptr, 1, &g_task);
   }
   AircraftData d = aircraft_get();
-  if (!d.valid || millis() - d.fetchedAt > 3 * POLL_MS) {  // old planes would be wrong: scan again
+  if (!d.valid || millis() - d.fetchedAt > 3 * RADAR_POLL_MS) {  // old planes would be wrong: scan again
     AircraftData l;
     l.loading = true;
     publish(l);

@@ -16,3 +16,11 @@ run = "pio run -t upload"
 [tasks.clean]
 description = "Clean build output"
 run = "pio run -t clean"
+
+[tasks.render]
+description = "Render every face on this computer into docs/faces/ (needs one prior build)"
+run = "sh docs/tools/sim/render.sh"
+
+[tasks.check]
+description = "Check that the docs match the code (paths, functions, faces, web flasher palettes)"
+run = "python3 docs/tools/check.py"

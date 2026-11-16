@@ -40,7 +40,7 @@
 
 **My network isn't listed.** The clock scans once when setup starts. Choose "Other (type manually)..." in the network dropdown to type the name by hand. It must be 2.4 GHz (the ESP32-C3 has no 5 GHz radio).
 
-**It keeps going back to the setup screen.** It couldn't join the saved network within 20 seconds (wrong password, out of range, 5 GHz-only network). Re-enter the details. If the screen is just left alone for 5 minutes, it reboots and retries the saved network.
+**It keeps going back to the setup screen.** It couldn't join the saved network within 20 seconds (`WIFI_CONNECT_TIMEOUT_MS` in `src/tuning.h`) (wrong password, out of range, 5 GHz-only network). Re-enter the details. If the screen is just left alone for 5 minutes, it reboots and retries the saved network.
 
 **Re-open setup later.** Hold the **BOOT button for 3 seconds** while the clock is running.
 
@@ -48,9 +48,9 @@
 
 ## Time
 
-**Wrong time or timezone.** Pick the timezone on the setup page. If yours isn't listed, add it to `ZONES[]` in `src/provisioning.cpp` as a POSIX TZ string (for example `EST5EDT,M3.2.0,M11.1.0`); see the [POSIX TZ list](https://github.com/nayarsystems/posix_tz_db).
+**Wrong time or timezone.** Pick the timezone on the setup page. If yours isn't listed, add it to `ZONES[]` in `src/setup/zones.cpp` as a POSIX TZ string (for example `EST5EDT,M3.2.0,M11.1.0`); see the [POSIX TZ list](https://github.com/nayarsystems/posix_tz_db).
 
-**Stuck on "Syncing time...".** NTP (`pool.ntp.org`, `time.nist.gov`) is unreachable from your network, or UDP port 123 is blocked.
+**Stuck on the "Synchronizing" animation.** NTP (`NTP_SERVER_1` / `NTP_SERVER_2` in `src/tuning.h`: `pool.ntp.org`, `time.nist.gov`) is unreachable from your network, or UDP port 123 is blocked.
 
 ## Weather and night mode
 

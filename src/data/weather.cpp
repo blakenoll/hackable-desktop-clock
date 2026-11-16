@@ -1,3 +1,6 @@
+// Weather background task: resolves the location once (US Census street-address geocoder, else Open-Meteo's ZIP
+// geocoder; cached in NVS), then fetches Open-Meteo current + hourly + daily data every WEATHER_REFRESH_MS and
+// publishes a WeatherData snapshot (weather_get()). Also drives tide_refresh(). Never touches LVGL.
 #include "weather.h"
 #include "tide.h"
 #include <WiFi.h>
@@ -6,9 +9,8 @@
 #include <HTTPClient.h>
 #include <freertos/semphr.h>
 #include <math.h>
+#include "../tuning.h"
 
-static constexpr uint32_t REFRESH_MS = 10UL * 60 * 1000;  // Open-Meteo "current" data itself updates ~every 15 min, so some polls return unchanged values
-static constexpr uint32_t RETRY_MS = 60UL * 1000;
 static constexpr int RAIN_HOURS = WeatherData::RAIN_HOURS;  // hourly values (rain chance, temperature) cover this many hours
 
 static WeatherData g_data;
@@ -236,7 +238,7 @@ static void weatherTask(void *) {
   for (;;) {
     ClockConfig cfg;
     config_load(cfg);
-    vTaskDelay(pdMS_TO_TICKS(refresh(cfg) ? REFRESH_MS : RETRY_MS));
+    vTaskDelay(pdMS_TO_TICKS(refresh(cfg) ? WEATHER_REFRESH_MS : WEATHER_RETRY_MS));
   }
 }
 

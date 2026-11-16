@@ -1,11 +1,15 @@
+// Boot flow and main loop: display + UI init, saved settings, WiFi, NTP, then once a second the clock face,
+// night mode, offline marker, and copying the background tasks' weather / tide / radar snapshots into the UI.
+// The only place (with setup mode) that calls LVGL; background tasks publish data through *_get() snapshots.
 #include <Arduino.h>
 #include <WiFi.h>
 #include <lvgl.h>
 #include <time.h>
-#include "button.h"
 #include "config.h"
-#include "display.h"
-#include "provisioning.h"
+#include "tuning.h"
+#include "hw/button.h"
+#include "hw/display.h"
+#include "setup/portal.h"
 #include "ui/ui.h"
 #include "data/aircraft.h"
 #include "data/tide.h"
@@ -30,20 +34,20 @@ static UiOptions uiOptions(const ClockConfig &cfg) {
   return o;
 }
 
-// Joins the saved WiFi. A long BOOT press, or failing for 20 s, drops into setup mode.
+// Joins the saved WiFi. A long BOOT press, or failing for WIFI_CONNECT_TIMEOUT_MS, drops into setup mode.
 static void connectWifi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(g_cfg.ssid.c_str(), g_cfg.pass.c_str());
   uint32_t start = millis();
   while (WiFi.status() != WL_CONNECTED) {
-    if (button_long_press() || millis() - start > 20000) prov_run(true);
+    if (button_long_press() || millis() - start > WIFI_CONNECT_TIMEOUT_MS) prov_run(true);
     lv_timer_handler();
     delay(50);
   }
 }
 
 static void syncTime() {
-  configTzTime(g_cfg.tz.c_str(), "pool.ntp.org", "time.nist.gov");
+  configTzTime(g_cfg.tz.c_str(), NTP_SERVER_1, NTP_SERVER_2);
   tm t;
   while (!getLocalTime(&t, 100)) {
     if (button_long_press()) prov_run(true);
@@ -78,9 +82,6 @@ void setup() {
 }
 
 // ---- Running ---------------------------------------------------------------------------------------
-
-static constexpr uint32_t STALE_MS = 30UL * 60 * 1000;   // weather older than this is dimmed
-static constexpr uint32_t OFFLINE_MS = 10UL * 1000;       // brief WiFi blips don't show the marker
 
 // Night by the clock (setup page "Fixed hours"): from nightStart:00 until nightEnd:00, possibly across midnight.
 static bool scheduledNight(int hour) {
@@ -130,7 +131,7 @@ static void updateOffline() {
   static uint32_t offSince = 0;
   if (WiFi.status() == WL_CONNECTED) offSince = 0;
   else if (!offSince) offSince = millis() | 1;
-  ui_set_offline(offSince && millis() - offSince > OFFLINE_MS);
+  ui_set_offline(offSince && millis() - offSince > OFFLINE_MARKER_MS);
 }
 
 // Pushes new weather to the UI (only when the weather task published something new).
@@ -164,7 +165,7 @@ static void showWeather(const WeatherData &w) {
 static void updateWeather() {
   static uint32_t shownVersion = 0;
   WeatherData w = weather_get();
-  ui_set_weather_stale(w.valid && millis() - w.fetchedAt > STALE_MS);
+  ui_set_weather_stale(w.valid && millis() - w.fetchedAt > WEATHER_STALE_MS);
   if (w.version != shownVersion) {
     shownVersion = w.version;
     showWeather(w);
@@ -190,7 +191,7 @@ static void updateRadar() {
   static uint32_t shownVersion = UINT32_MAX;
   static bool shownStale = false;
   AircraftData d = aircraft_get();
-  bool stale = d.valid && millis() - d.fetchedAt > 2 * 60 * 1000UL;  // fetches keep failing: don't show guesses
+  bool stale = d.valid && millis() - d.fetchedAt > RADAR_STALE_MS;  // fetches keep failing: don't show guesses
   if (d.version == shownVersion && stale == shownStale) return;
   shownVersion = d.version;
   shownStale = stale;

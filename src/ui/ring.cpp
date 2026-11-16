@@ -1,3 +1,5 @@
+// Generic seconds rings (RingKind: ticks, dot ticks, blocks, analog markers, arc, orbit): build, per-second
+// update and colours. Tick geometry is tickGeo(), colours styleTick(). Also the hourly chime and the boot splash.
 #include "ui_internal.h"
 
 namespace ui {

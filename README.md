@@ -4,10 +4,10 @@
 
 A digital desk clock for an ESP32-C3 and a 240x240 round GC9A01 display, built with PlatformIO, Arduino and LVGL 9.
 
-- Time over NTP, 12-hour, with the date above it
-- A 60-tick **seconds ring** around the rim
+- Time over NTP, 12- or 24-hour, with the date
+- A **seconds ring** around the rim (its style depends on the face)
 - **Weather** from [Open-Meteo](https://open-meteo.com/) (no API key): icon, temperature and the day's high/low, refreshed every 10 minutes
-- **Night mode**: everything turns dim red after sunset
+- **Night mode**: everything turns dim red (or amber, or dim white) after sunset or at fixed hours
 - **Ten clock faces**: Polished (default), Arc, Stacked, Analog, Zen, Forecast, Retro LCD, Daylight, Tide (high/low tide chart from NOAA predictions for the nearest US tide station, or one you pick on the setup page) and Radar (a radar scope with the live aircraft within 20 NM of your ZIP, from [adsb.fi](https://adsb.fi) ADS-B data; polled every 10 s only while the face is showing). Tap the BOOT button to switch; themes, ring style and night colour are on the setup page
 - **No secrets in the firmware**: WiFi, timezone, time/date format, clock face, colour theme, ZIP code and units are set from your phone through a captive-portal setup page on the clock itself
 
@@ -79,7 +79,7 @@ Top row: Polished, Arc, Stacked, Analog. Middle row: Zen, Forecast, Retro LCD, D
 
 ## Make it yours
 
-[docs/CUSTOMIZING.md](docs/CUSTOMIZING.md) has recipes with exact file locations: 12/24-hour time, date format, colors, layout, fonts, ring style, timezones, weather refresh, new weather icons, adding settings to the setup page, and more.
+[docs/CUSTOMIZING.md](docs/CUSTOMIZING.md) maps each common change to the exact file and function: colours and themes, layout, faces, the seconds ring, fonts, weather icons and text, refresh intervals, timezones, adding settings to the setup page, and more. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains how the pieces fit together.
 
 ### Working with Claude Code
 
@@ -91,25 +91,25 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 | `change-hardware` | adapt to a different display, pins or ESP32 board |
 | `flash-clock` | build, flash and read serial output without tripping on the known gotchas |
 
-`CLAUDE.md` holds the project facts those skills build on. The skills can't see the screen, so they will ask you to check changes on the real display.
+`CLAUDE.md` (also linked as `AGENTS.md` for other agents) is the map those skills start from: where to change what, the rules, and the build gotchas. The skills can't see the screen, so they will ask you to check changes on the real display.
 
 ## Project layout
 
 | Path | What it is |
 |------|------------|
 | `src/main.cpp` | Boot flow and main loop |
-| `src/display.cpp` | TFT_eSPI → LVGL glue |
-| `src/ui/` | The UI behind `ui.h`: `faces/face_*.cpp` (one file per clock face), `faces.cpp` (the face table), `ring.cpp` (seconds ring, chime), `weather_view.cpp`, `theme.cpp` (colour themes, night colours), `boot_screens.cpp` (connecting / syncing / scanning / setup screens), `core.cpp` (theming, rebuild). See the comment atop `src/ui/ui_internal.h` |
-| `src/data/` | `weather.cpp` (Open-Meteo geocoding + forecast in a background task), `weather_format.cpp` (icons and text for the data), `tide.cpp` (NOAA tides), `aircraft.cpp` (adsb.fi aircraft for the Radar face) |
-| `src/config.cpp`, `src/config.h` | Saved settings (NVS) |
-| `src/button.cpp` | BOOT button: short / double / long press |
-| `src/provisioning.cpp` | Setup AP + captive portal + web form |
-| `src/ui/fonts/font_weather.c` | Generated 26 px weather-icon font (12 glyphs) |
-| `src/ui/fonts/font_manrope_*.c` | Generated Manrope text fonts (14, 20, 56 px) |
-| `include/lv_conf.h` | LVGL config: enabled fonts and widgets, memory |
+| `src/tuning.h` | Timings and thresholds (refresh intervals, timeouts, button timings) |
+| `src/config.*`, `src/config_fields.h` | Saved settings (NVS); `config_fields.h` lists every setting once |
+| `src/setup/` | Setup mode: access point + captive portal (`portal.cpp`), the setup page (`form.cpp`), timezones (`zones.cpp`) |
+| `src/hw/` | Display (TFT_eSPI -> LVGL) and the BOOT button |
+| `src/data/` | Background fetches: weather (Open-Meteo), tides (NOAA), aircraft (adsb.fi); `weather_format.cpp` turns data into icons and text |
+| `src/ui/` | Everything drawn, behind `ui.h`. `faces/face_*.cpp` is one file per face; the file list is at the top of `src/ui/ui_internal.h` |
+| `src/ui/fonts/` | Generated Manrope and Weather Icons fonts ([README](src/ui/fonts/README.md)) |
+| `include/lv_conf.h` | LVGL config |
 | `fix_tft.py` | Build-time patch for a TFT_eSPI/ESP32-C3 crash; see [docs/HARDWARE.md](docs/HARDWARE.md) |
 | `platformio.ini` | Board, pins, pinned library versions, partition table |
-| `docs/` | Customizing, hardware and troubleshooting guides |
+| `docs/` | Guides ([customizing](docs/CUSTOMIZING.md), [architecture](docs/ARCHITECTURE.md), [faces](docs/FACES.md), [data](docs/DATA.md), [hardware](docs/HARDWARE.md), [troubleshooting](docs/TROUBLESHOOTING.md), [web flasher](docs/WEB_FLASHER.md)), face renders and tools |
+| `site/` | The web flasher (GitHub Pages) |
 
 ## Credits
 

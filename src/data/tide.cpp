@@ -1,3 +1,6 @@
+// NOAA CO-OPS tides: finds the nearest station once (streams NOAA's ~2 MB station list through StationFinder),
+// fetches high/low predictions and the water temperature, and publishes a TideData snapshot (tide_get()).
+// Called from the weather task (tide_refresh()); never touches LVGL.
 #include "tide.h"
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
@@ -5,13 +8,11 @@
 #include <HTTPClient.h>
 #include <freertos/semphr.h>
 #include <math.h>
+#include "../tuning.h"
 
-static constexpr uint32_t TIDE_REFRESH_MS = 6UL * 60 * 60 * 1000;  // predictions don't change; this just keeps the window current
-static constexpr float MAX_STATION_KM = 60;                         // farther than this: no tides here (inland)
 
 static TideData g_tide;
 static SemaphoreHandle_t g_mu;
-static constexpr uint32_t WATER_REFRESH_MS = 30UL * 60 * 1000;
 static uint32_t g_at = 0;       // millis() of the last fetch that settled the data (0 = never)
 static uint32_t g_waterAt = 0;  // same for the water temperature
 static String g_for;       // station + unit that data is for
@@ -140,7 +141,7 @@ static Find findStation(float lat, float lon, String &id, String &name) {
   // A cut-off download would pick the nearest of the stations seen so far: insist on (nearly) all of them.
   if (got <= 0 || (size > 0 && got < size) || f.count < 1000) return Find::NetError;
   Serial.printf("tide: %d stations, nearest %s %s (%.0f km)\n", f.count, f.bestId, f.bestName, f.bestKm);
-  if (f.bestKm > MAX_STATION_KM) return Find::None;
+  if (f.bestKm > TIDE_MAX_STATION_KM) return Find::None;
   id = f.bestId;
   name = f.bestName;
   return Find::Ok;

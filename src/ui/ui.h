@@ -36,7 +36,7 @@ struct UiOptions {
   uint8_t dateFmt = 0;     // 0 = "Nov 6", 1 = "6 Nov"
   uint8_t theme = 0;       // index into THEMES[] (src/ui/theme.cpp) (0 red, 1 amber, 2 mint, 3 ice, 4 orchid, 5 mono, 6 ember)
   uint8_t face = 0;        // Face
-  uint8_t nightColor = 0;  // 0 red, 1 amber, 2 dim white
+  uint8_t nightColor = 0;  // index into NIGHTS[] (src/ui/theme.cpp): 0 red, 1 amber, 2 dim white
   bool chime = true;       // comet lap around the ring on the hour
   bool detail = true;      // "40% RAIN" / "FEELS 65" line
   bool seconds = false;    // seconds as small digits beside the time
@@ -50,6 +50,8 @@ const char *ui_face_name(int face);  // "Polished", "Arc"... for the setup page
 void ui_set_theme(int theme);  // colour theme index (BOOT double press cycles it)
 int ui_theme_count();
 const char *ui_theme_name(int theme);  // "Red", "Amber"...
+int ui_night_color_count();
+const char *ui_night_color_name(int i);  // "Red", "Amber", "Dim white" (NIGHTS[] in src/ui/theme.cpp)
 
 // Boot splash: a comet sweeps once around the seconds ring (~1 s, blocking).
 void ui_boot_splash();
