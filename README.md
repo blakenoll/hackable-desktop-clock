@@ -59,7 +59,7 @@ On first boot (or whenever the saved network can't be joined for 20 s) the clock
 
 1. The screen shows the `clk-setup-XXXX` network name and a one-time password. Join that network from your phone.
 2. The setup page should pop up. If it doesn't, open `http://192.168.4.1`.
-3. Pick your WiFi network (2.4 GHz only) and enter its password, choose a timezone, optionally enter a **US 5-digit ZIP code** for weather, choose °F or °C, and tap **Save & restart**.
+3. Pick your WiFi network (2.4 GHz only) and enter its password, choose a timezone, optionally enter a **US 5-digit ZIP code** for weather (plus, optionally, your **street address**, so weather, tides and the radar centre on your house rather than the middle of the ZIP; it is looked up once via the US Census geocoder), choose °F or °C, and tap **Save & restart**.
 
 Settings are stored in flash and survive reboots and reflashing. To change them later, **hold the BOOT button for 3 seconds** while the clock is running. (Holding BOOT *during reset* enters the ROM bootloader instead.) If the setup screen is left idle for 5 minutes and WiFi was saved before, the clock reboots and retries it.
 

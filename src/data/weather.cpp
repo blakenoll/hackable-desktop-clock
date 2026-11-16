@@ -2,6 +2,7 @@
 #include "tide.h"
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include "net.h"
 #include <HTTPClient.h>
 #include <freertos/semphr.h>
 #include <math.h>
@@ -58,6 +59,7 @@ static String urlEncode(const String &s) {
 // HTTPS GET without certificate verification: this is public, read-only data
 // and no credentials are sent, so we skip pinning a CA that could later rotate.
 static bool httpsGet(const String &url, String &body) {
+  NetLock net;  // one TLS session at a time (net.h); first, so it is released last
   WiFiClientSecure client;
   client.setInsecure();
   HTTPClient http;
@@ -88,6 +90,21 @@ static Geo geocode(const String &city, float &lat, float &lon) {
   if (r < 0 || !findNum(body, "\"latitude\":", r, a) || !findNum(body, "\"longitude\":", r, b)) return Geo::NotFound;
   lat = (float)a;
   lon = (float)b;
+  return Geo::Ok;
+}
+
+// Street address -> rooftop-ish coordinates via the US Census geocoder (no key, US only). The ZIP is appended so
+// a bare "123 Main St" is unambiguous. Matches look like "coordinates":{"x":-77.03,"y":38.89} (x = longitude).
+static Geo geocodeAddress(const String &addr, const String &zip, float &lat, float &lon) {
+  String body;
+  String url = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?benchmark=Public_AR_Current&format=json&address=" +
+               urlEncode(addr + ", " + zip);
+  if (!httpsGet(url, body)) return Geo::NetError;
+  int m = body.indexOf("\"coordinates\":{");
+  double x, y;
+  if (m < 0 || !findNum(body, "\"x\":", m, x) || !findNum(body, "\"y\":", m, y)) return Geo::NotFound;
+  lat = (float)y;
+  lon = (float)x;
   return Geo::Ok;
 }
 
@@ -179,15 +196,24 @@ static bool fetchCurrent(float lat, float lon, char unit, WeatherData &d) {
 static bool refresh(const ClockConfig &cfg0) {
   ClockConfig cfg = cfg0;
   if (WiFi.status() != WL_CONNECTED || !cfg.city.length()) return false;
-  bool haveCoords = cfg.geocity == cfg.city && (cfg.lat != 0 || cfg.lon != 0);
+  String key = config_geo_key(cfg);
+  bool haveCoords = cfg.geocity == key && (cfg.lat != 0 || cfg.lon != 0);
   if (!haveCoords) {
     float lat, lon;
-    Geo g = geocode(cfg.city, lat, lon);
+    Geo g = Geo::NotFound;
+    if (cfg.addr.length()) {
+      g = geocodeAddress(cfg.addr, cfg.city, lat, lon);
+      // Not matched: fall back to the ZIP centre (cached under the same key, so it isn't retried until the address
+      // changes). A network error retries the address on the next cycle instead of settling for the ZIP.
+      Serial.println(g == Geo::Ok ? "Weather: address located" : g == Geo::NotFound ? "Weather: address not found, using ZIP centre"
+                                                                                     : "Weather: address lookup failed, will retry");
+    }
+    if (g == Geo::NotFound) g = geocode(cfg.city, lat, lon);
     if (g == Geo::Ok) {
-      config_save_geo(cfg.city, lat, lon);
+      config_save_geo(key, lat, lon);
       cfg.lat = lat;
       cfg.lon = lon;
-      cfg.geocity = cfg.city;  // tide_refresh() checks this; without it tides wait a full cycle after first setup
+      cfg.geocity = key;  // tide_refresh() checks this; without it tides wait a full cycle after first setup
       haveCoords = true;
     } else if (g == Geo::NotFound) {
       publishError(cfg.units, "ZIP not found");
@@ -220,5 +246,6 @@ void weather_begin(const ClockConfig &cfg) {
   tide_begin();
   g_data.loading = true;  // show the skeleton until the first fetch resolves
   g_data.version = 1;     // differs from the UI's initial 0, so it redraws right away
+  // Priority 1 like loop(): at 0 its rare long downloads (the tide station list) crawled behind the Radar face.
   xTaskCreate(weatherTask, "weather", 10240, nullptr, 1, nullptr);
 }

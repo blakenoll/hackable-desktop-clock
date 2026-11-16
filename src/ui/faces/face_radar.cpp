@@ -12,7 +12,8 @@ static constexpr float R = 112;            // scope radius, px (= the query rang
 static constexpr int RINGS = 4;            // range rings at 1/4 .. 4/4 of the range
 static constexpr int MAXP = AircraftData::MAX;
 static constexpr int TAGS = 3;             // nearest aircraft that get a callsign
-static constexpr int BOX = 21, MID = 10;   // blip container (leader line + dot) and its centre
+static constexpr int BOX = 29, MID = 14;   // blip container (leader line + dot) and its centre
+static constexpr float LEAD = 12;          // track leader length from the dot's centre, px
 static constexpr uint32_t SWEEP_MS = 4000; // one revolution
 static constexpr int TRAIL = 4;            // sweep afterglow segments
 static constexpr uint32_t PHOSPHOR = 0x2EE59D;
@@ -40,7 +41,7 @@ static bool quiet() { return nightMix == 255; }  // fully night: nothing animate
 static const struct { float from, to; lv_opa_t opa; } SEG[TRAIL] = {{0, 3, 120}, {3, 12, 64}, {12, 30, 32}, {30, 60, 14}};
 
 static lv_opa_t blipBright(float behindDeg) {  // 0 = the beam is on it, 360 = about to be hit again
-  int o = 255 - (int)(behindDeg * (255 - 70) / 360);
+  int o = 255 - (int)(behindDeg * (255 - 100) / 360);  // floor 100: leaders stay readable between passes
   return (lv_opa_t)(o & ~7);  // steps of 8: fewer redraws
 }
 
@@ -98,7 +99,7 @@ static void radarPaint() {
   for (int k = 0; k < TRAIL; k++) lv_obj_set_style_arc_color(sweep[k], mixDN(PHOSPHOR, nightC(60)), LV_PART_INDICATOR);
   for (int i = 0; i < MAXP; i++) {
     bgc(blipDot[i], mixDN(0xDDFFEF, nightC(92)));
-    lv_obj_set_style_line_color(blipLead[i], mixDN(scaleHex(PHOSPHOR, 75), nightC(55)), 0);
+    lv_obj_set_style_line_color(blipLead[i], mixDN(PHOSPHOR, nightC(70)), 0);
   }
   for (int i = 0; i < TAGS; i++) tc(tag[i], mixDN(scaleHex(PHOSPHOR, 85), nightC(60)));
   lv_obj_set_style_border_color(target, mixDN(T.accent, nightC(80)), 0);
@@ -126,13 +127,20 @@ static void placeTags() {
       lv_obj_update_layout(tag[i]);
       int w = lv_obj_get_width(tag[i]), h = 12;
       int bx = blipX[i], by = blipY[i];
-      bool leftFirst = bx > RING_CENTER + 30;
+      // The plane's own leader: a tag over it reads as "/JBU106". Sample its far half (the near half is beside the dot).
+      float lt = planes[i].track * (float)M_PI / 180, ll = planes[i].gs > 30 ? LEAD : 0;
+      // Try the side away from the leader first (the inward side when it points mostly up or down).
+      bool leftFirst = ll > 0 && fabsf(sinf(lt)) > 0.3f ? sinf(lt) > 0 : bx > RING_CENTER + 30;
       for (int c = 0; c < 4 && !shown; c++) {
         bool left = (c % 2 == 0) == leftFirst;
         lv_area_t r = {left ? bx - 6 - w : bx + 6, c < 2 ? by - 14 : by + 3, 0, 0};
         r.x2 = r.x1 + w - 1;
         r.y2 = r.y1 + h - 1;
         bool ok = true;
+        for (float f : {0.5f, 0.75f, 1.0f}) {
+          int lx = bx + (int)lroundf(f * ll * sinf(lt)), ly = by - (int)lroundf(f * ll * cosf(lt));
+          if (lx >= r.x1 - 2 && lx <= r.x2 + 2 && ly >= r.y1 - 1 && ly <= r.y2 + 1) ok = false;
+        }
         for (int cx : {(int)r.x1, (int)r.x2})
           for (int cy : {(int)r.y1, (int)r.y2})
             if ((cx - RING_CENTER) * (cx - RING_CENTER) + (cy - RING_CENTER) * (cy - RING_CENTER) > 114 * 114) ok = false;
@@ -176,12 +184,17 @@ static void radarUpdate() {
       py = -y * scale;
       on = px * px + py * py < (R - 3) * (R - 3);  // drifted off the scope
       blipDeg[i] = fmodf(atan2f(px, -py) * 180 / (float)M_PI + 360, 360);
-      // Leader: 8 px along the track (from the dot's centre), none when stationary.
-      float L = a.gs > 30 ? 8 : 0;
-      leadPts[i][0] = {MID, MID};
-      leadPts[i][1] = {(lv_value_precise_t)(MID + L * sinf(t)), (lv_value_precise_t)(MID - L * cosf(t))};
-      lv_line_set_points(blipLead[i], leadPts[i], 2);
+      // Move first, then the leader: its redraw then falls inside the box's own (deduplicated by LVGL), so a
+      // second's update costs ~2 dirty areas per blip instead of 4 (see LV_INV_BUF_SIZE in lv_conf.h).
       lv_obj_set_pos(blip[i], (int)lroundf(RING_CENTER + px) - MID, (int)lroundf(RING_CENTER + py) - MID);
+      // Leader: LEAD px along the track (from the dot's centre), none when stationary. Unchanged -> left alone.
+      float L = a.gs > 30 ? LEAD : 0;
+      lv_point_precise_t end = {(lv_value_precise_t)lroundf(MID + L * sinf(t)), (lv_value_precise_t)lroundf(MID - L * cosf(t))};
+      if (end.x != leadPts[i][1].x || end.y != leadPts[i][1].y) {
+        leadPts[i][0] = {MID, MID};
+        leadPts[i][1] = end;
+        lv_line_set_points(blipLead[i], leadPts[i], 2);
+      }
     }
     setHidden(blip[i], !on);
     blipX[i] = (int)lroundf(RING_CENTER + px);
@@ -241,7 +254,9 @@ static void build() {
     lv_obj_center(a);
     lv_arc_set_rotation(a, 270);
     lv_arc_set_bg_angles(a, 0, 0);
-    lv_obj_set_style_arc_width(a, (int)R, LV_PART_INDICATOR);
+    // 1 px short of the radius: at width >= radius LVGL invalidates the whole arc box on every angle change
+    // (lv_draw_arc_get_area), i.e. the full scope each frame. The 1 px hole at the centre sits under `home`.
+    lv_obj_set_style_arc_width(a, (int)R - 1, LV_PART_INDICATOR);
     lv_obj_set_style_arc_opa(a, SEG[k].opa, LV_PART_INDICATOR);
     lv_obj_set_style_arc_rounded(a, false, LV_PART_INDICATOR);
     lv_arc_set_angles(a, 0, 0);
@@ -258,7 +273,9 @@ static void build() {
     lv_obj_set_size(blip[i], BOX, BOX);
     blipLead[i] = lv_line_create(blip[i]);
     lv_obj_remove_style_all(blipLead[i]);
-    lv_obj_set_style_line_width(blipLead[i], 1, 0);
+    lv_obj_set_style_line_width(blipLead[i], 2, 0);
+    lv_obj_set_style_line_rounded(blipLead[i], true, 0);
+    leadPts[i][0] = leadPts[i][1] = {MID, MID};  // no leader until radarUpdate() sets one
     blipDot[i] = mkDisc(blip[i], 5);
     lv_obj_set_pos(blipDot[i], MID - 2, MID - 2);
     blipOpa[i] = LV_OPA_COVER;

@@ -6,6 +6,7 @@
 struct ClockConfig {
   String ssid, pass, tz;
   String city;           // 5-digit US ZIP code for weather ("" = weather off)
+  String addr;           // optional street address within the ZIP, for exact coordinates ("" = ZIP centre)
   char units = 'F';      // 'F' or 'C'
   bool h24 = false;      // 24-hour clock (default 12-hour with AM/PM)
   uint8_t dateFmt = 0;   // 0 = "Fri Nov 6", 1 = "Fri 6 Nov"
@@ -20,7 +21,7 @@ struct ClockConfig {
   String tideStation;    // NOAA tide station ID chosen on the setup page ("" = nearest to the ZIP)
   // Nearest tide station the tide code found for `tideGeo` (cached in NVS; "" = none within range).
   String tideGeo, tideAuto, tideName;
-  // Coordinates the weather task resolved for `geocity` (cached in NVS).
+  // Coordinates the weather task resolved for `geocity` (cached in NVS; compare with config_geo_key()).
   String geocity;
   float lat = 0, lon = 0;
 };
@@ -30,7 +31,10 @@ bool config_load(ClockConfig &cfg);
 // Saves everything the setup page edits (not the cached coordinates or the day/night state).
 void config_save(const ClockConfig &cfg);
 
-// Caches coordinates resolved for `city` so we only geocode when the city changes.
+// What the coordinates are resolved from: the ZIP, plus the street address when one is set. `geocity` and
+// `tideGeo` hold this key, so changing either the ZIP or the address re-geocodes (and re-finds the tide station).
+String config_geo_key(const ClockConfig &cfg);
+// Caches coordinates resolved for `city` (a config_geo_key()) so we only geocode when it changes.
 void config_save_geo(const String &city, float lat, float lon);
 // Caches the nearest tide station found for `city` (id "" = none nearby), so the station list is only read once.
 void config_save_tide_auto(const String &city, const String &id, const String &name);
