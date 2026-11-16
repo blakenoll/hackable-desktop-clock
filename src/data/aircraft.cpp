@@ -162,7 +162,7 @@ class AcParser : public Stream {
     a = Aircraft();
     a.x = x;
     a.y = y;
-    a.gs = cur.gs;
+    a.gs = isnan(cur.track) ? 0 : cur.gs;  // no track: don't dead-reckon (a track of 0 would drift it north)
     a.track = track;
     a.alt = cur.alt;
     strlcpy(a.flight, cur.flight[0] ? cur.flight : cur.reg[0] ? cur.reg : cur.hex, sizeof(a.flight));
