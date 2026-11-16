@@ -65,7 +65,7 @@ Each face is one file, `src/ui/faces/face_<name>.cpp`, that defines a `FaceDef` 
 **Tide** (`face_tide.cpp`; data in [DATA.md](DATA.md#tides)): no seconds ring, so the chart is 216 px wide. A half-cosine runs between turns from −6 h to +12 h with fill columns; "now" is a ringed marker and a thin vertical line. Below the chart: height and trend, `LOW 3:58 PM · WATER 69°`, and the short station name (text before ` (` or `,`, uppercased).
 
 **Radar** (`face_radar.cpp`; data in [DATA.md](DATA.md#radar)):
-- **Scope:** radius 112 px = `RADAR_NM` (20 NM), four range rings, north up.
+- **Scope:** radius 112 px = `RADAR_NM` (10 NM), four range rings, north up.
 - **Sweep:** four wedge `lv_arc`s rotated by an `lv_anim` on `sweepBox`. Each arc's width is radius − 1. **Why:** at width ≥ radius, LVGL's `lv_draw_arc_get_area()` invalidates the whole arc box and redrew the full scope every frame.
 - **Blips:** 29 px boxes (a dot plus a 12 px, 2 px rounded track leader), so moving one invalidates little. The box is moved before the leader is updated, so the leader's redraw falls inside the box's.
 - **Motion:** blips dead-reckon every second from ground speed and track (capped at 60 s). Each blip's opacity follows how long ago the beam passed it (floor 100/255).
