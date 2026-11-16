@@ -1,8 +1,9 @@
+// NVS (flash) persistence for ClockConfig. The user settings are listed once in config_fields.h.
 #include "config.h"
 #include <Preferences.h>
+#include "config_fields.h"
 
 static const char *NAMESPACE = "clock";
-static const char *DEFAULT_TZ = "PST8PDT,M3.2.0,M11.1.0";
 
 // Opens the namespace for the lifetime of the object.
 struct Nvs {
@@ -11,27 +12,31 @@ struct Nvs {
   ~Nvs() { p.end(); }
 };
 
+// Visitors for config_fields() (config_fields.h).
+struct Loader {
+  Preferences &p;
+  void text(const char *k, String &f, const char *def) { f = p.getString(k, def); }
+  void secret(const char *k, String &f) { f = p.getString(k, ""); }
+  void unit(const char *k, char &f) { f = p.getString(k, "F")[0] == 'C' ? 'C' : 'F'; }
+  void flag(const char *k, bool &f, bool def) { f = p.getBool(k, def); }
+  void number(const char *k, uint8_t &f, uint8_t def, int lo, int hi) { f = (uint8_t)constrain((int)p.getUChar(k, def), lo, hi); }
+};
+
+struct Saver {
+  Preferences &p;
+  void text(const char *k, String &f, const char *) { p.putString(k, f); }
+  void secret(const char *k, String &f) { p.putString(k, f); }
+  void unit(const char *k, char &f) { p.putString(k, String(f)); }
+  void flag(const char *k, bool &f, bool) { p.putBool(k, f); }
+  void number(const char *k, uint8_t &f, uint8_t, int, int) { p.putUChar(k, f); }
+};
+
 bool config_load(ClockConfig &cfg) {
   Nvs n;
   Preferences &p = n.p;
-  cfg.ssid = p.getString("ssid", "");
-  cfg.pass = p.getString("pass", "");
-  cfg.tz = p.getString("tz", DEFAULT_TZ);
-  cfg.city = p.getString("city", "");
-  cfg.addr = p.getString("addr", "");
-  cfg.units = p.getString("units", "F")[0] == 'C' ? 'C' : 'F';
-  cfg.h24 = p.getBool("h24", false);
-  cfg.dateFmt = p.getUChar("datefmt", 0) == 1 ? 1 : 0;
-  cfg.accent = p.getUChar("accent", 0);
-  cfg.face = p.getUChar("face", 0);
-  cfg.nightMode = p.getUChar("nmode", 0);
-  cfg.nightStart = p.getUChar("nstart", 22) % 24;
-  cfg.nightEnd = p.getUChar("nend", 7) % 24;
-  cfg.nightColor = p.getUChar("ncolor", 0);
-  cfg.chime = p.getBool("chime", true);
-  cfg.detail = p.getBool("detail", true);
-  cfg.seconds = p.getBool("secs", false);
-  cfg.tideStation = p.getString("tidestn", "");
+  Loader l{p};
+  config_fields(l, cfg);
+  // Caches written by the background tasks, not the setup page.
   cfg.tideGeo = p.getString("tidegeo", "");
   cfg.tideAuto = p.getString("tideauto", "");
   cfg.tideName = p.getString("tidename", "");
@@ -43,25 +48,9 @@ bool config_load(ClockConfig &cfg) {
 
 void config_save(const ClockConfig &cfg) {
   Nvs n;
-  Preferences &p = n.p;
-  p.putString("ssid", cfg.ssid);
-  p.putString("pass", cfg.pass);
-  p.putString("tz", cfg.tz);
-  p.putString("city", cfg.city);
-  p.putString("addr", cfg.addr);
-  p.putString("units", String(cfg.units));
-  p.putBool("h24", cfg.h24);
-  p.putUChar("datefmt", cfg.dateFmt);
-  p.putUChar("accent", cfg.accent);
-  p.putUChar("face", cfg.face);
-  p.putUChar("nmode", cfg.nightMode);
-  p.putUChar("nstart", cfg.nightStart);
-  p.putUChar("nend", cfg.nightEnd);
-  p.putUChar("ncolor", cfg.nightColor);
-  p.putBool("chime", cfg.chime);
-  p.putBool("detail", cfg.detail);
-  p.putBool("secs", cfg.seconds);
-  p.putString("tidestn", cfg.tideStation);
+  Saver s{n.p};
+  ClockConfig c = cfg;  // config_fields() takes a mutable config; Saver only reads it
+  config_fields(s, c);
 }
 
 String config_geo_key(const ClockConfig &cfg) {

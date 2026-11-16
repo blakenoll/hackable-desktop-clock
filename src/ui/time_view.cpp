@@ -1,3 +1,5 @@
+// Time and date: the label builders faces assemble (mkTime, mkDateRow...), ui_update() once a second, and the
+// date text (DateParts, dateUpdate()).
 #include "ui_internal.h"
 
 namespace ui {

@@ -1,3 +1,4 @@
+// Small LVGL helpers shared by the UI files: boxes, labels, rows, null-safe setters (tc, bgc, setText...).
 #include "ui_internal.h"
 
 namespace ui {

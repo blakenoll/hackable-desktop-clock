@@ -1,8 +1,10 @@
-// Host render of the real ui.cpp: draws each face into a 240x240 buffer and writes PPM files.
+// Host render of the real UI (src/ui/): draws each face into a 240x240 buffer and writes PPM files. render.sh
+// builds and runs it. Add a numbered section below to stage another situation.
 #include <Arduino.h>
 #include <lvgl.h>
 #include <stdio.h>
 #include <math.h>
+#include <ctype.h>
 #include <string>
 #include "ui/ui.h"
 #include "data/aircraft.h"
@@ -74,7 +76,16 @@ int main(int argc, char **argv) {
   ui_set_options(o);
   ui_set_night(false);
   ui_boot_splash();
-  static const char *names[] = {"polished", "arc", "stacked", "analog", "zen", "forecast", "retro", "daylight", "tide", "radar"};
+  // File names come from the face table ("Retro LCD" -> "retro"); render.sh reads the list back from manifest.txt
+  // (face names in enum order, then the theme and night-colour counts) so nothing here needs editing for a new face.
+  static std::string names[FACE_COUNT];
+  FILE *man = fopen((out + "/manifest.txt").c_str(), "w");
+  for (int f = 0; f < FACE_COUNT; f++) {
+    for (const char *c = ui_face_name(f); *c && *c != ' '; c++) names[f] += (char)tolower((unsigned char)*c);  // first word
+    fprintf(man, "%s ", names[f].c_str());
+  }
+  fprintf(man, "\n%d %d\n", ui_theme_count(), ui_night_color_count());
+  fclose(man);
   lv_mem_monitor_t mon;
   // 1. every face by day, switched in place like the BOOT button does
   tm t = mk(10, 47, 37);
@@ -88,7 +99,7 @@ int main(int argc, char **argv) {
     run(1500);
     shot(out + "/day-" + names[f]);
     lv_mem_monitor(&mon);
-    printf("%-9s used %6u max %6u frag %u%%\n", names[f], (unsigned)(mon.total_size - mon.free_size), (unsigned)mon.max_used, mon.frag_pct);
+    printf("%-9s used %6u max %6u frag %u%%\n", names[f].c_str(), (unsigned)(mon.total_size - mon.free_size), (unsigned)mon.max_used, mon.frag_pct);
   }
   // 2. options: seconds digits + 24 h + other themes / rings
   for (int f = 0; f < FACE_COUNT; f++) {
@@ -125,7 +136,7 @@ int main(int argc, char **argv) {
     ui_set_weather_stale(false); run(1000);
   }
   // 5. every face in every colour theme, same time/weather as section 1 (web flasher's theme picker)
-  for (int th = 0; th < 7; th++) {
+  for (int th = 0; th < ui_theme_count(); th++) {
     weather(false);
     for (int f = 0; f < FACE_COUNT; f++) {
       UiOptions v; v.face = f; v.theme = th;
@@ -137,7 +148,7 @@ int main(int argc, char **argv) {
     }
   }
   // 6. every face at night in each night colour (web flasher's night picker)
-  for (int nc = 0; nc < 3; nc++) {
+  for (int nc = 0; nc < ui_night_color_count(); nc++) {
     for (int f = 0; f < FACE_COUNT; f++) {
       UiOptions v; v.face = f; v.nightColor = nc;
       ui_set_options(v);

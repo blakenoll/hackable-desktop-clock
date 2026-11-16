@@ -1,6 +1,9 @@
+// How weather data reads on screen: WMO code -> icon glyph and colour, and the detail / feels / wind text.
+// Pure functions (no fetching, no LVGL), shared by main.cpp and the faces.
 #include "weather_format.h"
 #include <math.h>
 #include <stdio.h>
+#include "../tuning.h"
 
 // Glyphs from src/ui/fonts/font_weather.c (Weather Icons, codepoints U+F0xx).
 const char *weather_icon(int c, bool isDay, uint32_t *color) {
@@ -30,12 +33,9 @@ int weather_fall(int c) {
   return 0;
 }
 
-// Rain chance (max over the next hours) once it reaches this, else the "feels like" line.
-static constexpr int RAIN_SHOW_PCT = 30;
-
 void weather_feels_text(const WeatherData &w, char *out, size_t n) {
   out[0] = 0;
-  if (fabsf(w.feels - w.temp) >= (w.unit == 'C' ? 3 : 5)) snprintf(out, n, "Feels %d\xC2\xB0", (int)lroundf(w.feels));
+  if (fabsf(w.feels - w.temp) >= (w.unit == 'C' ? FEELS_DIFF_C : FEELS_DIFF_F)) snprintf(out, n, "Feels %d\xC2\xB0", (int)lroundf(w.feels));
 }
 
 void weather_detail_text(const WeatherData &w, char *out, size_t n) {
@@ -44,7 +44,7 @@ void weather_detail_text(const WeatherData &w, char *out, size_t n) {
 }
 
 bool weather_wind_calm(const WeatherData &w) {
-  return w.windSpeed < (w.unit == 'C' ? 5.0f : 3.0f);  // under ~3 mph the direction is mostly noise
+  return w.windSpeed < (w.unit == 'C' ? WIND_CALM_KMH : WIND_CALM_MPH);  // the direction is mostly noise
 }
 
 void weather_wind_text(const WeatherData &w, char *out, size_t n) {

@@ -19,7 +19,7 @@
 #define LV_USE_SCALE 0
 #define LV_USE_LINE 1   // seconds-ring ticks
 #define LV_USE_LABEL 1
-#define LV_USE_CANVAS 1
+#define LV_USE_CANVAS 0
 #define LV_USE_QRCODE 0
 
 #endif

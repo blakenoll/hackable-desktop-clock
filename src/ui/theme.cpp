@@ -1,3 +1,5 @@
+// Colour themes (THEMES[], listed on the setup page and cycled by a double BOOT press), night colours
+// (NIGHTS[], used at varying brightness via nightC()), and the day/night colour blend mixDN().
 #include "ui_internal.h"
 
 namespace ui {
@@ -19,8 +21,9 @@ const Theme THEMES[] = {
 const int THEME_COUNT = sizeof(THEMES) / sizeof(THEMES[0]);
 
 // Night colours. Everything shown at night is this colour at some brightness (nightC(percent)).
-// Night colours. Everything shown at night is this colour at some brightness (nightC(percent)).
-static const uint32_t NIGHTS[] = {0xD01818, 0xC8780A, 0x6E6E6E};  // red, amber, dim white
+// Listed on the setup page by name (NVS `ncolor` is the index). Keep them warm: blue/green light hurts night vision.
+struct NightColor { const char *name; uint32_t hex; };
+static const NightColor NIGHTS[] = {{"Red", 0xD01818}, {"Amber", 0xC8780A}, {"Dim white", 0x6E6E6E}};
 
 const int NIGHT_COUNT = sizeof(NIGHTS) / sizeof(NIGHTS[0]);
 
@@ -34,11 +37,13 @@ uint32_t mixHex(uint32_t a, uint32_t b, int pctA) {  // pctA = 100 -> a
   return (ch(16) << 16) | (ch(8) << 8) | ch(0);
 }
 
-uint32_t nightC(int pct) { return scaleHex(NIGHTS[opt.nightColor], pct); }
+uint32_t nightC(int pct) { return scaleHex(NIGHTS[opt.nightColor].hex, pct); }
 
 // Day/night pair blended by nightMix, so a day->night switch can fade instead of snapping.
 lv_color_t mixDN(uint32_t day, uint32_t nt) {
   return lv_color_mix(lv_color_hex(nt), lv_color_hex(day), nightMix);
 }
+
+const char *nightName(int i) { return i >= 0 && i < NIGHT_COUNT ? NIGHTS[i].name : ""; }
 
 }  // namespace ui

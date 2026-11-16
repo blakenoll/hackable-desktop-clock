@@ -7,9 +7,11 @@
 //   ring.cpp           the generic seconds rings (ticks, arc, orbit), the hourly chime and the boot splash
 //   time_view.cpp      time / date labels, the pieces faces assemble (mkTime...), ui_update() and the date text
 //   weather_view.cpp   weather row, skeleton, detail line, offline marker, rain particles, hourly data
-//   boot_screens.cpp   connecting / syncing / scanning animations, status text, setup screen
+//   boot_screens.cpp   connecting / syncing / scanning animations, status text
+//   setup_screen.cpp   the setup-mode screen (network name, password, address)
 //   core.cpp           palette + night theming, rebuild(), init and option setters
 //   faces.cpp          the FaceDef table;  faces/face_*.cpp: one file per clock face
+//   fonts/             generated LVGL fonts (Manrope text sizes, Weather Icons); how to regenerate: docs/CUSTOMIZING.md
 #pragma once
 #include <Arduino.h>
 #include <lvgl.h>
@@ -45,6 +47,7 @@ struct Theme { const char *name; uint32_t digits, accent, tick, sub, colon, base
 extern const Theme THEMES[];
 extern const int THEME_COUNT;
 extern const int NIGHT_COUNT;
+const char *nightName(int i);  // "Red", "Amber"... (NIGHTS[])
 
 extern UiOptions opt;
 extern bool night;        // target mode (what ui_set_night last asked for)

@@ -1,3 +1,5 @@
+// UI core: the text palette and day/night theming (applyTheme), rebuild() which tears down and recreates the
+// active face from cached state, ui_init() and the option / face / theme setters.
 #include "ui_internal.h"
 
 namespace ui {
@@ -142,6 +144,8 @@ void ui_set_theme(int theme) {
 
 int ui_theme_count() { return THEME_COUNT; }
 const char *ui_theme_name(int i) { return i >= 0 && i < THEME_COUNT ? THEMES[i].name : ""; }
+int ui_night_color_count() { return NIGHT_COUNT; }
+const char *ui_night_color_name(int i) { return nightName(i); }
 
 void ui_set_face(int face) {
   opt.face = (uint8_t)(face >= 0 && face < FACE_COUNT ? face : 0);

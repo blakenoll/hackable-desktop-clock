@@ -1,3 +1,5 @@
+// Weather on the face: icon + temperature row with the high/low range bar, the loading skeleton, the detail
+// line, the stale dimming, the offline marker, rain/snow particles, and the hourly / sun data some faces use.
 #include "ui_internal.h"
 
 namespace ui {

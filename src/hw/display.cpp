@@ -1,3 +1,5 @@
+// TFT_eSPI -> LVGL glue: inits the GC9A01 panel (pins and SPI are -D flags in platformio.ini) and flushes LVGL's
+// partial render buffer to it. Another display or resolution starts here (docs/HARDWARE.md).
 #include "display.h"
 #include <Arduino.h>
 #include <TFT_eSPI.h>

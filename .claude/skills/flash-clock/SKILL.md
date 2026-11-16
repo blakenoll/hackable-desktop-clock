@@ -27,7 +27,7 @@ pio run
 ```
 
 - `Bad CPU type in executable` on Apple Silicon = Rosetta 2 missing → user runs `softwareupdate --install-rosetta --agree-to-license`.
-- Report flash use from the summary line; the budget is the 3 MB `huge_app` partition (firmware ~1.39 MB).
+- Report flash use from the summary line; the budget is the 3 MB `huge_app` partition.
 
 ## Flash
 
