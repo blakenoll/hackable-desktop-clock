@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/cover.svg" alt="hackable-desktop-clock: an ESP32-C3 round desk clock with weather, seconds ring and night mode" width="100%"></p>
+<p align="center"><img src="docs/cover.png" alt="hackable-desktop-clock: an ESP32-C3 round desk clock with weather, seconds ring and night mode" width="100%"></p>
 
 # hackable-desktop-clock
 

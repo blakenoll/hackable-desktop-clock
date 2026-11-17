@@ -1,6 +1,6 @@
 # Web flasher
 
-`site/index.html` is a single static page, deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`. The workflow builds the firmware, copies the `.bin` files and the face renders (`docs/faces/faces.png`, `night.png`, `themes/`) into `site/`, and publishes it. Those build outputs are gitignored in `site/`.
+`site/index.html` is a single static page, deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`. The workflow builds the firmware, copies the `.bin` files and the face renders (`docs/faces/themes/`, with `day-0.png` and `night-0.png` as the default picture) into `site/`, and publishes it. Those build outputs are gitignored in `site/`.
 
 ## Flashing flow
 
@@ -11,7 +11,7 @@
 
 ## Theme preview
 
-`PALETTES` in the page script lists the colour themes (name + current-second tick colour) and night colours (name + base colour) for the picker. It shows `faces/themes/day-N.png` / `night-N.png`, rendered by `docs/tools/sim/render.sh`. **Keep `PALETTES` in sync with `THEMES[]` and `NIGHTS[]` in `src/ui/theme.cpp`**: `python3 docs/tools/check.py` fails when they differ.
+`PALETTES` in the page script lists the colour themes (name + current-second tick colour) and night colours (name + base colour) for the picker. It shows `faces/themes/day-N.png` / `night-N.png`, rendered by `docs/tools/sim/render.sh`. These are plain montages with no frame, because the page draws the bezel in CSS; the README images (`faces.png` etc.) are rendered with `montage.py --bezel` and carry their own. **Keep `PALETTES` in sync with `THEMES[]` and `NIGHTS[]` in `src/ui/theme.cpp`**: `python3 docs/tools/check.py` fails when they differ.
 
 ## Hero clock
 

@@ -30,10 +30,10 @@ cd "$B/out"
 N=$(sed -n 1p manifest.txt)
 set -- $(sed -n 2p manifest.txt)
 THEMES=$1 NIGHTS=$2
-python3 "$HERE/montage.py" "$ROOT/docs/faces/faces.png" 4 $(for n in $N; do echo day-$n; done)
-python3 "$HERE/montage.py" "$ROOT/docs/faces/night.png" 4 $(for n in $N; do echo night-$n; done)
-python3 "$HERE/montage.py" "$ROOT/docs/faces/options.png" 4 $(for n in $N; do echo opt-$n; done)
-python3 "$HERE/montage.py" "$ROOT/docs/faces/states.png" 3 $(for n in polished stacked forecast; do echo load-$n msg-$n stale-$n; done)
+python3 "$HERE/montage.py" --bezel "$ROOT/docs/faces/faces.png" 4 $(for n in $N; do echo day-$n; done)
+python3 "$HERE/montage.py" --bezel "$ROOT/docs/faces/night.png" 4 $(for n in $N; do echo night-$n; done)
+python3 "$HERE/montage.py" --bezel "$ROOT/docs/faces/options.png" 4 $(for n in $N; do echo opt-$n; done)
+python3 "$HERE/montage.py" --bezel "$ROOT/docs/faces/states.png" 3 $(for n in polished stacked forecast; do echo load-$n msg-$n stale-$n; done)
 # Per-theme / per-night-colour montages for the web flasher's pickers (same 4-column layout as faces.png).
 mkdir -p "$ROOT/docs/faces/themes"
 for th in $(seq 0 $((THEMES - 1))); do
