@@ -459,11 +459,11 @@
           </li>
           <li class="step" data-step="download" data-state="pending">
             <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-            <div class="min-w-0 flex-1"><p class="label">Download firmware</p></div>
+            <div class="min-w-0 flex-1"><p class="label">Downloading firmware</p></div>
           </li>
           <li class="step" data-step="write" data-state="pending">
             <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-            <div class="min-w-0 flex-1"><p class="label">Write firmware</p><div class="mt-3 flex items-center gap-3"><div class="h-1.5 flex-1 overflow-hidden rounded-full bg-line"><div id="fl-bar" class="h-full w-0 rounded-full bg-accent transition-[width] duration-300"></div></div><span id="fl-pct" class="w-10 text-right font-mono text-xs text-dim">0%</span></div></div>
+            <div class="min-w-0 flex-1"><p class="label">Flashing firmware</p><div class="mt-3 flex items-center gap-3"><div class="h-1.5 flex-1 overflow-hidden rounded-full bg-line"><div id="fl-bar" class="h-full w-0 rounded-full bg-accent transition-[width] duration-300"></div></div><span id="fl-pct" class="w-10 text-right font-mono text-xs text-dim">0%</span></div></div>
           </li>
           <li class="step" data-step="restart" data-state="pending">
             <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
@@ -512,7 +512,7 @@
     failed_initialize: "Couldn't talk to the clock.",
     not_supported: "That board isn't an ESP32-C3.",
     failed_firmware_download: "Couldn't download the firmware. Check your connection and try again.",
-    write_failed: 'Writing stopped partway. The clock is fine: plug it back in and flash again.',
+    write_failed: 'Flashing stopped partway. The clock is fine: plug it back in and flash again.',
   };
 
   const dlg = document.getElementById('flasher');

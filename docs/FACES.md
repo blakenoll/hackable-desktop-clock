@@ -82,4 +82,6 @@ Each face is one file, `src/ui/faces/face_<name>.cpp`, that defines a `FaceDef` 
 - `faces.png` (day), `night.png`, `options.png`, `states.png` (loading / message / stale)
 - `themes/day-N.png` (every face in `THEMES[N]`) and `themes/night-N.png` (`NIGHTS[N]`) for the web flasher's pickers
 
+**Rerun it after any change that alters how a face looks**, even a small one such as a colour, brightness, spacing or font tweak, and commit the updated PNGs with the change. The web flasher and the docs show these images, so stale ones misrepresent the clock.
+
 To stage another situation, add a section to `docs/tools/sim/sim.cpp`.
