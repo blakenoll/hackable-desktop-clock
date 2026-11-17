@@ -51,10 +51,10 @@ static void weather(bool rainy) {
   ui_set_tide(tt, th, hi, 8, 'F', nullptr);
   // A handful of aircraft around home, nearest first (NM east / north, knots, degrees, ft).
   static const struct { float x, y, gs, trk; int alt; const char *id, *type; } P[] = {
-      {-2.1f, 1.6f, 160, 25, 1800, "JBU106", "A320"},   {5.8f, -3.9f, 244, 282, 4950, "UAL2609", "B39M"},
-      {-7.5f, -6.0f, 420, 60, 23000, "DAL1192", "A321"}, {9.5f, 8.0f, 300, 200, 11000, "AAL871", "B738"},
-      {-11.0f, 9.5f, 120, 90, 2500, "N512CK", "C172"},   {3.0f, 15.5f, 450, 170, 35000, "SWA221", "B737"},
-      {14.0f, -10.5f, 380, 330, 18000, "FDX12", "B763"}, {-15.5f, -9.0f, 0, 0, 0, "RCH431", "C17"}};
+      {-1.05f, 0.8f, 160, 25, 1800, "JBU106", "A320"},   {2.9f, -1.95f, 244, 282, 4950, "UAL2609", "B39M"},
+      {-3.75f, -3.0f, 420, 60, 23000, "DAL1192", "A321"}, {4.75f, 4.0f, 300, 200, 11000, "AAL871", "B738"},
+      {-5.5f, 4.75f, 120, 90, 2500, "N512CK", "C172"},   {1.5f, 7.75f, 450, 170, 35000, "SWA221", "B737"},
+      {7.0f, -5.25f, 380, 330, 18000, "FDX12", "B763"}, {-7.75f, -4.5f, 0, 0, 0, "RCH431", "C17"}};
   static Aircraft ac[8];
   for (int k = 0; k < 8; k++) {
     ac[k] = Aircraft();

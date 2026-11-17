@@ -11,7 +11,7 @@ static void segPaint() {
   if (!seg[0][0]) return;
   static const uint8_t MAP[10] = {63, 6, 91, 79, 102, 109, 125, 7, 127, 111};  // bit 0..6 = segment a..g
   const Theme &T = THEMES[opt.theme];
-  lv_color_t on = mixDN(T.tick, nightC(100)), ghost = mixDN(scaleHex(T.tick, 9), 0x000000);
+  lv_color_t on = mixDN(T.tick, nightC(100)), ghost = mixDN(scaleHex(T.tick, 18), nightC(8));
   for (int d = 0; d < 4; d++) {
     uint8_t m = isdigit((unsigned char)segText[d]) ? MAP[segText[d] - '0'] : 0;
     for (int s = 0; s < 7; s++) lv_obj_set_style_bg_color(seg[d][s], (m >> s) & 1 ? on : ghost, 0);
