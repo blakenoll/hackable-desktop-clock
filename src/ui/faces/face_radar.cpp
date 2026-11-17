@@ -10,7 +10,7 @@ namespace ui {
 // nearest few carry their callsign, the nearest is ringed and spelled out under the scope. Night: the sweep stops
 // and the blips stay at a steady dim red.
 static constexpr float R = 112;            // scope radius, px (= the query range)
-static constexpr int RINGS = 4;            // range rings at 1/4 .. 4/4 of the range
+static constexpr int RINGS = RADAR_NM;     // one range ring per nautical mile; the outermost is the query range
 static constexpr int MAXP = AircraftData::MAX;
 static constexpr int TAGS = 3;             // nearest aircraft that get a callsign
 static constexpr int BOX = 29, MID = 14;   // blip container (leader line + dot) and its centre
