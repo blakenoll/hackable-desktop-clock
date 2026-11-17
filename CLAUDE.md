@@ -29,7 +29,7 @@ Docs: [CUSTOMIZING](docs/CUSTOMIZING.md) (recipes by task), [ARCHITECTURE](docs/
 
 - Build: `pio run`. Flash: `pio run -t upload` (ask first). With [mise](https://mise.jdx.dev): `mise install`, then `mise run build|upload|clean|render|check`.
 - `pio` lives in `~/.platformio/penv/bin` and may not be on PATH in agent shells: `export PATH="$PATH:$HOME/.platformio/penv/bin"`.
-- Host renders: `sh docs/tools/sim/render.sh` compiles `src/ui/` for this computer and writes `docs/faces/*.png` (needs gcc, python3 and one prior `pio run` for LVGL, or `LVGL_DIR=<lvgl 9.6 checkout>`). Use it to check layout before flashing, and rerun it when faces or themes change (the web flasher shows those images).
+- Host renders: `sh docs/tools/sim/render.sh` compiles `src/ui/` for this computer and writes `docs/faces/*.png` (needs gcc, python3 and one prior `pio run` for LVGL, or `LVGL_DIR=<lvgl 9.6 checkout>`). Use it to check layout before flashing, and **rerun it after any change to how a face, theme or colour looks** (even a small brightness tweak) and commit the updated `docs/faces/` PNGs with it; the web flasher and docs show those images.
 - Consistency check: `python3 docs/tools/check.py`. It confirms that paths and functions named in the docs exist and that the web flasher's palettes match `theme.cpp`. CI runs it; run it after moving or renaming anything.
 
 ## Rules
