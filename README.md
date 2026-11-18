@@ -61,7 +61,7 @@ On first boot (or whenever the saved network can't be joined for 20 s) the clock
 2. The setup page should pop up. If it doesn't, open `http://192.168.4.1`.
 3. Pick your WiFi network (2.4 GHz only) and enter its password, choose a timezone, optionally enter a **US 5-digit ZIP code** for weather (plus, optionally, your **street address**, so weather, tides and the radar centre on your house rather than the middle of the ZIP; it is looked up once via the US Census geocoder), choose °F or °C, and tap **Save & restart**.
 
-Settings are stored in flash and survive reboots and reflashing. To change them later, **hold the BOOT button for 3 seconds** while the clock is running. Apps and scripts can also change them over WiFi through a small JSON API ([docs/API.md](docs/API.md)); its key is shown at the bottom of the setup page. (Holding BOOT *during reset* enters the ROM bootloader instead.) If the setup screen is left idle for 5 minutes and WiFi was saved before, the clock reboots and retries it.
+Settings are stored in flash and survive reboots and reflashing. To change them later, **hold the BOOT button for 3 seconds** while the clock is running. Apps and scripts can also change them over WiFi through a small JSON API ([docs/API.md](docs/API.md)); its key is shown at the bottom of the setup page. **Home Assistant** finds clocks on its own and offers their faces, themes and night mode as entities: install the integration from this repo through HACS ([docs/HOME_ASSISTANT.md](docs/HOME_ASSISTANT.md)). (Holding BOOT *during reset* enters the ROM bootloader instead.) If the setup screen is left idle for 5 minutes and WiFi was saved before, the clock reboots and retries it.
 
 ## Using it
 
@@ -102,6 +102,7 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 | `src/config.*`, `src/config_fields.h` | Saved settings (NVS); `config_fields.h` lists every setting once |
 | `src/setup/` | Setup mode: access point + captive portal (`portal.cpp`), the setup page (`form.cpp`), timezones (`zones.cpp`) |
 | `src/api/` | Settings API over WiFi: JSON endpoints, mDNS, API key ([docs/API.md](docs/API.md)) |
+| `custom_components/deskclock/` | Home Assistant integration, installable through HACS ([docs/HOME_ASSISTANT.md](docs/HOME_ASSISTANT.md)); tests in `tests/home_assistant/` |
 | `src/hw/` | Display (TFT_eSPI -> LVGL) and the BOOT button |
 | `src/data/` | Background fetches: weather (Open-Meteo), tides (NOAA), aircraft (adsb.fi); `weather_format.cpp` turns data into icons and text |
 | `src/ui/` | Everything drawn, behind `ui.h`. `faces/face_*.cpp` is one file per face; the file list is at the top of `src/ui/ui_internal.h` |
@@ -109,7 +110,7 @@ This repo ships [Claude Code](https://claude.com/claude-code) skills in `.claude
 | `include/lv_conf.h` | LVGL config |
 | `fix_tft.py` | Build-time patch for a TFT_eSPI/ESP32-C3 crash; see [docs/HARDWARE.md](docs/HARDWARE.md) |
 | `platformio.ini` | Board, pins, pinned library versions, partition table |
-| `docs/` | Guides ([customizing](docs/CUSTOMIZING.md), [architecture](docs/ARCHITECTURE.md), [faces](docs/FACES.md), [data](docs/DATA.md), [API](docs/API.md), [hardware](docs/HARDWARE.md), [troubleshooting](docs/TROUBLESHOOTING.md), [web flasher](docs/WEB_FLASHER.md)), face renders and tools |
+| `docs/` | Guides ([customizing](docs/CUSTOMIZING.md), [architecture](docs/ARCHITECTURE.md), [faces](docs/FACES.md), [data](docs/DATA.md), [API](docs/API.md), [Home Assistant](docs/HOME_ASSISTANT.md), [hardware](docs/HARDWARE.md), [troubleshooting](docs/TROUBLESHOOTING.md), [web flasher](docs/WEB_FLASHER.md)), face renders and tools |
 | `site/` | The web flasher (GitHub Pages) |
 
 ## Credits

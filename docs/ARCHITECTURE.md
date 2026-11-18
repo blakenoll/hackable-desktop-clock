@@ -19,6 +19,8 @@ src/
     fonts/            generated LVGL fonts
 include/lv_conf.h     LVGL configuration
 fix_tft.py            pre-build patch for TFT_eSPI on the C3 (see HARDWARE.md)
+git_version.py        pre-build: FIRMWARE_VERSION from `git describe` (reported by GET /api/info)
+custom_components/    the Home Assistant integration (HOME_ASSISTANT.md); tests in tests/home_assistant/
 docs/tools/           host renderer (sim/) and the docs consistency check (check.py)
 site/                 the web flasher (GitHub Pages)
 ```

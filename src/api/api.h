@@ -20,5 +20,7 @@ void api_setup_routes(WebServer &server, ClockConfig &cfg);
 
 // "A1B2": the last two bytes of this chip's MAC, so several clocks get distinct, stable names.
 String api_device_suffix();
+// "a0b1c2d3e4f5": the whole MAC in lowercase hex, a stable unique ID (GET /api/info, mDNS TXT `id`).
+String api_device_id();
 // "deskclock-a1b2": the DHCP hostname and mDNS name (API_HOSTNAME_PREFIX in tuning.h + the suffix).
 String api_hostname();

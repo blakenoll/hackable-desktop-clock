@@ -1,0 +1,13 @@
+{
+  "domain": "deskclock",
+  "name": "Hackable Desk Clock",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/blakenoll/hackable-desktop-clock/blob/main/docs/HOME_ASSISTANT.md",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/blakenoll/hackable-desktop-clock/issues",
+  "requirements": [],
+  "version": "1.0.0",
+  "zeroconf": ["_deskclock._tcp.local."]
+}

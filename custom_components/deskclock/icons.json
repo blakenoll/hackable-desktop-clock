@@ -1,0 +1,23 @@
+{
+  "entity": {
+    "select": {
+      "tz": { "default": "mdi:map-clock" },
+      "units": { "default": "mdi:thermometer" },
+      "datefmt": { "default": "mdi:calendar" },
+      "accent": { "default": "mdi:palette" },
+      "face": { "default": "mdi:clock-digital" },
+      "nmode": { "default": "mdi:weather-night" },
+      "ncolor": { "default": "mdi:palette-outline" }
+    },
+    "switch": {
+      "h24": { "default": "mdi:hours-24" },
+      "chime": { "default": "mdi:bell-ring-outline" },
+      "detail": { "default": "mdi:text-short" },
+      "secs": { "default": "mdi:timer-outline" }
+    },
+    "number": {
+      "nstart": { "default": "mdi:weather-sunset-down" },
+      "nend": { "default": "mdi:weather-sunset-up" }
+    }
+  }
+}

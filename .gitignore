@@ -7,3 +7,7 @@
 # web flasher build outputs (copied in by CI)
 site/*.bin
 site/faces/
+
+# Python (Home Assistant integration and its tests)
+__pycache__/
+.pytest_cache/

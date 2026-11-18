@@ -1,0 +1,2 @@
+# Home Assistant test harness for custom_components/deskclock (pins a Home Assistant release).
+pytest-homeassistant-custom-component==0.13.375

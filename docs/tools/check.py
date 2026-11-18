@@ -29,7 +29,7 @@ DOCS = ["CLAUDE.md", "README.md"] + sorted(
     + glob.glob("src/**/README.md", root_dir=ROOT, recursive=True))
 
 # ---- Paths -----------------------------------------------------------------------------------------
-PATH_RE = re.compile(r"`((?:src|docs|include|site|\.claude|\.github)/[^`\s]*|[\w.-]+\.(?:ini|py|toml|md))`")
+PATH_RE = re.compile(r"`((?:src|docs|include|site|\.claude|\.github|custom_components|tests)/[^`\s]*|[\w.-]+\.(?:ini|py|toml|md))`")
 for doc in DOCS:
     text = read(doc)
     for m in PATH_RE.finditer(text):
@@ -52,7 +52,8 @@ for doc in DOCS:
 
 # ---- Functions -------------------------------------------------------------------------------------
 code = ""
-for pattern in ("src/**/*.cpp", "src/**/*.h", "site/*.html", "docs/tools/**/*.cpp", "docs/tools/**/*.sh"):
+for pattern in ("src/**/*.cpp", "src/**/*.h", "site/*.html", "docs/tools/**/*.cpp", "docs/tools/**/*.sh",
+                "custom_components/**/*.py"):
     for f in glob.glob(pattern, root_dir=ROOT, recursive=True):
         code += read(f) + "\n"
 LIBRARY = {  # library functions the docs mention
