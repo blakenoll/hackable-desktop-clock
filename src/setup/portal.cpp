@@ -1,11 +1,13 @@
 // Setup mode: scans WiFi, starts a WPA2 access point with a random password, and serves the setup page
-// (form.cpp) through a captive portal until the user saves, then reboots. Never returns.
+// (form.cpp) and the settings API (src/api/) through a captive portal until the user saves, then reboots.
+// Never returns.
 #include "portal.h"
 #include <WiFi.h>
 #include <WebServer.h>
 #include <DNSServer.h>
 #include <lvgl.h>
 #include "setup_internal.h"
+#include "../api/api.h"
 #include "../tuning.h"
 #include "../ui/ui.h"
 
@@ -57,9 +59,7 @@ static String scanOptions() {
   // "clk-setup-A1B2": last two bytes of this chip's MAC, so several clocks being set up
   // at once each advertise a distinct, stable name.
   char apSsid[32];
-  uint64_t efuse = ESP.getEfuseMac();  // byte 0 of the MAC is the lowest byte
-  snprintf(apSsid, sizeof(apSsid), "%s-%02X%02X", SETUP_AP_PREFIX, (unsigned)((efuse >> 32) & 0xFF),
-           (unsigned)((efuse >> 40) & 0xFF));
+  snprintf(apSsid, sizeof(apSsid), "%s-%s", SETUP_AP_PREFIX, api_device_suffix().c_str());
   WiFi.softAP(apSsid, apPass);
   IPAddress ip = WiFi.softAPIP();
   Serial.printf("Setup AP \"%s\" password %s at %s\n", apSsid, apPass, ip.toString().c_str());
@@ -70,7 +70,7 @@ static String scanOptions() {
   dns.start(53, "*", ip);  // answer every hostname with our IP -> captive portal
 
   WebServer server(80);
-  String page = setup_page(netOptions, cur);
+  String page = setup_page(netOptions, cur, config_api_token());  // the radio is on: the token is truly random
   server.on("/", HTTP_GET, [&]() { server.send(200, "text/html", page); });
   server.on("/save", HTTP_POST, [&]() {
     ClockConfig n;
@@ -84,6 +84,7 @@ static String scanOptions() {
     delay(1500);
     ESP.restart();
   });
+  api_setup_routes(server, cur);  // the JSON settings API (src/api/), without the token here
   server.onNotFound([&]() {  // OS captive-portal probes land here
     server.sendHeader("Location", String("http://") + ip.toString() + "/");
     server.send(302, "text/plain", "");

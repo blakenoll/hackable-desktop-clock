@@ -1,6 +1,7 @@
 // The setup page served in setup mode (portal.cpp): plain HTML built from strings, one *Fields() helper per
 // section, and setup_parse() which reads the submitted form back. To add a setting, see config_fields.h.
 #include "setup_internal.h"
+#include "../api/api.h"
 #include "../config_fields.h"
 #include "../ui/ui.h"
 
@@ -124,10 +125,12 @@ static String weatherFields(const ClockConfig &cur) {
          html_esc(cur.tideStation) + "\">";
 }
 
-String setup_page(const String &netOptions, const ClockConfig &cur) {
+String setup_page(const String &netOptions, const ClockConfig &cur, const String &apiToken) {
   return String(PAGE_HEAD) + "<h1>Desk Clock Setup</h1><form method=post action=/save>" + wifiFields(netOptions, cur) +
          timezoneField(cur) + displayFields(cur) + nightFields(cur) + weatherFields(cur) +
-         "<button type=submit>Save &amp; restart</button></form></body></html>";
+         "<button type=submit>Save &amp; restart</button></form>"
+         "<p><small>Settings API key: <code>" + html_esc(apiToken) + "</code><br>Apps and scripts use it to change these settings over "
+         "WiFi at http://" + api_hostname() + ".local. Keep it private.</small></p></body></html>";
 }
 
 String setup_saved_page(const String &ssid) {
