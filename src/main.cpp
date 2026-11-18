@@ -1,6 +1,7 @@
 // Boot flow and main loop: display + UI init, saved settings, WiFi, NTP, then once a second the clock face,
 // night mode, offline marker, and copying the background tasks' weather / tide / radar snapshots into the UI.
 // The only place (with setup mode) that calls LVGL; background tasks publish data through *_get() snapshots.
+// The settings API (src/api/) is answered here too, from api_poll().
 #include <Arduino.h>
 #include <WiFi.h>
 #include <lvgl.h>
@@ -9,6 +10,7 @@
 #include "tuning.h"
 #include "hw/button.h"
 #include "hw/display.h"
+#include "api/api.h"
 #include "setup/portal.h"
 #include "ui/ui.h"
 #include "data/aircraft.h"
@@ -36,6 +38,7 @@ static UiOptions uiOptions(const ClockConfig &cfg) {
 
 // Joins the saved WiFi. A long BOOT press, or failing for WIFI_CONNECT_TIMEOUT_MS, drops into setup mode.
 static void connectWifi() {
+  WiFi.setHostname(api_hostname().c_str());  // before the STA starts; also the mDNS name (src/api/)
   WiFi.mode(WIFI_STA);
   WiFi.begin(g_cfg.ssid.c_str(), g_cfg.pass.c_str());
   uint32_t start = millis();
@@ -53,6 +56,25 @@ static void syncTime() {
     if (button_long_press()) prov_run(true);
     lv_timer_handler();
   }
+}
+
+static void setNight(bool n);
+
+// The settings API (src/api/) saved a change into g_cfg that applies without a restart: show it now.
+static void settingsChanged(const ClockConfig &prev) {
+  if (g_cfg.tz != prev.tz) {
+    setenv("TZ", g_cfg.tz.c_str(), 1);
+    tzset();
+  }
+  ui_set_options(uiOptions(g_cfg));  // rebuilds the face
+#if !defined(FORCE_NIGHT) && !defined(CYCLE_NIGHT)
+  if (g_cfg.nightMode != prev.nightMode) {
+    WeatherData w = weather_get();
+    if (g_cfg.nightMode == 2) setNight(false);
+    else if (g_cfg.nightMode == 0 && w.valid) setNight(!w.isDay);
+    // mode 1 (fixed hours): updateNight() picks it up within a second
+  }
+#endif
 }
 
 void setup() {
@@ -79,6 +101,7 @@ void setup() {
   syncTime();
   ui_set_syncing(false);
   weather_begin(g_cfg);
+  api_begin(g_cfg, settingsChanged);
 }
 
 // ---- Running ---------------------------------------------------------------------------------------
@@ -201,6 +224,7 @@ static void updateRadar() {
 
 void loop() {
   handleButton();
+  api_poll();
   static int lastSec = -1;
   tm t;
   if (getLocalTime(&t, 0) && t.tm_sec != lastSec) {  // once a second

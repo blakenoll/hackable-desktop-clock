@@ -90,3 +90,14 @@ void config_save_theme(uint8_t theme) {
   Nvs n;
   n.p.putUChar("accent", theme);
 }
+
+String config_api_token() {
+  Nvs n;
+  String t = n.p.getString("apitoken", "");
+  if (t.length() == 16) return t;
+  char buf[17];
+  for (int i = 0; i < 8; i++) snprintf(buf + 2 * i, 3, "%02x", (unsigned)(esp_random() & 0xFF));
+  t = buf;
+  n.p.putString("apitoken", t);
+  return t;
+}

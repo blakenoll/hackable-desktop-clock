@@ -21,6 +21,10 @@ static constexpr const char *SETUP_AP_PREFIX = "clk-setup";        // + "-A1B2" 
 static constexpr uint32_t SETUP_IDLE_REBOOT_MS = 5UL * 60 * 1000;  // no client this long -> reboot and retry saved WiFi
 static constexpr uint32_t SETUP_SCAN_TIMEOUT_MS = 15UL * 1000;     // WiFi scan before the AP starts
 
+// ---- Settings API (src/api/, docs/API.md) -----------------------------------------------------------------
+static constexpr const char *API_HOSTNAME_PREFIX = "deskclock";  // + "-a1b2" from the chip's MAC -> deskclock-a1b2.local
+static constexpr uint16_t API_PORT = 80;
+
 // ---- Weather (src/data/weather.cpp, weather_format.cpp) --------------------------------------------------
 // Open-Meteo's "current" data itself updates about every 15 min, so much shorter mostly returns unchanged values.
 static constexpr uint32_t WEATHER_REFRESH_MS = 10UL * 60 * 1000;

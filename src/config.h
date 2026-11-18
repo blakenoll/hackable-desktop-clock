@@ -45,3 +45,6 @@ void config_save_night(bool night);
 // Single settings changed by a BOOT press.
 void config_save_face(uint8_t face);
 void config_save_theme(uint8_t theme);
+// The settings API key (NVS `apitoken`, 16 hex characters), created on first use. Call it only once the
+// radio is on, so esp_random() is truly random. Shown on the setup page; see docs/API.md.
+String config_api_token();

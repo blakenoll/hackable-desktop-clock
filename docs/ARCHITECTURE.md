@@ -12,6 +12,7 @@ src/
   config_fields.h     the list of user settings: NVS key, field, default, range
   hw/                 display.cpp (TFT_eSPI -> LVGL), button.cpp (BOOT button gestures)
   setup/              setup mode: portal.cpp (AP, DNS, web server), form.cpp (the page), zones.cpp (timezones)
+  api/                the settings API over WiFi: JSON endpoints, mDNS, API key (see API.md)
   data/               background fetches: weather.cpp, tide.cpp, aircraft.cpp; weather_format.cpp (icons, text); net.h (NetLock)
   ui/                 everything drawn; public API ui.h, private ui_internal.h (lists the files)
     faces/            one file per clock face
@@ -28,13 +29,13 @@ site/                 the web flasher (GitHub Pages)
 2. `ui_boot_splash()`: a comet runs once around the ring (~1 s, blocking).
 3. No WiFi saved -> `prov_run()` (setup mode, never returns).
 4. `connectWifi()` with the animated WiFi glyph; after `WIFI_CONNECT_TIMEOUT_MS` or a long BOOT press -> setup mode.
-5. `syncTime()` (NTP with the saved POSIX TZ) behind the "synchronizing" animation, then `weather_begin()` starts the weather task.
+5. `syncTime()` (NTP with the saved POSIX TZ) behind the "synchronizing" animation, then `weather_begin()` starts the weather task and `api_begin()` starts the settings API and mDNS ([API.md](API.md)).
 
 Every blocking wait calls `lv_timer_handler()` so the animations keep running.
 
 ## Main loop
 
-`loop()` polls the button (short press = next face, double = next theme, both saved; long = setup mode), and once a second:
+`loop()` polls the button (short press = next face, double = next theme, both saved; long = setup mode), answers settings API requests (`api_poll()`; a saved change runs `settingsChanged()` or restarts), and once a second:
 
 - `ui_update(t)`: time, date, ring, plus the face's `onTime` hook
 - `updateNight()`: night by fixed hours when `nmode` is 1 (mode 0 follows `is_day` from the weather, mode 2 never)
@@ -47,7 +48,7 @@ Entered on first boot, when WiFi can't be joined, or by holding BOOT for 3 s. `p
 
 1. It **scans WiFi before starting the access point**. **Why:** scanning while serving hops channels and drops the phone's connection. The scan is async (`WiFi.scanNetworks(true)` polled with `lv_timer_handler()`) so the sonar animation keeps running; a blocking scan would freeze it.
 2. It starts a WPA2 AP named `SETUP_AP_PREFIX` plus the last two MAC bytes, with a **random 8-digit password per session**. The password is shown on screen (`ui_show_setup()`) and printed to serial.
-3. A DNS server answers every name with the clock's IP, so phones open the captive portal. The page is built by `setup_page()` (`form.cpp`). On submit, `setup_parse()` reads it through `config_fields()`, then it saves and reboots.
+3. A DNS server answers every name with the clock's IP, so phones open the captive portal. The page is built by `setup_page()` (`form.cpp`). On submit, `setup_parse()` reads it through `config_fields()`, then it saves and reboots. The same server also answers the settings API without the key (`api_setup_routes()`, [API.md](API.md#in-setup-mode)).
 4. If WiFi was saved before and no client connects for `SETUP_IDLE_REBOOT_MS`, it reboots to retry.
 
 Only 2.4 GHz networks work (the C3 has no 5 GHz radio). Timezones are presets (`zones.cpp`); a saved zone that isn't a preset stays selectable as `Saved: ...`.
