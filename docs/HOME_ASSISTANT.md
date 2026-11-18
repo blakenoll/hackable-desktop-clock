@@ -73,7 +73,7 @@ Call it with `action: rest_command.deskclock_set` and `data: {settings: {face: 9
 
 ## Troubleshooting
 
-- **Not discovered.** Check that Home Assistant's container uses host networking (see above), and that `http://deskclock-xxxx.local/api/info` opens from the Home Assistant machine. If it doesn't, add the clock by IP. Home Assistant updates the address by itself when discovery later sees the clock at a new IP.
+- **Not discovered.** First restart Home Assistant if you haven't since installing the integration: it only starts watching for `_deskclock._tcp` at startup. Then check the log for warnings from `custom_components.deskclock` (an unreachable clock, or firmware too old to be added), that Home Assistant's container uses host networking (see above), and that `http://deskclock-xxxx.local/api/info` opens from the Home Assistant machine. If it doesn't, add the clock by IP. Home Assistant updates the address by itself when discovery later sees the clock at a new IP.
 - **"The clock rejected the API key"** after erasing the clock's flash: the key changed. Home Assistant shows a **Reconfigure** prompt; enter the new key from the setup page.
 - **Entities unavailable.** The clock is offline, restarting or in setup mode. They come back on their own.
 

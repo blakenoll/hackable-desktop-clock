@@ -49,6 +49,7 @@ class FakeClock:
         self.key = KEY
         self.online = True
         self.version = "abc1234"
+        self.old_firmware = False  # #29 firmware: /api/info without id and version
         self.schema = copy.deepcopy(SCHEMA)
         self.config: dict[str, Any] = {
             "ssid": "home", "tz": "PST8PDT,M3.2.0,M11.1.0", "city": "29401", "units": "F", "h24": False,
@@ -68,9 +69,11 @@ class FakeClock:
         headers = self.mock.mock_calls[-1][3] or {}
         path = url.path
         if path == "/api/info":
-            return self._reply(method, url, 200, {"api": 1, "id": DEVICE_ID, "version": self.version,
-                                                  "host": "deskclock-a1b2", "mode": self.mode,
-                                                  "auth": self.mode == "normal"})
+            info = {"api": 1, "id": DEVICE_ID, "version": self.version, "host": "deskclock-a1b2",
+                    "mode": self.mode, "auth": self.mode == "normal"}
+            if self.old_firmware:
+                del info["id"], info["version"]
+            return self._reply(method, url, 200, info)
         if path == "/api/schema":
             return self._reply(method, url, 200, self.schema)
         if self.mode == "normal" and headers.get("Authorization") != f"Bearer {self.key}":
