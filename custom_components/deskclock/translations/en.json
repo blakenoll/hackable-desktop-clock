@@ -1,0 +1,66 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Hackable Desk Clock",
+        "description": "Enter the clock's address and its API key. The key is at the bottom of the clock's setup page (hold BOOT for 3 seconds to open setup mode).",
+        "data": {
+          "host": "Host",
+          "api_key": "API key"
+        },
+        "data_description": {
+          "host": "deskclock-xxxx.local or the clock's IP address",
+          "api_key": "16 characters, shown at the bottom of the setup page"
+        }
+      },
+      "zeroconf_confirm": {
+        "title": "Set up {name}",
+        "description": "Found {name} at {host}. Enter its API key, shown at the bottom of the clock's setup page (hold BOOT for 3 seconds to open setup mode).",
+        "data": {
+          "api_key": "API key"
+        }
+      },
+      "reauth_confirm": {
+        "title": "New API key for {name}",
+        "description": "The clock rejected the saved API key (its settings may have been erased). Enter the key shown at the bottom of its setup page.",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Couldn't reach the clock. Check the address and that the clock is on your WiFi.",
+      "invalid_auth": "The clock rejected that API key.",
+      "setup_mode": "The clock is in setup mode. Let it rejoin your WiFi, then try again."
+    },
+    "abort": {
+      "already_configured": "This clock is already set up.",
+      "cannot_connect": "Couldn't reach the clock.",
+      "not_ipv4": "Only IPv4 addresses are supported.",
+      "reauth_successful": "The new API key works.",
+      "unique_id_mismatch": "That address belongs to a different clock."
+    }
+  },
+  "entity": {
+    "select": {
+      "tz": { "name": "Timezone" },
+      "units": { "name": "Temperature units" },
+      "datefmt": { "name": "Date format" },
+      "accent": { "name": "Colour theme" },
+      "face": { "name": "Clock face" },
+      "nmode": { "name": "Night mode" },
+      "ncolor": { "name": "Night colour" }
+    },
+    "switch": {
+      "h24": { "name": "24-hour time" },
+      "chime": { "name": "Hourly chime" },
+      "detail": { "name": "Weather detail line" },
+      "secs": { "name": "Seconds as digits" }
+    },
+    "number": {
+      "nstart": { "name": "Night starts (hour)" },
+      "nend": { "name": "Night ends (hour)" }
+    }
+  }
+}

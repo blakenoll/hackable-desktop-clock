@@ -64,7 +64,7 @@ Coordinates in face code are pixel offsets from the centre of the 240x240 screen
 2. Add one line to `config_fields()` in `src/config_fields.h`: NVS key (≤ 15 characters, also the form field name), field, default and range. Loading, saving and reading the submitted form all go through this list.
 3. Add the input to one of the `*Fields()` helpers in `src/setup/form.cpp`, with `name=` set to the same key (`field()`, `option()` and `onOff()` build a `<select>`).
 4. Use it. A display option goes into `UiOptions` (`src/ui/ui.h`) through `uiOptions()` in `src/main.cpp`; anything else reads `cfg.<field>`.
-5. The settings API ([API.md](API.md)) picks it up from `config_fields()` with no extra work. If it's only read at boot, add its key to `RESTART_KEYS` in `src/api/api.cpp`; if it applies live in some other way than `ui_set_options()`, handle it in `settingsChanged()` (`src/main.cpp`). Give it labelled `choices` in `SchemaWriter` there if it's a list, and server-side checks in `textProblem()` if it's text.
+5. The settings API ([API.md](API.md)) picks it up from `config_fields()` with no extra work. If it's only read at boot, add its key to `RESTART_KEYS` in `src/api/api.cpp`; if it applies live in some other way than `ui_set_options()`, handle it in `settingsChanged()` (`src/main.cpp`). Give it labelled `choices` in `SchemaWriter` there if it's a list, and server-side checks in `textProblem()` if it's text. Home Assistant gets an entity for it automatically; give it a proper name and icon in `KNOWN_KEYS` (`custom_components/deskclock/entity.py`), `translations/en.json` and `icons.json` ([HOME_ASSISTANT.md](HOME_ASSISTANT.md#changing-the-integration)).
 
 Settings are in NVS under the namespace `clock` and survive reflashing.
 

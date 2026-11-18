@@ -12,6 +12,7 @@ ESP32-C3 SuperMini + 240x240 GC9A01 round display: an LVGL 9 desk clock with NTP
 | Timezone list | `ZONES[]` in `src/setup/zones.cpp` |
 | Setup access point, captive portal, WiFi scan | `src/setup/portal.cpp` |
 | Settings API over WiFi (JSON, mDNS, API key) | `src/api/api.cpp` (see [docs/API.md](docs/API.md)) |
+| Home Assistant integration | `custom_components/deskclock/`, tests in `tests/home_assistant/` (see [docs/HOME_ASSISTANT.md](docs/HOME_ASSISTANT.md)) |
 | One clock face | `src/ui/faces/face_<name>.cpp` (see [docs/FACES.md](docs/FACES.md)) |
 | Add a face | new `face_<name>.cpp` + `enum Face` in `src/ui/ui.h` + table in `src/ui/faces.cpp` |
 | Colour themes / night colours | `THEMES[]` / `NIGHTS[]` in `src/ui/theme.cpp` (and `PALETTES` in `site/index.html`) |
@@ -24,13 +25,14 @@ ESP32-C3 SuperMini + 240x240 GC9A01 round display: an LVGL 9 desk clock with NTP
 | Boot flow, main loop | `src/main.cpp` |
 | Web flasher site | `site/index.html` (see [docs/WEB_FLASHER.md](docs/WEB_FLASHER.md)) |
 
-Docs: [CUSTOMIZING](docs/CUSTOMIZING.md) (recipes by task), [ARCHITECTURE](docs/ARCHITECTURE.md) (boot, tasks, threading, the face rebuild model, night mode), [FACES](docs/FACES.md), [DATA](docs/DATA.md), [API](docs/API.md), [HARDWARE](docs/HARDWARE.md), [TROUBLESHOOTING](docs/TROUBLESHOOTING.md), [WEB_FLASHER](docs/WEB_FLASHER.md). Skills in `.claude/skills/`: `flash-clock`, `customize-clock`, `change-hardware`. `AGENTS.md` and `.agents/skills` are symlinks to this file and that folder, so edit the real files.
+Docs: [CUSTOMIZING](docs/CUSTOMIZING.md) (recipes by task), [ARCHITECTURE](docs/ARCHITECTURE.md) (boot, tasks, threading, the face rebuild model, night mode), [FACES](docs/FACES.md), [DATA](docs/DATA.md), [API](docs/API.md), [HOME_ASSISTANT](docs/HOME_ASSISTANT.md), [HARDWARE](docs/HARDWARE.md), [TROUBLESHOOTING](docs/TROUBLESHOOTING.md), [WEB_FLASHER](docs/WEB_FLASHER.md). Skills in `.claude/skills/`: `flash-clock`, `customize-clock`, `change-hardware`. `AGENTS.md` and `.agents/skills` are symlinks to this file and that folder, so edit the real files.
 
 ## Commands
 
 - Build: `pio run`. Flash: `pio run -t upload` (ask first). With [mise](https://mise.jdx.dev): `mise install`, then `mise run build|upload|clean|render|check`.
 - `pio` lives in `~/.platformio/penv/bin` and may not be on PATH in agent shells: `export PATH="$PATH:$HOME/.platformio/penv/bin"`.
 - Host renders: `sh docs/tools/sim/render.sh` compiles `src/ui/` for this computer and writes `docs/faces/*.png` (needs gcc, python3 and one prior `pio run` for LVGL, or `LVGL_DIR=<lvgl 9.6 checkout>`). Use it to check layout before flashing, and **rerun it after any change to how a face, theme or colour looks** (even a small brightness tweak) and commit the updated `docs/faces/` PNGs with it; the web flasher and docs show those images.
+- Home Assistant integration tests: `pip install -r tests/home_assistant/requirements.txt && pytest tests/home_assistant` (Python 3.14; CI runs them). Run them after changing the API or the integration.
 - Consistency check: `python3 docs/tools/check.py`. It confirms that paths and functions named in the docs exist and that the web flasher's palettes match `theme.cpp`. CI runs it; run it after moving or renaming anything.
 
 ## Rules

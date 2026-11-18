@@ -12,6 +12,9 @@
 
 static constexpr int API_VERSION = 1;              // bump on incompatible changes; GET /api/info reports it
 static constexpr const char *MDNS_SERVICE = "deskclock";  // advertised as _deskclock._tcp
+#ifndef FIRMWARE_VERSION
+#define FIRMWARE_VERSION "dev"  // set by git_version.py
+#endif
 
 static WebServer *srv = nullptr;
 static ClockConfig *cur = nullptr;
@@ -231,6 +234,8 @@ static bool authorized() {
 static void handleInfo() {
   JsonDocument d;
   d["api"] = API_VERSION;
+  d["id"] = api_device_id();
+  d["version"] = FIRMWARE_VERSION;
   d["host"] = api_hostname();
   d["mode"] = setupMode ? "setup" : "normal";
   d["auth"] = !setupMode;
@@ -312,6 +317,13 @@ String api_device_suffix() {
   return s;
 }
 
+String api_device_id() {
+  uint64_t efuse = ESP.getEfuseMac();
+  char s[13];
+  for (int i = 0; i < 6; i++) snprintf(s + 2 * i, 3, "%02x", (unsigned)((efuse >> (8 * i)) & 0xFF));
+  return s;
+}
+
 String api_hostname() {
   String h = String(API_HOSTNAME_PREFIX) + "-" + api_device_suffix();
   h.toLowerCase();
@@ -334,6 +346,7 @@ void api_begin(ClockConfig &cfg, void (*applied)(const ClockConfig &prev)) {
   if (MDNS.begin(host.c_str())) {
     MDNS.addService(MDNS_SERVICE, "tcp", API_PORT);
     MDNS.addServiceTxt(MDNS_SERVICE, "tcp", "api", String(API_VERSION));
+    MDNS.addServiceTxt(MDNS_SERVICE, "tcp", "id", api_device_id());
     MDNS.addService("http", "tcp", API_PORT);
   }
   Serial.printf("Settings API at http://%s.local/api/info (%s)\n", host.c_str(), WiFi.localIP().toString().c_str());

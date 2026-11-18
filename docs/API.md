@@ -7,7 +7,7 @@ A small JSON API over WiFi for reading and changing the clock's settings without
 Once the clock has joined your WiFi, it serves the API on port 80 (`API_PORT` in `src/tuning.h`) and advertises itself over mDNS:
 
 - Hostname `deskclock-xxxx.local`: `API_HOSTNAME_PREFIX` plus the same four MAC hex digits as the `clk-setup-XXXX` network, in lowercase. It is also the DHCP hostname, so it shows up under that name in your router.
-- Bonjour service `_deskclock._tcp` with TXT record `api=<version>`, plus `_http._tcp`.
+- Bonjour service `_deskclock._tcp` with TXT records `api=<version>` and `id=<MAC in hex>`, plus `_http._tcp`. Home Assistant uses this to discover clocks ([HOME_ASSISTANT.md](HOME_ASSISTANT.md)).
 
 The setup page shows the exact address at the bottom, and serial prints it at boot (`Settings API at http://...`).
 
@@ -23,7 +23,7 @@ The API is plain HTTP on your local network, so treat the key like a WiFi passwo
 
 | Method and path | Key needed | What it does |
 |---|---|---|
-| `GET /api/info` | no | `{"api":1,"host":"deskclock-a1b2","mode":"normal","auth":true}` |
+| `GET /api/info` | no | `{"api":1,"id":"a0b1c2d3a1b2","version":"9685f64","host":"deskclock-a1b2","mode":"normal","auth":true}`. `id` is the MAC (a stable unique ID); `version` is `git describe` of the build (`git_version.py`, "dev" without git). |
 | `GET /api/schema` | no | Every setting: `key`, `type` (`text` / `secret` / `choice` / `bool` / `number`), `default`, `min` / `max`, `restart`, and `choices` (`value` + `label`) where there's a list. Faces, themes, night colours and timezones come from the firmware's own tables, so clients needn't hard-code them. |
 | `GET /api/config` | yes | The current settings as one flat object keyed like the schema. The WiFi password (`pass`) is never returned. |
 | `POST /api/config` | yes | Changes the keys in the JSON body (a partial object; absent keys are unchanged). Replies `{"ok":true,"restart":false,"config":{...}}`. |
