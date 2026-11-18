@@ -411,7 +411,47 @@
         <p class="mt-4 leading-relaxed text-ink">The clock starts a WiFi network named <span class="kbd">clk-setup-XXXX</span>. The password is shown on the clock's screen.
         Join it and a setup page opens, where you choose your WiFi (2.4&nbsp;GHz only), timezone and ZIP code for weather.</p>
         <p class="mt-4 leading-relaxed text-ink">To re-enter setup later, hold <span class="kbd">BOOT</span> for 3 seconds while the clock is running.</p>
+        <p class="mt-4 border-t border-line pt-4 text-sm text-dim">Using Home Assistant? <a class="font-semibold text-white underline decoration-accent/60 underline-offset-4 hover:decoration-accent" href="#home-assistant">Add the clock there</a> once it's on your WiFi.</p>
       </div>
+    </div>
+  </section>
+
+  <section id="home-assistant" class="mt-28 scroll-mt-8">
+    <p class="eyebrow text-accent">Smart home</p>
+    <h2 class="mt-3 text-3xl font-extrabold tracking-[-.025em] text-white md:text-4xl">Works with Home Assistant.</h2>
+    <div class="mt-10 grid gap-5 md:grid-cols-[1fr_1.4fr]">
+      <div class="card flex flex-col">
+        <p class="leading-relaxed text-ink">Home Assistant finds the clock on your network by itself. Its face, colour theme, night mode and display options become entities you can put on a dashboard or change from automations: the Radar face when you're expecting a delivery, night mode when the house goes to sleep.</p>
+        <p class="mt-4 leading-relaxed text-ink">The integration installs through <a class="font-semibold text-white underline decoration-accent/60 underline-offset-4 hover:decoration-accent" href="https://hacs.xyz">HACS</a>. Everything stays on your local network.</p>
+        <div class="mt-auto flex flex-wrap items-center gap-x-6 gap-y-4 pt-7">
+          <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=blakenoll&amp;repository=hackable-desktop-clock&amp;category=integration"
+             class="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-extrabold text-[#050607] transition hover:bg-[#f1f3f5] active:scale-[.98]">
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/></svg>
+            Add to HACS
+          </a>
+          <a class="group inline-flex items-center gap-1.5 text-sm font-semibold text-ink transition hover:text-white" href="https://github.com/blakenoll/hackable-desktop-clock/blob/main/docs/HOME_ASSISTANT.md">
+            Setup guide
+            <svg viewBox="0 0 24 24" class="h-4 w-4 transition group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m0 0l-5-5m5 5l-5 5"/></svg>
+          </a>
+        </div>
+      </div>
+      <ol class="flex flex-col divide-y divide-line rounded-3xl border border-line bg-panel px-7 py-2">
+        <li class="flex flex-1 flex-col justify-center py-5"><div class="flex gap-4">
+          <span class="pt-0.5 font-mono text-sm text-accent">01</span>
+          <div><p class="font-extrabold text-white">Install the integration</p>
+          <p class="mt-1 text-sm leading-relaxed text-ink">Click <strong class="text-slate-200">Add to HACS</strong>, install <strong class="text-slate-200">Hackable Desk Clock</strong>, then restart Home Assistant.</p></div>
+        </div></li>
+        <li class="flex flex-1 flex-col justify-center py-5"><div class="flex gap-4">
+          <span class="pt-0.5 font-mono text-sm text-accent">02</span>
+          <div><p class="font-extrabold text-white">Accept the discovered clock</p>
+          <p class="mt-1 text-sm leading-relaxed text-ink">It shows up under Settings &rarr; Devices &amp; services. Enter the API key from the bottom of the clock's setup page.</p></div>
+        </div></li>
+        <li class="flex flex-1 flex-col justify-center py-5"><div class="flex gap-4">
+          <span class="pt-0.5 font-mono text-sm text-accent">03</span>
+          <div><p class="font-extrabold text-white">Not discovered?</p>
+          <p class="mt-1 text-sm leading-relaxed text-ink">Home Assistant must be on the same network (in Docker, <span class="kbd">network_mode: host</span>). Or add the clock by its IP address.</p></div>
+        </div></li>
+      </ol>
     </div>
   </section>
 
@@ -481,6 +521,7 @@
         <div class="mt-6 rounded-2xl border border-line bg-black/30 p-5">
           <p class="font-extrabold text-white">First install?</p>
           <p class="mt-2 text-sm">The clock starts a WiFi network named <span class="kbd">clk-setup-XXXX</span>, with the password on its screen. Join it from your phone to choose your WiFi, timezone and ZIP code.</p>
+          <p class="mt-3 text-sm">Using Home Assistant? Once the clock is on your WiFi, it shows up there by itself. <a class="font-semibold text-white underline decoration-accent/60 underline-offset-4 hover:decoration-accent" href="#home-assistant" id="fl-ha">How to add it</a></p>
         </div>
       </section>
 
@@ -593,6 +634,7 @@
   }));
   dlg.querySelector('[data-act="pick"]').addEventListener('click', () => pick());
   dlg.querySelector('[data-act="close"]').addEventListener('click', () => dlg.close());
+  document.getElementById('fl-ha').addEventListener('click', () => dlg.close());  // then the link scrolls to the section
   $('fl-all').addEventListener('click', () => pick(false));
   $('fl-close').addEventListener('click', () => dlg.close());
   dlg.addEventListener('cancel', e => { if (busy) e.preventDefault(); });           // Esc
