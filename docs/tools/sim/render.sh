@@ -1,6 +1,6 @@
 #!/bin/sh
 # Renders the real clock faces on this computer: compiles src/ui/ (the UI code) against LVGL with a stub Arduino.h,
-# draws every face into a 240x240 buffer and writes montages to docs/faces/*.png.
+# draws every face into a 240x240 buffer and writes montages to docs/faces/*.png, plus the Home Assistant icon.
 # Needs gcc/g++, python3 and one prior `pio run` (for .pio/libdeps/.../lvgl). Usage: sh docs/tools/sim/render.sh
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -42,4 +42,6 @@ done
 for nc in $(seq 0 $((NIGHTS - 1))); do
   python3 "$HERE/montage.py" "$ROOT/docs/faces/themes/night-$nc.png" 4 $(for n in $N; do echo nightc$nc-$n; done)
 done
-echo "wrote docs/faces/*.png and docs/faces/themes/*.png"
+# The Home Assistant integration's icon (docs/HOME_ASSISTANT.md): the Polished face in its bezel.
+python3 "$HERE/brand_icon.py" day-polished.ppm "$ROOT/custom_components/deskclock/brand"
+echo "wrote docs/faces/*.png, docs/faces/themes/*.png and custom_components/deskclock/brand/*.png"

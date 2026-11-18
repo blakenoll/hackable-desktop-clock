@@ -32,11 +32,13 @@
     "error": {
       "cannot_connect": "Couldn't reach the clock. Check the address and that the clock is on your WiFi.",
       "invalid_auth": "The clock rejected that API key.",
-      "setup_mode": "The clock is in setup mode. Let it rejoin your WiFi, then try again."
+      "setup_mode": "The clock is in setup mode. Let it rejoin your WiFi, then try again.",
+      "firmware_too_old": "The clock's firmware is too old for Home Assistant. Reflash it with current firmware, then try again."
     },
     "abort": {
       "already_configured": "This clock is already set up.",
       "cannot_connect": "Couldn't reach the clock.",
+      "firmware_too_old": "The clock's firmware is too old for Home Assistant. Reflash it with current firmware.",
       "not_ipv4": "Only IPv4 addresses are supported.",
       "reauth_successful": "The new API key works.",
       "unique_id_mismatch": "That address belongs to a different clock."

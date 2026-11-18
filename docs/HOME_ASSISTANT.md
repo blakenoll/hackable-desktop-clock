@@ -73,7 +73,7 @@ Call it with `action: rest_command.deskclock_set` and `data: {settings: {face: 9
 
 ## Troubleshooting
 
-- **Not discovered.** Check that Home Assistant's container uses host networking (see above), and that `http://deskclock-xxxx.local/api/info` opens from the Home Assistant machine. If it doesn't, add the clock by IP. Home Assistant updates the address by itself when discovery later sees the clock at a new IP.
+- **Not discovered.** First restart Home Assistant if you haven't since installing the integration: it only starts watching for `_deskclock._tcp` at startup. Then check the log for warnings from `custom_components.deskclock` (an unreachable clock, or firmware too old to be added), that Home Assistant's container uses host networking (see above), and that `http://deskclock-xxxx.local/api/info` opens from the Home Assistant machine. If it doesn't, add the clock by IP. Home Assistant updates the address by itself when discovery later sees the clock at a new IP.
 - **"The clock rejected the API key"** after erasing the clock's flash: the key changed. Home Assistant shows a **Reconfigure** prompt; enter the new key from the setup page.
 - **Entities unavailable.** The clock is offline, restarting or in setup mode. They come back on their own.
 
@@ -85,5 +85,6 @@ Call it with `action: rest_command.deskclock_set` and `data: {settings: {face: 9
   - `custom_components/deskclock/entity.py`: which settings are exposed (`exposed()`), and the device info.
   - `custom_components/deskclock/select.py`, `custom_components/deskclock/switch.py` and `custom_components/deskclock/number.py`: build entities from the schema.
   - `custom_components/deskclock/translations/en.json` and `icons.json`: names and icons for the known settings (`KNOWN_KEYS` in `custom_components/deskclock/entity.py`). Any other setting is named after its key.
+- **Icon.** `custom_components/deskclock/brand/icon.png` and `icon@2x.png` are the Polished face in its bezel, written by `sh docs/tools/sim/render.sh` (`docs/tools/sim/brand_icon.py`). Home Assistant serves them from the integration folder after a restart; versions too old to read a `brand/` folder show "icon not available".
 - **Tests.** They run against a fake clock (`tests/home_assistant/conftest.py`): `pip install -r tests/home_assistant/requirements.txt && pytest tests/home_assistant`. Home Assistant needs Python 3.14. CI runs them.
 - **Versions.** When you change the integration, bump `version` in `custom_components/deskclock/manifest.json`. `homeassistant` in `hacs.json` is the oldest Home Assistant release it supports.

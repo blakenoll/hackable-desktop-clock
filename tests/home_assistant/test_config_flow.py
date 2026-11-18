@@ -94,3 +94,27 @@ async def test_reauth(hass, clock):
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reauth_successful"
     assert entry.data[CONF_API_KEY] == KEY
+
+
+async def test_old_firmware(hass, clock, caplog):
+    clock.old_firmware = True
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_ZEROCONF}, data=_zeroconf(props={"api": "1"})
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "firmware_too_old"
+    assert "reflash" in caplog.text
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}, data={CONF_HOST: HOST, CONF_API_KEY: KEY}
+    )
+    assert result["errors"] == {"base": "firmware_too_old"}
+
+
+async def test_zeroconf_unreachable_is_logged(hass, clock, caplog):
+    clock.online = False
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_ZEROCONF}, data=_zeroconf(props={"api": "1"})
+    )
+    assert result["reason"] == "cannot_connect"
+    assert "couldn't reach it" in caplog.text
