@@ -10,6 +10,7 @@ A digital desk clock for an ESP32-C3 and a 240x240 round GC9A01 display, built w
 - **Night mode**: everything turns dim red (or amber, or dim white) after sunset or at fixed hours
 - **Ten clock faces**: Polished (default), Arc, Stacked, Analog, Zen, Forecast, Retro LCD, Daylight, Tide (high/low tide chart from NOAA predictions for the nearest US tide station, or one you pick on the setup page) and Radar (a radar scope with the live aircraft within 5 NM of your ZIP, from [adsb.fi](https://adsb.fi) ADS-B data; polled every 10 s only while the face is showing). Tap the BOOT button to switch; themes, ring style and night colour are on the setup page
 - **No secrets in the firmware**: WiFi, timezone, time/date format, clock face, colour theme, ZIP code and units are set from your phone through a captive-portal setup page on the clock itself
+- **Home Assistant**: the clock shows up on its own, with its face, colour theme, night mode and display options as entities for dashboards and automations ([below](#home-assistant))
 
 ## What you need
 
@@ -61,7 +62,7 @@ On first boot (or whenever the saved network can't be joined for 20 s) the clock
 2. The setup page should pop up. If it doesn't, open `http://192.168.4.1`.
 3. Pick your WiFi network (2.4 GHz only) and enter its password, choose a timezone, optionally enter a **US 5-digit ZIP code** for weather (plus, optionally, your **street address**, so weather, tides and the radar centre on your house rather than the middle of the ZIP; it is looked up once via the US Census geocoder), choose °F or °C, and tap **Save & restart**.
 
-Settings are stored in flash and survive reboots and reflashing. To change them later, **hold the BOOT button for 3 seconds** while the clock is running. Apps and scripts can also change them over WiFi through a small JSON API ([docs/API.md](docs/API.md)); its key is shown at the bottom of the setup page. **Home Assistant** finds clocks on its own and offers their faces, themes and night mode as entities: install the integration from this repo through HACS ([docs/HOME_ASSISTANT.md](docs/HOME_ASSISTANT.md)). (Holding BOOT *during reset* enters the ROM bootloader instead.) If the setup screen is left idle for 5 minutes and WiFi was saved before, the clock reboots and retries it.
+Settings are stored in flash and survive reboots and reflashing. To change them later, **hold the BOOT button for 3 seconds** while the clock is running. (Holding BOOT *during reset* enters the ROM bootloader instead.) If the setup screen is left idle for 5 minutes and WiFi was saved before, the clock reboots and retries it.
 
 ## Using it
 
@@ -70,6 +71,16 @@ Settings are stored in flash and survive reboots and reflashing. To change them 
 - **Night mode:** when Open-Meteo says it's dark (`is_day = 0`) everything switches to red tones. It needs a ZIP code, since the flag comes from the weather fetch. The last state is remembered across reboots.
 - **No ZIP entered:** weather and night mode are simply off.
 - **Night mode options (setup page):** follow sunset (default), fixed hours (works without a ZIP), or never; night colour red, amber or dim white.
+
+## Home Assistant
+
+[![Open your Home Assistant instance and add this repository to HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=blakenoll&repository=hackable-desktop-clock&category=integration)
+
+1. Click the badge above, or add `https://github.com/blakenoll/hackable-desktop-clock` to HACS as a custom repository of type **Integration**. Install **Hackable Desk Clock**, then **restart Home Assistant**.
+2. Your clock appears under Settings → Devices & services as **Discovered**. Click **Add** and enter its API key, shown at the bottom of the clock's setup page.
+3. Change the face, colour theme, night mode, timezone and other display options from Home Assistant, or switch them from automations. A face picked with the BOOT button shows up there within 30 seconds.
+
+Discovery needs Home Assistant on the same network as the clock (in Docker, `network_mode: host`); otherwise add the clock by its IP. Details, an example automation and troubleshooting are in [docs/HOME_ASSISTANT.md](docs/HOME_ASSISTANT.md). Home Assistant uses the clock's small JSON settings API, which scripts can use too ([docs/API.md](docs/API.md)).
 
 ## Faces
 
