@@ -11,7 +11,7 @@
 
 ## Theme preview
 
-`PALETTES` in the page script lists the colour themes (name + current-second tick colour) and night colours (name + base colour) for the picker. It shows `faces/themes/day-N.png` / `night-N.png`, rendered by `docs/tools/sim/render.sh`. These are plain montages with no frame, because the page draws the bezel in CSS; the README images (`faces.png` etc.) are rendered with `montage.py --bezel` and carry their own. **Keep `PALETTES` in sync with `THEMES[]` and `NIGHTS[]` in `src/ui/theme.cpp`**: `python3 docs/tools/check.py` fails when they differ.
+`PALETTES` in the page script lists the colour themes (name + current-second tick colour) and night colours (name + base colour) for the picker. It shows `faces/themes/day-N.png` / `night-N.png`, rendered by `docs/tools/sim/render.sh`. These are plain montages with no frame, because the page draws the bezel in CSS; the README images (`faces.png` etc.) are rendered with `montage.py --bezel` and carry their own, on a transparent background. **Keep `PALETTES` in sync with `THEMES[]` and `NIGHTS[]` in `src/ui/theme.cpp`**: `python3 docs/tools/check.py` fails when they differ.
 
 ## Hero clock
 
