@@ -30,12 +30,14 @@ class DeskClockApi:
         self.host = host
         self._api_key = api_key
 
-    async def _request(self, method: str, path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def _request(
+        self, method: str, path: str, body: dict[str, Any] | None = None, params: dict[str, str] | None = None
+    ) -> dict[str, Any]:
         headers = {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
         try:
             async with asyncio.timeout(REQUEST_TIMEOUT):
                 async with self._session.request(
-                    method, f"http://{self.host}{path}", headers=headers, json=body
+                    method, f"http://{self.host}{path}", headers=headers, json=body, params=params
                 ) as resp:
                     if resp.status == 401:
                         raise DeskClockAuthError("wrong API key")
@@ -61,3 +63,11 @@ class DeskClockApi:
     async def set(self, changes: dict[str, Any]) -> dict[str, Any]:
         """Change some settings; returns {"ok", "restart", "config"}."""
         return await self._request("POST", "/api/config", changes)
+
+    async def notify(self, notification: dict[str, Any]) -> dict[str, Any]:
+        """Show a notification card: {"title", "text", "level", "duration", "id"}; replaces the current one."""
+        return await self._request("POST", "/api/notify", notification)
+
+    async def clear_notification(self, notification_id: str | None = None) -> dict[str, Any]:
+        """Remove the current card (only if its id matches, when one is given); returns {"ok", "cleared"}."""
+        return await self._request("DELETE", "/api/notify", params={"id": notification_id} if notification_id else None)

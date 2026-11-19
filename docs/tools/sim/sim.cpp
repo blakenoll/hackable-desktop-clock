@@ -161,6 +161,29 @@ int main(int argc, char **argv) {
       run(46000);
     }
   }
+  // 7. notification cards: info (timer half gone), warn, alarm (pulse caught mid-fade), then info at night
+  {
+    UiOptions v; ui_set_options(v);
+    t = mk(10, 47, 38); ui_update(t);
+    ui_notify("washer", "Laundry done", "The washing machine has finished its cycle.", NOTIFY_INFO, 30000);
+    run(15000);
+    shot(out + "/notify-info");
+    ui_notify("garage", "Garage open", "The garage door has been open for 10 minutes.", NOTIFY_WARN, 0);
+    run(1500);
+    shot(out + "/notify-warn");
+    ui_notify("smoke", "Smoke alarm", "Smoke detected in the kitchen. Everyone out.", NOTIFY_ALARM, 0);
+    run(1250);
+    shot(out + "/notify-alarm");
+    ui_notify_clear(nullptr);
+    ui_set_night(true);
+    run(46000);
+    ui_notify("door", "Front door", "Someone is at the door.", NOTIFY_INFO, 0);
+    run(1500);
+    shot(out + "/notify-night");
+    ui_notify_clear("door");
+    ui_set_night(false);
+    run(46000);
+  }
   lv_mem_monitor(&mon);
   printf("final used %u max %u\n", (unsigned)(mon.total_size - mon.free_size), (unsigned)mon.max_used);
   return 0;

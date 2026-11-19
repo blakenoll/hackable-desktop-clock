@@ -37,7 +37,7 @@ Every blocking wait calls `lv_timer_handler()` so the animations keep running.
 
 ## Main loop
 
-`loop()` polls the button (short press = next face, double = next theme, both saved; long = setup mode), answers settings API requests (`api_poll()`; a saved change runs `settingsChanged()` or restarts), and once a second:
+`loop()` polls the button (short press = next face, double = next theme, both saved; long = setup mode; while a notification card shows, a short or double press only dismisses it), answers settings API requests (`api_poll()`; a saved change runs `settingsChanged()` or restarts), and once a second:
 
 - `ui_update(t)`: time, date, ring, plus the face's `onTime` hook
 - `updateNight()`: night by fixed hours when `nmode` is 1 (mode 0 follows `is_day` from the weather, mode 2 never)

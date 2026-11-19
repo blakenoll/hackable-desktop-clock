@@ -29,6 +29,7 @@ void applyIconColor() {
 // Recolours everything for the current nightMix, theme and night colour.
 void applyTheme() {
   bootPaint();
+  notifyPaint();
   if (!faceRoot) return;
   const Theme &T = THEMES[opt.theme];
   const FaceDef &f = face();

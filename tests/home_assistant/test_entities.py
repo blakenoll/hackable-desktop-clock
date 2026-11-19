@@ -29,8 +29,8 @@ async def test_entities_from_schema(hass, entry):
     ents = er.async_get(hass)
     ids = {e.unique_id.removeprefix(f"{DEVICE_ID}_"): e.entity_id
            for e in er.async_entries_for_config_entry(ents, entry.entry_id)}
-    # Every setting except the password and free text (ssid, city).
-    assert set(ids) == {"tz", "units", "h24", "face", "accent", "nstart", "chime"}
+    # Every setting except the password and free text (ssid, city), plus the notification entity.
+    assert set(ids) == {"tz", "units", "h24", "face", "accent", "nstart", "chime", "notification"}
     assert hass.states.get(ids["face"]).state == "Polished"
     assert hass.states.get(ids["face"]).attributes["options"] == ["Polished", "Arc", "Radar"]
     assert hass.states.get(ids["tz"]).state == "US Pacific"

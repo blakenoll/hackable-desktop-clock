@@ -44,3 +44,7 @@ static constexpr int RADAR_NM = 5;                             // query radius a
 static constexpr uint32_t RADAR_POLL_MS = 10UL * 1000;         // adsb.fi allows 1 request/s; the face dead-reckons between
 static constexpr uint32_t RADAR_BACKOFF_MS = 60UL * 1000;      // after an HTTP error (4xx responses count toward an IP ban)
 static constexpr uint32_t RADAR_STALE_MS = 2UL * 60 * 1000;    // fetches failing this long -> "NO RADAR DATA"
+
+// ---- Notifications (src/ui/notify.cpp, src/api/api.cpp) -------------------------------------------------
+static constexpr int NOTIFY_DEFAULT_SECONDS = 30;  // how long a card shows when the request gives no "duration"
+static constexpr int NOTIFY_MAX_SECONDS = 3600;    // longest "duration"; 0 means until dismissed

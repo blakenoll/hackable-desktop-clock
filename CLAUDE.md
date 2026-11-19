@@ -12,6 +12,7 @@ ESP32-C3 SuperMini + 240x240 GC9A01 round display: an LVGL 9 desk clock with NTP
 | Timezone list | `ZONES[]` in `src/setup/zones.cpp` |
 | Setup access point, captive portal, WiFi scan | `src/setup/portal.cpp` |
 | Settings API over WiFi (JSON, mDNS, API key) | `src/api/api.cpp` (see [docs/API.md](docs/API.md)) |
+| Notification card (look, timing) / its API | `src/ui/notify.cpp` / `handleNotify()` in `src/api/api.cpp` (see [docs/API.md](docs/API.md#notifications)) |
 | Home Assistant integration | `custom_components/deskclock/`, tests in `tests/home_assistant/` (see [docs/HOME_ASSISTANT.md](docs/HOME_ASSISTANT.md)) |
 | One clock face | `src/ui/faces/face_<name>.cpp` (see [docs/FACES.md](docs/FACES.md)) |
 | Add a face | new `face_<name>.cpp` + `enum Face` in `src/ui/ui.h` + table in `src/ui/faces.cpp` |

@@ -34,6 +34,7 @@ python3 "$HERE/montage.py" --bezel "$ROOT/docs/faces/faces.png" 4 $(for n in $N;
 python3 "$HERE/montage.py" --bezel "$ROOT/docs/faces/night.png" 4 $(for n in $N; do echo night-$n; done)
 python3 "$HERE/montage.py" --bezel "$ROOT/docs/faces/options.png" 4 $(for n in $N; do echo opt-$n; done)
 python3 "$HERE/montage.py" --bezel "$ROOT/docs/faces/states.png" 3 $(for n in polished stacked forecast; do echo load-$n msg-$n stale-$n; done)
+python3 "$HERE/montage.py" --bezel "$ROOT/docs/faces/notify.png" 4 notify-info notify-warn notify-alarm notify-night
 # Per-theme / per-night-colour montages for the web flasher's pickers (same 4-column layout as faces.png).
 mkdir -p "$ROOT/docs/faces/themes"
 for th in $(seq 0 $((THEMES - 1))); do

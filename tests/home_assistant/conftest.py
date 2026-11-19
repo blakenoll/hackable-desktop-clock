@@ -50,13 +50,16 @@ class FakeClock:
         self.online = True
         self.version = "abc1234"
         self.old_firmware = False  # #29 firmware: /api/info without id and version
+        self.notify_support = True  # firmware with POST /api/notify
+        self.card: dict[str, Any] | None = None  # the notification showing on the clock
         self.schema = copy.deepcopy(SCHEMA)
         self.config: dict[str, Any] = {
             "ssid": "home", "tz": "PST8PDT,M3.2.0,M11.1.0", "city": "29401", "units": "F", "h24": False,
             "face": 0, "accent": 0, "nstart": 22, "chime": True,
         }
-        for method, path in (("get", "info"), ("get", "schema"), ("get", "config"), ("post", "config")):
-            aioclient_mock.request(method, re.compile(rf"/api/{path}$"), side_effect=self._handle)
+        for method, path in (("get", "info"), ("get", "schema"), ("get", "config"), ("post", "config"),
+                             ("post", "notify"), ("delete", "notify")):
+            aioclient_mock.request(method, re.compile(rf"/api/{path}(\?.*)?$"), side_effect=self._handle)
 
     def _reply(self, method: str, url, status: int, body: dict[str, Any]) -> AiohttpClientMockResponse:
         return AiohttpClientMockResponse(method, url, status=status, text=json.dumps(body))
@@ -71,6 +74,8 @@ class FakeClock:
         if path == "/api/info":
             info = {"api": 1, "id": DEVICE_ID, "version": self.version, "host": "deskclock-a1b2",
                     "mode": self.mode, "auth": self.mode == "normal"}
+            if self.notify_support:
+                info["notify"] = True
             if self.old_firmware:
                 del info["id"], info["version"]
             return self._reply(method, url, 200, info)
@@ -80,6 +85,8 @@ class FakeClock:
             return self._reply(method, url, 401, {"error": "missing or wrong API key"})
         if method.lower() == "get":
             return self._reply(method, url, 200, self.config)
+        if path == "/api/notify":
+            return self._notify(method, url, data)
         fields = {f["key"]: f for f in self.schema["fields"]}
         restart = False
         for k, v in (data or {}).items():
@@ -92,6 +99,23 @@ class FakeClock:
                 restart |= f["restart"]
                 self.config[k] = v
         return self._reply(method, url, 200, {"ok": True, "restart": restart, "config": self.config})
+
+
+    def _notify(self, method: str, url, data):
+        if method.lower() == "delete":
+            want = url.query.get("id")
+            cleared = self.card is not None and (not want or want == self.card.get("id"))
+            if cleared:
+                self.card = None
+            return self._reply(method, url, 200, {"ok": True, "cleared": cleared})
+        limits = {"title": 30, "text": 80, "id": 24}
+        for k, v in data.items():
+            if k in limits and len(v) > limits[k]:
+                return self._reply(method, url, 400, {"error": f"{k}: at most {limits[k]} characters"})
+        if data.get("level", "info") not in ("info", "warn", "alarm"):
+            return self._reply(method, url, 400, {"error": 'level: must be "info", "warn" or "alarm"'})
+        self.card = data
+        return self._reply(method, url, 200, {"ok": True})
 
 
 @pytest.fixture(autouse=True)
