@@ -59,7 +59,7 @@ class FakeClock:
         }
         for method, path in (("get", "info"), ("get", "schema"), ("get", "config"), ("post", "config"),
                              ("post", "notify"), ("delete", "notify")):
-            aioclient_mock.request(method, re.compile(rf"/api/{path}$"), side_effect=self._handle)
+            aioclient_mock.request(method, re.compile(rf"/api/{path}(\?.*)?$"), side_effect=self._handle)
 
     def _reply(self, method: str, url, status: int, body: dict[str, Any]) -> AiohttpClientMockResponse:
         return AiohttpClientMockResponse(method, url, status=status, text=json.dumps(body))
