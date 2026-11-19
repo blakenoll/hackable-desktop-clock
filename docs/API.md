@@ -23,10 +23,13 @@ The API is plain HTTP on your local network, so treat the key like a WiFi passwo
 
 | Method and path | Key needed | What it does |
 |---|---|---|
-| `GET /api/info` | no | `{"api":1,"id":"a0b1c2d3a1b2","version":"9685f64","host":"deskclock-a1b2","mode":"normal","auth":true}`. `id` is the MAC (a stable unique ID); `version` is `git describe` of the build (`git_version.py`, "dev" without git). |
+| `GET /api/info` | no | `{"api":1,"id":"a0b1c2d3a1b2","version":"9685f64","host":"deskclock-a1b2","mode":"normal","auth":true,"notify":true}`. `id` is the MAC (a stable unique ID); `version` is `git describe` of the build (`git_version.py`, "dev" without git); `notify` says `POST /api/notify` exists (firmware from before notifications has no such key). |
 | `GET /api/schema` | no | Every setting: `key`, `type` (`text` / `secret` / `choice` / `bool` / `number`), `default`, `min` / `max`, `restart`, and `choices` (`value` + `label`) where there's a list. Faces, themes, night colours and timezones come from the firmware's own tables, so clients needn't hard-code them. |
 | `GET /api/config` | yes | The current settings as one flat object keyed like the schema. The WiFi password (`pass`) is never returned. |
 | `POST /api/config` | yes | Changes the keys in the JSON body (a partial object; absent keys are unchanged). Replies `{"ok":true,"restart":false,"config":{...}}`. |
+
+| `POST /api/notify` | yes | Shows a notification card over the face ([below](#notifications)). Replies `{"ok":true}`. |
+| `DELETE /api/notify` | yes | Removes the card, optionally only if it has the id in `?id=`. Replies `{"ok":true,"cleared":true}`. |
 
 Errors are `{"error":"..."}` with status 400 (bad JSON, unknown key, value out of range: nothing is saved), 401 (missing or wrong key) or 404.
 
@@ -48,6 +51,28 @@ curl -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
 
 Send `Content-Type: application/json`. A form-encoded body is not read as JSON.
 
+## Notifications
+
+`POST /api/notify` puts a card over whatever face is showing: an icon, a title and a few lines of text, inside a ring (previews in [faces/notify.png](faces/notify.png)). One card shows at a time, and a new one replaces it.
+
+| Field | Meaning |
+|---|---|
+| `title` | Up to 30 characters, one line. |
+| `text` | Up to 80 characters, wraps over about four lines. Send a `title`, a `text` or both. |
+| `level` | `"info"` (default): the clock's theme colour. `"warn"`: amber. `"alarm"`: bright red, pulses, and ignores night mode. Info and warn follow the night colour at night. |
+| `duration` | Seconds on screen, 0 to 3600 (default 30, `NOTIFY_DEFAULT_SECONDS` in `src/tuning.h`). **0 keeps the card until it is dismissed.** The ring unwinds as the time runs out. |
+| `id` | Up to 24 characters. A name for the card, so `DELETE /api/notify?id=<id>` removes just that one. |
+
+A short or double press of BOOT dismisses the card (it doesn't change the face meanwhile); holding BOOT still opens setup. The fonts only have printable ASCII and the degree sign, so other characters show as `?`. Notifications aren't available in setup mode (409).
+
+```sh
+curl -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+     -d '{"title":"Front door","text":"Someone is at the door.","level":"warn","duration":20,"id":"door"}' $CLOCK/api/notify
+curl -X DELETE -H "Authorization: Bearer $KEY" "$CLOCK/api/notify?id=door"
+```
+
+The code is `src/ui/notify.cpp` (`ui_notify()` in `ui.h`). Cards are not saved: a restart clears them.
+
 ## In setup mode
 
 The same endpoints also run on the setup access point (`http://192.168.4.1/api/...`), so an app can do first-time setup without the HTML page:
@@ -58,7 +83,7 @@ The same endpoints also run on the setup access point (`http://192.168.4.1/api/.
 
 ## Implementation notes
 
-- Requests are answered from `loop()` (`api_poll()` in `src/main.cpp`) or the setup portal's loop, never from a background task. Settings changes can therefore call LVGL directly (`settingsChanged()` in `src/main.cpp`).
+- Requests are answered from `loop()` (`api_poll()` in `src/main.cpp`) or the setup portal's loop, never from a background task. Settings changes and notifications can therefore call LVGL directly (`settingsChanged()` in `src/main.cpp`).
 - Reading, writing and describing settings are three visitors over `config_fields()` (`JsonReader`, `JsonWriter`, `SchemaWriter` in `src/api/api.cpp`). `textProblem()` holds the server-side checks for text settings (the setup page's HTML patterns only check in the browser). `RESTART_KEYS` lists the settings that need a restart.
 - JSON is handled by [ArduinoJson](https://arduinojson.org) 7 (pinned in `platformio.ini`).
 - Bump `API_VERSION` in `api.cpp` when a change would break existing clients.

@@ -120,8 +120,11 @@ static void setNight(bool n) {
 }
 
 // BOOT: short press = next face, double press = next colour theme (both saved), long press = setup.
+// While a notification card is showing, a short or double press only dismisses it.
 static void handleButton() {
-  switch (button_event()) {
+  ButtonEvent ev = button_event();
+  if ((ev == BTN_SHORT || ev == BTN_DOUBLE) && ui_notify_clear(nullptr)) return;
+  switch (ev) {
     case BTN_LONG: prov_run(true);
     case BTN_SHORT:
       g_cfg.face = (g_cfg.face + 1) % ui_face_count();

@@ -27,6 +27,20 @@ def exposed(field: dict[str, Any]) -> bool:
     return kind != "secret" and not (kind == "text" and not field.get("choices"))
 
 
+def device_info(info: dict[str, Any]) -> DeviceInfo:
+    """The device every entity of one clock belongs to."""
+    device_id = info["id"]
+    suffix = str(info.get("host", device_id)).rsplit("-", 1)[-1].upper()
+    return DeviceInfo(
+        identifiers={(DOMAIN, device_id)},
+        connections={(CONNECTION_NETWORK_MAC, format_mac(device_id))},
+        name=f"Desk Clock {suffix}",
+        manufacturer=MANUFACTURER,
+        model=MODEL,
+        sw_version=info.get("version"),
+    )
+
+
 class DeskClockEntity(CoordinatorEntity[DeskClockCoordinator]):
     """A setting of the clock."""
 
@@ -37,23 +51,14 @@ class DeskClockEntity(CoordinatorEntity[DeskClockCoordinator]):
         self.field = field
         self.key: str = field["key"]
         info = coordinator.info
-        device_id = info["id"]
-        self._attr_unique_id = f"{device_id}_{self.key}"
+        self._attr_unique_id = f"{info['id']}_{self.key}"
         if self.key in KNOWN_KEYS:
             self._attr_translation_key = self.key
         else:
             self._attr_name = self.key
         if self.key not in PRIMARY_KEYS:
             self._attr_entity_category = EntityCategory.CONFIG
-        suffix = str(info.get("host", device_id)).rsplit("-", 1)[-1].upper()
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, device_id)},
-            connections={(CONNECTION_NETWORK_MAC, format_mac(device_id))},
-            name=f"Desk Clock {suffix}",
-            manufacturer=MANUFACTURER,
-            model=MODEL,
-            sw_version=info.get("version"),
-        )
+        self._attr_device_info = device_info(info)
 
     @property
     def available(self) -> bool:

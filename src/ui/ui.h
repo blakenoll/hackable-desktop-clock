@@ -97,5 +97,15 @@ void ui_set_weather_stale(bool stale);
 // Small crossed-out WiFi glyph above the date while the network is down.
 void ui_set_offline(bool offline);
 
+// Notification card over the face (POST /api/notify, docs/API.md). One at a time: a new one replaces the current
+// one. `id` (may be null) names it for ui_notify_clear(). durationMs 0 = stays until cleared or dismissed. The text
+// is limited to what the fonts can draw (ASCII and the degree sign; anything else shows as "?"). Main loop only.
+enum NotifyLevel { NOTIFY_INFO, NOTIFY_WARN, NOTIFY_ALARM };  // alarm: ignores night colours and pulses
+constexpr int NOTIFY_ID_MAX = 24, NOTIFY_TITLE_MAX = 30, NOTIFY_TEXT_MAX = 80;  // characters; the API rejects more
+void ui_notify(const char *id, const char *title, const char *text, int level, uint32_t durationMs);
+// Removes the card if its id matches (null or "" matches any card). Returns whether one was removed.
+bool ui_notify_clear(const char *id);
+bool ui_notify_active();
+
 // Replaces the clock face with the WiFi-setup screen (AP name + password).
 void ui_show_setup(const char *apSsid, const char *apPass, const char *ip);

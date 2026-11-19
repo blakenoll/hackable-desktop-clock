@@ -10,7 +10,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import DeskClockApi, DeskClockError
 from .coordinator import DeskClockConfigEntry, DeskClockCoordinator
 
-PLATFORMS = [Platform.NUMBER, Platform.SELECT, Platform.SWITCH]
+PLATFORMS = [Platform.NOTIFY, Platform.NUMBER, Platform.SELECT, Platform.SWITCH]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: DeskClockConfigEntry) -> bool:

@@ -63,6 +63,34 @@
     "number": {
       "nstart": { "name": "Night starts (hour)" },
       "nend": { "name": "Night ends (hour)" }
+    },
+    "notify": {
+      "notification": { "name": "Notification" }
+    }
+  },
+  "selector": {
+    "level": {
+      "options": { "info": "Info", "warn": "Warning", "alarm": "Alarm" }
+    }
+  },
+  "services": {
+    "show_notification": {
+      "name": "Show notification",
+      "description": "Shows a card over the clock face. It replaces any card already showing and goes away after the duration, or when BOOT is pressed.",
+      "fields": {
+        "message": { "name": "Message", "description": "Up to 80 characters. Only plain letters, digits and punctuation can be drawn." },
+        "title": { "name": "Title", "description": "Up to 30 characters." },
+        "level": { "name": "Level", "description": "Info and warning use the clock's colours (its night colour at night). An alarm is bright red, pulses and ignores night mode." },
+        "duration": { "name": "Duration", "description": "Seconds to show the card, or 0 to keep it until it is dismissed. Default: 30." },
+        "id": { "name": "ID", "description": "A name for this card, so Dismiss notification can remove just this one." }
+      }
+    },
+    "dismiss_notification": {
+      "name": "Dismiss notification",
+      "description": "Removes the card from the clock.",
+      "fields": {
+        "id": { "name": "ID", "description": "Only remove the card if it was shown with this ID. Leave empty to remove whatever is showing." }
+      }
     }
   }
 }

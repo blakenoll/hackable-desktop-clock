@@ -1,0 +1,47 @@
+show_notification:
+  target:
+    entity:
+      integration: deskclock
+      domain: notify
+  fields:
+    message:
+      required: true
+      example: "The washing machine has finished"
+      selector:
+        text:
+    title:
+      example: "Laundry done"
+      selector:
+        text:
+    level:
+      default: info
+      selector:
+        select:
+          translation_key: level
+          options:
+            - info
+            - warn
+            - alarm
+    duration:
+      example: 30
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: s
+          mode: box
+    id:
+      example: washer
+      selector:
+        text:
+
+dismiss_notification:
+  target:
+    entity:
+      integration: deskclock
+      domain: notify
+  fields:
+    id:
+      example: washer
+      selector:
+        text:

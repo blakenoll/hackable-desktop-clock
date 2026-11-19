@@ -18,6 +18,13 @@
     "number": {
       "nstart": { "default": "mdi:weather-sunset-down" },
       "nend": { "default": "mdi:weather-sunset-up" }
+    },
+    "notify": {
+      "notification": { "default": "mdi:message-badge-outline" }
     }
+  },
+  "services": {
+    "show_notification": { "service": "mdi:message-text" },
+    "dismiss_notification": { "service": "mdi:message-off" }
   }
 }

@@ -10,6 +10,7 @@
 //   boot_screens.cpp   connecting / syncing / scanning animations, status text
 //   setup_screen.cpp   the setup-mode screen (network name, password, address)
 //   core.cpp           palette + night theming, rebuild(), init and option setters
+//   notify.cpp         the notification card over the face (ui_notify)
 //   faces.cpp          the FaceDef table;  faces/face_*.cpp: one file per clock face
 //   fonts/             generated LVGL fonts (Manrope text sizes, Weather Icons); how to regenerate: docs/CUSTOMIZING.md
 #pragma once
@@ -144,6 +145,7 @@ struct Palette {
 Palette makePalette();
 void applyIconColor();
 void applyTheme();
+void notifyPaint();  // notify.cpp: recolour the notification card, if one is showing
 
 // ---- Faces ---------------------------------------------------------------------------------------
 // The date, split into the pieces faces arrange differently.

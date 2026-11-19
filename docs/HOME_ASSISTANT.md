@@ -30,6 +30,7 @@ One device per clock, with the firmware version (`git describe` of the build) on
 | Select | Clock face and colour theme (on the device's Controls); timezone, date format, night mode, night colour, temperature units (under Configuration) |
 | Switch | 24-hour time, hourly chime, weather detail line, seconds as digits |
 | Number | Night starts / night ends (hours, for fixed-hours night mode) |
+| Notify | **Notification**: messages shown on the clock's screen ([below](#notifications)) |
 
 - **Option names come from the clock.** The faces, themes, night colours and timezones are the firmware's own lists from `/api/schema`. A face or setting you add to the firmware shows up after the next reflash: the integration reloads by itself when it sees a new firmware version after the clock was offline.
 - **Not exposed:** the WiFi name and password, ZIP code, street address and tide station. A typo there would take the clock offline or lose the weather, so those stay on the setup page.
@@ -51,6 +52,54 @@ automation:
           entity_id: select.desk_clock_a1b2_clock_face
         data:
           option: "{{ 'Radar' if trigger.to_state.state == 'on' else 'Polished' }}"
+```
+
+## Notifications
+
+The **Notification** entity shows messages as a card over the clock face ([API.md](API.md#notifications) has the details and limits: 30 characters of title, 80 of text, plain ASCII). It appears only for firmware that has them; reflash the clock if it's missing.
+
+The standard action works for a plain message (an info card for 30 seconds):
+
+```yaml
+action: notify.send_message
+target:
+  entity_id: notify.desk_clock_a1b2_notification
+data:
+  title: Laundry done
+  message: The washing machine has finished.
+```
+
+`deskclock.show_notification` adds a `level` (`info`, `warn`, `alarm`), a `duration` in seconds (0 = until dismissed) and an `id`. `deskclock.dismiss_notification` removes the card, or only the one with a given `id`. Pressing BOOT on the clock dismisses it too.
+
+```yaml
+automation:
+  - alias: Garage left open
+    triggers:
+      - trigger: state
+        entity_id: cover.garage_door
+        to: "open"
+        for: "00:10:00"
+    actions:
+      - action: deskclock.show_notification
+        target:
+          entity_id: notify.desk_clock_a1b2_notification
+        data:
+          title: Garage open
+          message: Open for 10 minutes.
+          level: warn
+          duration: 0
+          id: garage
+  - alias: Garage closed
+    triggers:
+      - trigger: state
+        entity_id: cover.garage_door
+        to: "closed"
+    actions:
+      - action: deskclock.dismiss_notification
+        target:
+          entity_id: notify.desk_clock_a1b2_notification
+        data:
+          id: garage
 ```
 
 ## Without the integration
@@ -84,6 +133,7 @@ Call it with `action: rest_command.deskclock_set` and `data: {settings: {face: 9
   - `custom_components/deskclock/coordinator.py`: polling and changing a setting.
   - `custom_components/deskclock/entity.py`: which settings are exposed (`exposed()`), and the device info.
   - `custom_components/deskclock/select.py`, `custom_components/deskclock/switch.py` and `custom_components/deskclock/number.py`: build entities from the schema.
+  - `custom_components/deskclock/notify.py`: the notification entity and the `show_notification` / `dismiss_notification` services (`services.yaml` and the translations describe them).
   - `custom_components/deskclock/translations/en.json` and `icons.json`: names and icons for the known settings (`KNOWN_KEYS` in `custom_components/deskclock/entity.py`). Any other setting is named after its key.
 - **Icon.** `custom_components/deskclock/brand/icon.png` and `icon@2x.png` are the Polished face in its bezel, written by `sh docs/tools/sim/render.sh` (`docs/tools/sim/brand_icon.py`). Home Assistant serves them from the integration folder after a restart; versions too old to read a `brand/` folder show "icon not available".
 - **Tests.** They run against a fake clock (`tests/home_assistant/conftest.py`): `pip install -r tests/home_assistant/requirements.txt && pytest tests/home_assistant`. Home Assistant needs Python 3.14. CI runs them.

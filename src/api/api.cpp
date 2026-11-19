@@ -239,6 +239,7 @@ static void handleInfo() {
   d["host"] = api_hostname();
   d["mode"] = setupMode ? "setup" : "normal";
   d["auth"] = !setupMode;
+  d["notify"] = !setupMode;  // POST /api/notify is available
   reply(200, d);
 }
 
@@ -301,11 +302,73 @@ static void handlePost() {
   if (onApplied) onApplied(prev);
 }
 
+// POST /api/notify: {"title", "text", "level": "info"|"warn"|"alarm", "duration": seconds (0 = until dismissed), "id"}.
+// Shows a card over the face (ui_notify); a new one replaces the current one.
+static void handleNotify() {
+  if (!authorized()) return;
+  if (setupMode) return fail(409, "notifications aren't available in setup mode");
+  String body = srv->arg("plain");
+  JsonDocument in;
+  if (!body.length() || deserializeJson(in, body) || !in.is<JsonObject>())
+    return fail(400, "send the notification as a JSON object (Content-Type: application/json)");
+  JsonObjectConst o = in.as<JsonObjectConst>();
+  for (JsonPairConst kv : o) {
+    const char *k = kv.key().c_str();
+    if (strcmp(k, "title") && strcmp(k, "text") && strcmp(k, "level") && strcmp(k, "duration") && strcmp(k, "id"))
+      return fail(400, String(k) + ": unknown field (title, text, level, duration, id)");
+  }
+  String title, text, id;
+  struct { const char *key; int max; String *out; } strs[] = {
+      {"title", NOTIFY_TITLE_MAX, &title}, {"text", NOTIFY_TEXT_MAX, &text}, {"id", NOTIFY_ID_MAX, &id}};
+  for (auto &f : strs) {
+    JsonVariantConst v = o[f.key];
+    if (v.isNull()) continue;
+    if (!v.is<const char *>()) return fail(400, String(f.key) + ": must be a string");
+    *f.out = v.as<const char *>();
+    f.out->trim();
+    if ((int)f.out->length() > f.max) return fail(400, String(f.key) + ": at most " + f.max + " characters");
+  }
+  if (!title.length() && !text.length()) return fail(400, "send a title or a text");
+
+  int level = NOTIFY_INFO;
+  JsonVariantConst lv = o["level"];
+  if (!lv.isNull()) {
+    String s = lv.is<const char *>() ? lv.as<const char *>() : "";
+    if (s == "info") level = NOTIFY_INFO;
+    else if (s == "warn") level = NOTIFY_WARN;
+    else if (s == "alarm") level = NOTIFY_ALARM;
+    else return fail(400, "level: must be \"info\", \"warn\" or \"alarm\"");
+  }
+  int seconds = NOTIFY_DEFAULT_SECONDS;
+  JsonVariantConst dv = o["duration"];
+  if (!dv.isNull()) {
+    if (!dv.is<int>() || dv.as<int>() < 0 || dv.as<int>() > NOTIFY_MAX_SECONDS)
+      return fail(400, String("duration: must be a whole number of seconds from 0 (until dismissed) to ") + NOTIFY_MAX_SECONDS);
+    seconds = dv.as<int>();
+  }
+  ui_notify(id.c_str(), title.c_str(), text.c_str(), level, (uint32_t)seconds * 1000UL);
+  JsonDocument d;
+  d["ok"] = true;
+  reply(200, d);
+}
+
+// DELETE /api/notify[?id=...]: removes the current card (only if its id matches, when one is given).
+static void handleNotifyClear() {
+  if (!authorized()) return;
+  if (setupMode) return fail(409, "notifications aren't available in setup mode");
+  JsonDocument d;
+  d["ok"] = true;
+  d["cleared"] = ui_notify_clear(srv->arg("id").c_str());
+  reply(200, d);
+}
+
 static void routes(WebServer &s) {
   s.on("/api/info", HTTP_GET, handleInfo);
   s.on("/api/schema", HTTP_GET, handleSchema);
   s.on("/api/config", HTTP_GET, handleGet);
   s.on("/api/config", HTTP_POST, handlePost);
+  s.on("/api/notify", HTTP_POST, handleNotify);
+  s.on("/api/notify", HTTP_DELETE, handleNotifyClear);
 }
 
 // ---- Public ------------------------------------------------------------------------------------------
