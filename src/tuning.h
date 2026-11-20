@@ -24,6 +24,7 @@ static constexpr uint32_t SETUP_SCAN_TIMEOUT_MS = 15UL * 1000;     // WiFi scan 
 // ---- Settings API (src/api/, docs/API.md) -----------------------------------------------------------------
 static constexpr const char *API_HOSTNAME_PREFIX = "deskclock";  // + "-a1b2" from the chip's MAC -> deskclock-a1b2.local
 static constexpr uint16_t API_PORT = 80;
+static constexpr int PAIR_WINDOW_SECONDS = 60;  // how long POST /api/pair waits for a BOOT press before giving up
 
 // ---- Weather (src/data/weather.cpp, weather_format.cpp) --------------------------------------------------
 // Open-Meteo's "current" data itself updates about every 15 min, so much shorter mostly returns unchanged values.

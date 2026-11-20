@@ -4,6 +4,7 @@
 #include "api.h"
 #include <ArduinoJson.h>
 #include <ESPmDNS.h>
+#include <esp_random.h>
 #include <WiFi.h>
 #include "../config_fields.h"
 #include "../setup/zones.h"
@@ -240,6 +241,7 @@ static void handleInfo() {
   d["mode"] = setupMode ? "setup" : "normal";
   d["auth"] = !setupMode;
   d["notify"] = !setupMode;  // POST /api/notify is available
+  d["pair"] = !setupMode;    // POST /api/pair is available
   reply(200, d);
 }
 
@@ -362,11 +364,92 @@ static void handleNotifyClear() {
   reply(200, d);
 }
 
+// ---- Pairing -----------------------------------------------------------------------------------------
+// Lets a client (Home Assistant) get the API key by someone pressing BOOT, instead of reading it off the setup
+// page. POST /api/pair opens a window, shows a card with a 4-digit code and replies with the code and a one-time
+// `session`. The person at the clock checks the code against the one the client shows and presses BOOT. The client
+// then polls GET /api/pair?session=... and receives the key once. Without the session nobody else can collect
+// it, and only one request can be open at a time, so a stranger on the network can't swap theirs in.
+
+enum PairState { PAIR_IDLE, PAIR_PENDING, PAIR_APPROVED, PAIR_DENIED, PAIR_EXPIRED };
+static PairState pairState = PAIR_IDLE;
+static String pairSession;
+static uint32_t pairDeadline = 0;
+static constexpr const char *PAIR_CARD_ID = "pair";
+
+static constexpr uint32_t PAIR_PICKUP_MS = 30UL * 1000;  // how long an answer waits to be collected
+
+static void pairEnd(PairState s) {
+  pairState = s;
+  pairDeadline = millis() + PAIR_PICKUP_MS;  // an approved key not collected by then is forgotten
+  ui_notify_clear(PAIR_CARD_ID);
+}
+
+static int pairSecondsLeft() {
+  int32_t ms = (int32_t)(pairDeadline - millis());
+  return ms > 0 ? (ms + 999) / 1000 : 0;
+}
+
+static void handlePairStart() {
+  if (setupMode) return fail(409, "pairing isn't available in setup mode (the key is on the setup page)");
+  if (pairState == PAIR_PENDING) return fail(409, "pairing already in progress; try again when the card on the clock is gone");
+  char code[5], session[17];
+  snprintf(code, sizeof(code), "%04u", (unsigned)(esp_random() % 10000));
+  for (int i = 0; i < 8; i++) snprintf(session + 2 * i, 3, "%02x", (unsigned)(esp_random() & 0xFF));
+  pairSession = session;
+  pairState = PAIR_PENDING;
+  pairDeadline = millis() + (uint32_t)PAIR_WINDOW_SECONDS * 1000UL;
+  String text = String("Code ") + code + ". Press BOOT if it matches, double-press to cancel";
+  ui_notify(PAIR_CARD_ID, "Pair with app?", text.c_str(), NOTIFY_INFO, (uint32_t)PAIR_WINDOW_SECONDS * 1000UL);
+  JsonDocument d;
+  d["session"] = pairSession;
+  d["code"] = code;
+  d["expires"] = PAIR_WINDOW_SECONDS;
+  reply(202, d);
+}
+
+static void handlePairPoll() {
+  if (setupMode) return fail(409, "pairing isn't available in setup mode");
+  if (pairState == PAIR_IDLE || !sameSecret(srv->arg("session"), pairSession))
+    return fail(404, "no pairing with that session (start one with POST /api/pair)");
+  JsonDocument d;
+  switch (pairState) {
+    case PAIR_PENDING:
+      d["state"] = "pending";
+      d["expires"] = pairSecondsLeft();
+      break;
+    case PAIR_APPROVED:
+      d["state"] = "approved";
+      d["token"] = config_api_token();
+      pairState = PAIR_IDLE;  // handed over once
+      pairSession = "";
+      break;
+    default:
+      d["state"] = pairState == PAIR_DENIED ? "denied" : "expired";
+      pairState = PAIR_IDLE;
+      pairSession = "";
+      break;
+  }
+  reply(200, d);
+}
+
+bool api_pair_pending() { return pairState == PAIR_PENDING; }
+
+bool api_pair_button(bool approve) {
+  if (pairState != PAIR_PENDING) return false;
+  pairEnd(approve ? PAIR_APPROVED : PAIR_DENIED);
+  return true;
+}
+
 static void routes(WebServer &s) {
   s.on("/api/info", HTTP_GET, handleInfo);
   s.on("/api/schema", HTTP_GET, handleSchema);
   s.on("/api/config", HTTP_GET, handleGet);
   s.on("/api/config", HTTP_POST, handlePost);
+  if (!setupMode) {  // setup mode already hands out the key (GET /api/config), behind the access point's password
+    s.on("/api/pair", HTTP_POST, handlePairStart);
+    s.on("/api/pair", HTTP_GET, handlePairPoll);
+  }
   s.on("/api/notify", HTTP_POST, handleNotify);
   s.on("/api/notify", HTTP_DELETE, handleNotifyClear);
 }
@@ -416,6 +499,10 @@ void api_begin(ClockConfig &cfg, void (*applied)(const ClockConfig &prev)) {
 }
 
 void api_poll() {
+  if (pairState != PAIR_IDLE && (int32_t)(millis() - pairDeadline) >= 0) {
+    if (pairState == PAIR_PENDING) pairEnd(PAIR_EXPIRED);
+    else pairState = PAIR_IDLE, pairSession = "";
+  }
   if (srv) srv->handleClient();
 }
 

@@ -15,19 +15,33 @@ The setup page shows the exact address at the bottom, and serial prints it at bo
 
 In normal mode, every request to `/api/config` needs the header `Authorization: Bearer <key>`. The key is 16 hex characters, created on first use and kept in NVS (`apitoken`, see `config_api_token()` in `src/config.cpp`). It survives reflashing and changes only when NVS is erased.
 
-**Where to find it:** the bottom of the setup page (hold BOOT 3 s, join `clk-setup-XXXX`). Then leave setup mode without saving by tapping **Save & restart** with nothing changed, or wait for the idle reboot. The key is never printed to serial.
+**Where to find it:** a client can ask for it by [pairing](#pairing), with a press of BOOT. Or read it at the bottom of the setup page (hold BOOT 3 s, join `clk-setup-XXXX`). Then leave setup mode without saving by tapping **Save & restart** with nothing changed, or wait for the idle reboot. The key is never printed to serial.
 
 The API is plain HTTP on your local network, so treat the key like a WiFi password for the clock and use it only on networks you trust.
+
+## Pairing
+
+Instead of copying the key, a client can ask the clock for it and have someone confirm on the clock. Home Assistant does this ([HOME_ASSISTANT.md](HOME_ASSISTANT.md)).
+
+1. The client sends `POST /api/pair` (no key, no body). The clock shows a card with a random 4-digit code and replies `202 {"session":"<16 hex>","code":"4821","expires":60}`. The client shows the same code to the user. The window is `PAIR_WINDOW_SECONDS` (`src/tuning.h`).
+2. The person at the clock checks that the codes match and **presses BOOT** (a double press cancels). Both presses are handled in `handleButton()` and don't change the face.
+3. The client polls `GET /api/pair?session=<session>` and gets `{"state":"pending","expires":41}`, then one of:
+   - `{"state":"approved","token":"<the API key>"}`: handed over once (asking again is a 404), and forgotten after 30 s if nobody collects it.
+   - `{"state":"denied"}` (double press) or `{"state":"expired"}` (no press in time).
+
+Only one request can be open: a second `POST /api/pair` while one is pending gets 409, so nobody can swap theirs in. The key is returned only to whoever holds the `session`, and only after a physical press. The code guards against a request you didn't start: if the card shows a code your client isn't displaying, don't press. Like the rest of the API this is plain HTTP, so the key crosses your network in the clear. Pairing is not available in setup mode (`"pair": false` in `/api/info`), where `GET /api/config` already returns the key.
 
 ## Endpoints
 
 | Method and path | Key needed | What it does |
 |---|---|---|
-| `GET /api/info` | no | `{"api":1,"id":"a0b1c2d3a1b2","version":"9685f64","host":"deskclock-a1b2","mode":"normal","auth":true,"notify":true}`. `id` is the MAC (a stable unique ID); `version` is `git describe` of the build (`git_version.py`, "dev" without git); `notify` says `POST /api/notify` exists (firmware from before notifications has no such key). |
+| `GET /api/info` | no | `{"api":1,"id":"a0b1c2d3a1b2","version":"9685f64","host":"deskclock-a1b2","mode":"normal","auth":true,"notify":true}`. `id` is the MAC (a stable unique ID); `version` is `git describe` of the build (`git_version.py`, "dev" without git); `notify` says `POST /api/notify` exists (firmware from before notifications has no such key), and `pair` says the same for `POST /api/pair`. |
 | `GET /api/schema` | no | Every setting: `key`, `type` (`text` / `secret` / `choice` / `bool` / `number`), `default`, `min` / `max`, `restart`, and `choices` (`value` + `label`) where there's a list. Faces, themes, night colours and timezones come from the firmware's own tables, so clients needn't hard-code them. |
 | `GET /api/config` | yes | The current settings as one flat object keyed like the schema. The WiFi password (`pass`) is never returned. |
 | `POST /api/config` | yes | Changes the keys in the JSON body (a partial object; absent keys are unchanged). Replies `{"ok":true,"restart":false,"config":{...}}`. |
 
+| `POST /api/pair` | no | Starts pairing ([above](#pairing)). Replies `202` with the `session` and `code`; 409 if one is already open. |
+| `GET /api/pair?session=` | the session | Reports the pairing request, and hands over the key once it is approved. |
 | `POST /api/notify` | yes | Shows a notification card over the face ([below](#notifications)). Replies `{"ok":true}`. |
 | `DELETE /api/notify` | yes | Removes the card, optionally only if it has the id in `?id=`. Replies `{"ok":true,"cleared":true}`. |
 

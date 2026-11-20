@@ -13,6 +13,12 @@ void api_begin(ClockConfig &cfg, void (*applied)(const ClockConfig &prev));
 // Call from loop(): answers pending requests on the main loop, so `applied` may call LVGL.
 void api_poll();
 
+// Pairing (POST /api/pair, docs/API.md#pairing): while a pairing request waits for the BOOT button, a short press
+// approves it and a double press cancels it. handleButton() in main.cpp asks this first and, if it returns true,
+// treats the press as the answer and does nothing else with it. Main loop only.
+bool api_pair_button(bool approve);
+bool api_pair_pending();
+
 // Setup mode: the same endpoints on the portal's server, without the token (joining the setup access point
 // already needs the password from the display). GET /api/config also returns the token there, and a saved
 // change always restarts the clock.

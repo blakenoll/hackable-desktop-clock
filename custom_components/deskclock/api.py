@@ -71,3 +71,11 @@ class DeskClockApi:
     async def clear_notification(self, notification_id: str | None = None) -> dict[str, Any]:
         """Remove the current card (only if its id matches, when one is given); returns {"ok", "cleared"}."""
         return await self._request("DELETE", "/api/notify", params={"id": notification_id} if notification_id else None)
+
+    async def pair_start(self) -> dict[str, Any]:
+        """Ask the clock to show a pairing card; returns {"session", "code", "expires"} (no key needed)."""
+        return await self._request("POST", "/api/pair")
+
+    async def pair_poll(self, session: str) -> dict[str, Any]:
+        """Return {"state": "pending" | "approved" | "denied" | "expired", "token"?}. The token comes once."""
+        return await self._request("GET", "/api/pair", params={"session": session})

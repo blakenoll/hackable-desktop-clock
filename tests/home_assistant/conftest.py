@@ -52,13 +52,17 @@ class FakeClock:
         self.old_firmware = False  # #29 firmware: /api/info without id and version
         self.notify_support = True  # firmware with POST /api/notify
         self.card: dict[str, Any] | None = None  # the notification showing on the clock
+        self.pair_support = True  # firmware with POST /api/pair
+        self.pair_state: str | None = None  # None (no request), "pending", "approved", "denied" or "expired"
+        self.pair_session = "s3ss10n"
+        self.pair_code = "4821"
         self.schema = copy.deepcopy(SCHEMA)
         self.config: dict[str, Any] = {
             "ssid": "home", "tz": "PST8PDT,M3.2.0,M11.1.0", "city": "29401", "units": "F", "h24": False,
             "face": 0, "accent": 0, "nstart": 22, "chime": True,
         }
         for method, path in (("get", "info"), ("get", "schema"), ("get", "config"), ("post", "config"),
-                             ("post", "notify"), ("delete", "notify")):
+                             ("post", "notify"), ("delete", "notify"), ("post", "pair"), ("get", "pair")):
             aioclient_mock.request(method, re.compile(rf"/api/{path}(\?.*)?$"), side_effect=self._handle)
 
     def _reply(self, method: str, url, status: int, body: dict[str, Any]) -> AiohttpClientMockResponse:
@@ -76,11 +80,15 @@ class FakeClock:
                     "mode": self.mode, "auth": self.mode == "normal"}
             if self.notify_support:
                 info["notify"] = True
+            if self.pair_support and self.mode == "normal":
+                info["pair"] = True
             if self.old_firmware:
                 del info["id"], info["version"]
             return self._reply(method, url, 200, info)
         if path == "/api/schema":
             return self._reply(method, url, 200, self.schema)
+        if path == "/api/pair":
+            return self._pair(method, url)
         if self.mode == "normal" and headers.get("Authorization") != f"Bearer {self.key}":
             return self._reply(method, url, 401, {"error": "missing or wrong API key"})
         if method.lower() == "get":
@@ -100,6 +108,28 @@ class FakeClock:
                 self.config[k] = v
         return self._reply(method, url, 200, {"ok": True, "restart": restart, "config": self.config})
 
+
+    def press_boot(self, approve: bool = True) -> None:
+        """Someone presses BOOT on the clock (short press approves, double press cancels)."""
+        assert self.pair_state == "pending"
+        self.pair_state = "approved" if approve else "denied"
+
+    def _pair(self, method: str, url):
+        """POST starts a request (one at a time); GET ?session= reports it, and hands over the key once."""
+        if method.lower() == "post":
+            if self.pair_state == "pending":
+                return self._reply(method, url, 409, {"error": "pairing already in progress"})
+            self.pair_state = "pending"
+            return self._reply(method, url, 202, {"session": self.pair_session, "code": self.pair_code, "expires": 60})
+        if self.pair_state is None or url.query.get("session") != self.pair_session:
+            return self._reply(method, url, 404, {"error": "no pairing with that session"})
+        state = self.pair_state
+        body: dict[str, Any] = {"state": state}
+        if state == "approved":
+            body["token"] = self.key
+        if state != "pending":
+            self.pair_state = None
+        return self._reply(method, url, 200, body)
 
     def _notify(self, method: str, url, data):
         if method.lower() == "delete":

@@ -15,9 +15,10 @@ The `deskclock` integration (`custom_components/deskclock/` in this repo) lets H
 
 The clock needs firmware with the settings API (anything from PR #29 on).
 
-- **Found automatically.** A clock on your WiFi appears under Settings → Devices & services as **Discovered: Desk Clock A1B2**. Click **Add** and enter the clock's API key.
-- **By hand.** Add integration → **Hackable Desk Clock**, then enter `deskclock-xxxx.local` (or the clock's IP) and the key.
-- **Where the key is.** It's at the bottom of the clock's setup page: hold BOOT for 3 seconds, join `clk-setup-XXXX`, and read it off the page ([API.md](API.md#the-api-key)).
+- **Found automatically.** A clock on your WiFi appears under Settings → Devices & services as **Discovered: Desk Clock A1B2**. Click **Add**, then **Submit**.
+- **By hand.** Add integration → **Hackable Desk Clock**, then enter `deskclock-xxxx.local` (or the clock's IP).
+- **Pair.** The clock shows a card "Pair with app?" with a 4-digit code, and Home Assistant shows the same code. If they match, press BOOT on the clock (double-press to cancel). You have 60 seconds. Home Assistant receives the API key from the clock and stores it, so there is nothing to copy ([API.md](API.md#pairing)). Nothing appears on the clock until you click **Submit**.
+- **Typing the key instead.** If pairing fails you can choose **Enter the API key instead**. Firmware from before pairing goes straight to that form. The key is at the bottom of the clock's setup page: hold BOOT for 3 seconds, join `clk-setup-XXXX`, and read it off the page ([API.md](API.md#the-api-key)).
 
 **Docker:** auto-discovery needs the container on the host network (`network_mode: host`, which Home Assistant recommends anyway). On a bridged network, mDNS doesn't reach the container, so add the clock by IP instead.
 
@@ -123,13 +124,13 @@ Call it with `action: rest_command.deskclock_set` and `data: {settings: {face: 9
 ## Troubleshooting
 
 - **Not discovered.** First restart Home Assistant if you haven't since installing the integration: it only starts watching for `_deskclock._tcp` at startup. Then check the log for warnings from `custom_components.deskclock` (an unreachable clock, or firmware too old to be added), that Home Assistant's container uses host networking (see above), and that `http://deskclock-xxxx.local/api/info` opens from the Home Assistant machine. If it doesn't, add the clock by IP. Home Assistant updates the address by itself when discovery later sees the clock at a new IP.
-- **"The clock rejected the API key"** after erasing the clock's flash: the key changed. Home Assistant shows a **Reconfigure** prompt; enter the new key from the setup page.
+- **"The clock rejected the API key"** after erasing the clock's flash: the key changed. Home Assistant shows a **Reconfigure** prompt: click **Submit** and press BOOT on the clock again.
 - **Entities unavailable.** The clock is offline, restarting or in setup mode. They come back on their own.
 
 ## Changing the integration
 
 - **Files** (in `custom_components/deskclock/`):
-  - `custom_components/deskclock/config_flow.py`: discovery, the key and reauth.
+  - `custom_components/deskclock/config_flow.py`: discovery, pairing by BOOT press (with the typed key as a fallback) and reauth.
   - `custom_components/deskclock/coordinator.py`: polling and changing a setting.
   - `custom_components/deskclock/entity.py`: which settings are exposed (`exposed()`), and the device info.
   - `custom_components/deskclock/select.py`, `custom_components/deskclock/switch.py` and `custom_components/deskclock/number.py`: build entities from the schema.
