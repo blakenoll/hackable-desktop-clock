@@ -1,6 +1,6 @@
 # Web flasher
 
-`site/index.html` is a single static page, deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`. The workflow builds the firmware, copies the `.bin` files and the face renders (`docs/faces/themes/`, with `day-0.png` and `night-0.png` as the default picture) into `site/`, and publishes it. Those build outputs are gitignored in `site/`.
+`site/index.html` is a single static page, deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`. The workflow builds the firmware, copies the `.bin` files and the face renders (`docs/faces/themes/`, with `day-0.png` and `night-0.png` as the default picture, plus `docs/faces/notify.png` for the Home Assistant notifications section) into `site/`, and publishes it. Those build outputs are gitignored in `site/`.
 
 ## Flashing flow
 

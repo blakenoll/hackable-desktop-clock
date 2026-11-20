@@ -142,6 +142,7 @@
   .install-btn svg { width: 1.25rem; height: 1.25rem; }
   .install-btn-sm { padding: .8rem 1.5rem; font-size: 1rem; animation: none; }
   html { scroll-behavior: smooth; }
+  .nav-link[aria-current="true"] { background: rgb(255 255 255 / .07); color: #fff; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   @keyframes flash-ring {
     0%       { box-shadow: 0 0 0 0 rgb(255 59 48 / .45), 0 12px 32px -12px rgb(255 59 48 / .5); }
@@ -173,16 +174,25 @@
 </head>
 <body class="min-h-screen font-sans text-slate-200 antialiased selection:bg-accent/40">
 
-<header class="mx-auto flex max-w-6xl items-center justify-between px-5 pt-6">
+<header class="sticky top-0 z-30 border-b border-line/60 bg-bg/80 backdrop-blur-md">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3">
   <a href="#" class="flex items-center gap-2.5 text-sm font-extrabold tracking-tight text-white">
     <svg viewBox="0 0 24 24" class="h-6 w-6" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="none" stroke="#3a414a" stroke-width="1.5"/><path d="M12 12V6.5M12 12l3.5 2" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="1.4" fill="#ff3b30"/></svg>
-    hackable clock
+    <span class="hidden sm:inline">hackable clock</span>
   </a>
-  <a href="https://github.com/blakenoll/hackable-desktop-clock"
+  <nav aria-label="Sections" class="flex items-center gap-0.5 sm:gap-1">
+    <a href="#faces" class="nav-link rounded-full px-3 py-1.5 text-sm font-semibold text-ink transition hover:text-white">Faces</a>
+    <a href="#parts" class="nav-link rounded-full px-3 py-1.5 text-sm font-semibold text-ink transition hover:text-white">Parts</a>
+    <a href="#install" class="nav-link rounded-full px-3 py-1.5 text-sm font-semibold text-ink transition hover:text-white">Install</a>
+    <a href="#home-assistant" class="nav-link rounded-full px-3 py-1.5 text-sm font-semibold text-ink transition hover:text-white"><span class="hidden sm:inline">Home Assistant</span><span class="sm:hidden">HA</span></a>
+  </nav>
+  <a aria-label="GitHub" href="https://github.com/blakenoll/hackable-desktop-clock"
      class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-1.5 text-sm font-semibold text-ink transition hover:border-[#3a414a] hover:text-white">
     <svg viewBox="0 0 16 16" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-    GitHub
+    <span class="hidden sm:inline">GitHub</span>
   </a>
+
+  </div>
 </header>
 
 <main class="mx-auto max-w-6xl px-5 pb-16 pt-10 md:pt-16">
@@ -255,7 +265,7 @@
     </div>
   </section>
 
-  <section class="mt-28">
+  <section id="faces" class="mt-28 scroll-mt-20">
     <div class="flex flex-wrap items-end justify-between gap-6">
       <div>
         <p class="eyebrow text-accent">Ten faces</p>
@@ -331,7 +341,7 @@
     </div>
   </section>
 
-  <section id="parts" class="mt-28 scroll-mt-8">
+  <section id="parts" class="mt-28 scroll-mt-20">
     <p class="eyebrow text-accent">What you need</p>
     <h2 class="mt-3 text-3xl font-extrabold tracking-[-.025em] text-white md:text-4xl">Two parts and seven wires.</h2>
     <div class="mt-10 grid gap-5 md:grid-cols-[1.4fr_1fr]">
@@ -371,7 +381,7 @@
     </div>
   </section>
 
-  <section id="install" class="mt-28 scroll-mt-8">
+  <section id="install" class="mt-28 scroll-mt-20">
     <p class="eyebrow text-accent">Install guide</p>
     <h2 class="mt-3 text-3xl font-extrabold tracking-[-.025em] text-white md:text-4xl">Three steps to a running clock.</h2>
     <div class="mt-10 grid items-start gap-5 md:grid-cols-3">
@@ -416,7 +426,7 @@
     </div>
   </section>
 
-  <section id="home-assistant" class="mt-28 scroll-mt-8">
+  <section id="home-assistant" class="mt-28 scroll-mt-20">
     <p class="eyebrow text-accent">Smart home</p>
     <h2 class="mt-3 text-3xl font-extrabold tracking-[-.025em] text-white md:text-4xl">Works with Home Assistant.</h2>
     <div class="mt-10 grid gap-5 md:grid-cols-[1fr_1.4fr]">
@@ -452,6 +462,36 @@
           <p class="mt-1 text-sm leading-relaxed text-ink">Home Assistant must be on the same network (in Docker, <span class="kbd">network_mode: host</span>). Or add the clock by its IP address.</p></div>
         </div></li>
       </ol>
+    </div>
+
+    <div id="notifications" class="mt-5 scroll-mt-20 card">
+      <p class="eyebrow text-accent">Notifications</p>
+      <h3 class="mt-3 text-2xl font-extrabold tracking-[-.02em] text-white md:text-3xl">Let the house tap you on the shoulder.</h3>
+      <p class="mt-4 max-w-3xl leading-relaxed text-ink">Any automation can put a message on the clock. A card with an icon, a title and a short line of text appears over whatever face is showing, and a ring around its edge counts down the time left. It suits a finished wash, a door left open or a smoke alarm. Press BOOT to dismiss it, or let Home Assistant clear it once the problem is gone.</p>
+      <img src="faces/notify.png" width="1142" height="302" loading="lazy" class="mt-8 w-full max-w-3xl" alt="Four notification cards on the round display: an info card reading Laundry done, an amber warning reading Garage open, a red alarm reading Smoke alarm, and the info card in night colours">
+      <ul class="mt-3 grid max-w-3xl grid-cols-4 text-center text-xs font-semibold text-dim"><li>info</li><li>warn</li><li>alarm</li><li>at night</li></ul>
+      <div class="mt-8 grid gap-5 md:grid-cols-2">
+        <div><p class="font-extrabold text-white">A plain message</p>
+          <p class="mt-1 text-sm leading-relaxed text-ink">The standard <span class="kbd">notify.send_message</span> action shows an info card for 30 seconds.</p>
+          <pre class="mt-3 overflow-x-auto rounded-xl border border-line bg-black px-4 py-3 font-mono text-xs leading-relaxed text-slate-200"><code>action: notify.send_message
+target:
+  entity_id: notify.desk_clock_notification
+data:
+  title: Laundry done
+  message: The washing machine has finished.</code></pre></div>
+        <div><p class="font-extrabold text-white">Warnings and alarms</p>
+          <p class="mt-1 text-sm leading-relaxed text-ink"><span class="kbd">deskclock.show_notification</span> adds a level, a duration and an id. Send <span class="kbd">deskclock.dismiss_notification</span> with the same id to take the card down.</p>
+          <pre class="mt-3 overflow-x-auto rounded-xl border border-line bg-black px-4 py-3 font-mono text-xs leading-relaxed text-slate-200"><code>action: deskclock.show_notification
+target:
+  entity_id: notify.desk_clock_notification
+data:
+  title: Garage open
+  message: Open for 10 minutes.
+  level: warn      # info, warn or alarm
+  duration: 0      # 0 = stay until dismissed
+  id: garage</code></pre></div>
+      </div>
+      <p class="mt-6 text-sm text-dim">Titles take up to 30 characters and text up to 80, in plain ASCII. Reflash the clock if the Notification entity is missing. <a class="font-semibold text-white underline decoration-accent/60 underline-offset-4 hover:decoration-accent" href="https://github.com/blakenoll/hackable-desktop-clock/blob/main/docs/HOME_ASSISTANT.md#notifications">Full examples</a></p>
     </div>
   </section>
 
@@ -774,6 +814,19 @@
   addEventListener('load', () => Object.entries(PALETTES).forEach(([m, p]) =>
     p.options.forEach((_, i) => { new Image().src = `faces/themes/${m}-${i}.png`; })));
 
+
+// Nav: highlight the link for the section being read.
+(() => {
+  const links = [...document.querySelectorAll('.nav-link')];
+  const secs = links.map(a => document.querySelector(a.getAttribute('href')));
+  const spy = () => {
+    let cur = -1;
+    secs.forEach((el, i) => { if (el && el.getBoundingClientRect().top < innerHeight * 0.4) cur = i; });
+    links.forEach((a, i) => i === cur ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current'));
+  };
+  addEventListener('scroll', spy, { passive: true });
+  spy();
+})();
 </script>
 </body>
 </html>

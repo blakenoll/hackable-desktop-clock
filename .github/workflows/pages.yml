@@ -37,6 +37,7 @@ jobs:
           cp docs/faces/themes/day-0.png site/faces/day.png
           cp docs/faces/themes/night-0.png site/faces/night.png
           cp -r docs/faces/themes site/faces/themes
+          cp docs/faces/notify.png site/faces/notify.png
           ls -l site
       - uses: actions/upload-pages-artifact@v3
         with:
