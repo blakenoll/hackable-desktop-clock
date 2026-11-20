@@ -19,7 +19,7 @@ Each face is one file, `src/ui/faces/face_<name>.cpp`, that defines a `FaceDef` 
 | `onText(label)` | A label's text was just set |
 | `onStale(opa, ms)` | Dim face-private weather objects |
 | `detailPrefix()` | Text shown before the detail line ("NW 12 MPH") |
-| `detailOwn`, `msgInDetail`, `fullDate`, `ringAtNight` | Flags: the prefix is the whole detail line; weather messages without an icon go on the detail line; long day and month names; ring stays (dimmed) at night |
+| `detailOwn`, `msgInDetail`, `fullDate`, `ringAtNight`, `ampmInline` | Flags: the prefix is the whole detail line; weather messages without an icon go on the detail line; long day and month names; ring stays (dimmed) at night; AM/PM on the same baseline as the time |
 
 ### Rules
 
@@ -58,7 +58,7 @@ Each face is one file, `src/ui/faces/face_<name>.cpp`, that defines a `FaceDef` 
 
 **Polished (default):** date at y −62, time in the 56 pt font, weather row at +62 (icon + temperature + a vertical range bar: a gradient `rangeTrack` with `rangeDot` at the current temperature between today's low and high, numbers at the ends), and the detail line at +90. AM/PM is a separate label aligned to the right of the minutes (`placeAmpm()`), so it doesn't push the digits off-centre. The dot glides (`rangeFrac` animation) when the temperature changes. **Why a vertical bar:** a horizontal bar plus an arc at the bottom of the ring was tried and was too crowded on a round face.
 
-**Forecast:** weather in the centre, small time on top, and a compass ring (`K_CUSTOM`) with a needle from the wind-from bearing (`ui_set_wind()`; hidden when calm). The detail line carries the wind readout ("NW 12 MPH · FEELS 65°", `detailPrefix`, `detailOwn`). Below that are hourly rain bars, or temperature bars with values when no hour reaches 30 %. There's no seconds ring, so its colon pulses each second (solid at night).
+**Forecast:** a smaller time and a short date ("TUE · 11-10") on top, the wind line under it, weather in the centre, hourly rain or temperature bars below, and a compass ring (`K_CUSTOM`) with a needle from the wind-from bearing (`ui_set_wind()`; hidden when calm). The detail line carries the wind readout ("NW 12 MPH · FEELS 65°", `detailPrefix`, `detailOwn`). The bars sit raised, clear of the wind arrow, and show rain chance, or temperature with values when no hour reaches 30 %. There's no seconds ring, so its colon pulses each second (solid at night).
 
 **Daylight:** a 24-hour dial with the sunrise-to-sunset arc and a sun dot at "now" (from `ui_set_weather_extra()` sunrise / sunset).
 

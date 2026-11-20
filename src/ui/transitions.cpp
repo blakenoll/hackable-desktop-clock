@@ -16,7 +16,14 @@ void transitionsReset() { memset(swaps, 0, sizeof(swaps)); }
 void placeAmpm() {
   if (!floatAmpm || !timeM) return;
   lv_obj_update_layout(lv_obj_get_parent(timeM));  // digits changed width: re-place AM/PM beside them
-  if (ampmLabel) lv_obj_align_to(ampmLabel, timeM, LV_ALIGN_OUT_RIGHT_BOTTOM, 5, 3);
+  if (ampmLabel) {
+    int dy = 3;  // hangs a little below the digits
+    if (face().ampmInline) {  // share the digits' baseline: bottoms differ by the fonts' descent
+      const lv_font_t *df = lv_obj_get_style_text_font(timeM, LV_PART_MAIN), *af = lv_obj_get_style_text_font(ampmLabel, LV_PART_MAIN);
+      dy = af->base_line - df->base_line;
+    }
+    lv_obj_align_to(ampmLabel, timeM, LV_ALIGN_OUT_RIGHT_BOTTOM, 5, dy);
+  }
   if (secLabel) lv_obj_align_to(secLabel, timeM, LV_ALIGN_OUT_RIGHT_TOP, 5, 0);
 }
 
