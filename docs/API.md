@@ -59,7 +59,7 @@ Send `Content-Type: application/json`. A form-encoded body is not read as JSON.
 |---|---|
 | `title` | Up to 30 characters, one line. |
 | `text` | Up to 80 characters, wraps over about four lines. Send a `title`, a `text` or both. |
-| `level` | `"info"` (default): the clock's theme colour. `"warn"`: amber. `"alarm"`: bright red, pulses, and ignores night mode. Info and warn follow the night colour at night. |
+| `level` | `"info"` (default): green, whatever the theme. `"warn"`: amber. `"alarm"`: bright red, pulses, and ignores night mode. Info and warn follow the night colour at night. |
 | `duration` | Seconds on screen, 0 to 3600 (default 30, `NOTIFY_DEFAULT_SECONDS` in `src/tuning.h`). **0 keeps the card until it is dismissed.** The ring unwinds as the time runs out. |
 | `id` | Up to 24 characters. A name for the card, so `DELETE /api/notify?id=<id>` removes just that one. |
 

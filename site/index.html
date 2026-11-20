@@ -52,6 +52,7 @@
   }
   .eyebrow { @apply text-xs font-bold uppercase tracking-[.22em]; }
   .kbd { @apply rounded-md border border-line bg-white/[.04] px-1.5 py-0.5 font-mono text-[.85em] text-slate-200; }
+  .y-k { color: #ff6a61; } .y-s { color: #e8c38a; } .y-n { color: #7fd1ae; } .y-c { color: #7d8691; font-style: italic; }
   .card { @apply rounded-3xl border border-line bg-panel p-7; }
 
   :root { font-family: Manrope, system-ui, sans-serif; color-scheme: dark; }
@@ -471,25 +472,25 @@
       <img src="faces/notify.png" width="1142" height="302" loading="lazy" class="mt-8 w-full max-w-3xl" alt="Four notification cards on the round display: an info card reading Laundry done, an amber warning reading Garage open, a red alarm reading Smoke alarm, and the info card in night colours">
       <ul class="mt-3 grid max-w-3xl grid-cols-4 text-center text-xs font-semibold text-dim"><li>info</li><li>warn</li><li>alarm</li><li>at night</li></ul>
       <div class="mt-8 grid gap-5 md:grid-cols-2">
-        <div><p class="font-extrabold text-white">A plain message</p>
+        <div class="min-w-0"><p class="font-extrabold text-white">A plain message</p>
           <p class="mt-1 text-sm leading-relaxed text-ink">The standard <span class="kbd">notify.send_message</span> action shows an info card for 30 seconds.</p>
-          <pre class="mt-3 overflow-x-auto rounded-xl border border-line bg-black px-4 py-3 font-mono text-xs leading-relaxed text-slate-200"><code>action: notify.send_message
-target:
-  entity_id: notify.desk_clock_notification
-data:
-  title: Laundry done
-  message: The washing machine has finished.</code></pre></div>
-        <div><p class="font-extrabold text-white">Warnings and alarms</p>
+          <pre class="mt-3 max-w-full overflow-x-auto rounded-xl border border-line bg-black px-4 py-3 font-mono text-xs leading-relaxed text-slate-200"><code><span class="y-k">action</span>: <span class="y-s">notify.send_message</span>
+<span class="y-k">target</span>:
+  <span class="y-k">entity_id</span>: <span class="y-s">notify.desk_clock_notification</span>
+<span class="y-k">data</span>:
+  <span class="y-k">title</span>: <span class="y-s">Laundry done</span>
+  <span class="y-k">message</span>: <span class="y-s">The washing machine has finished.</span></code></pre></div>
+        <div class="min-w-0"><p class="font-extrabold text-white">Warnings and alarms</p>
           <p class="mt-1 text-sm leading-relaxed text-ink"><span class="kbd">deskclock.show_notification</span> adds a level, a duration and an id. Send <span class="kbd">deskclock.dismiss_notification</span> with the same id to take the card down.</p>
-          <pre class="mt-3 overflow-x-auto rounded-xl border border-line bg-black px-4 py-3 font-mono text-xs leading-relaxed text-slate-200"><code>action: deskclock.show_notification
-target:
-  entity_id: notify.desk_clock_notification
-data:
-  title: Garage open
-  message: Open for 10 minutes.
-  level: warn      # info, warn or alarm
-  duration: 0      # 0 = stay until dismissed
-  id: garage</code></pre></div>
+          <pre class="mt-3 max-w-full overflow-x-auto rounded-xl border border-line bg-black px-4 py-3 font-mono text-xs leading-relaxed text-slate-200"><code><span class="y-k">action</span>: <span class="y-s">deskclock.show_notification</span>
+<span class="y-k">target</span>:
+  <span class="y-k">entity_id</span>: <span class="y-s">notify.desk_clock_notification</span>
+<span class="y-k">data</span>:
+  <span class="y-k">title</span>: <span class="y-s">Garage open</span>
+  <span class="y-k">message</span>: <span class="y-s">Open for 10 minutes.</span>
+  <span class="y-k">level</span>: <span class="y-s">warn</span>      <span class="y-c"># info, warn or alarm</span>
+  <span class="y-k">duration</span>: <span class="y-n">0</span>      <span class="y-c"># 0 = stay until dismissed</span>
+  <span class="y-k">id</span>: <span class="y-s">garage</span></code></pre></div>
       </div>
       <p class="mt-6 text-sm text-dim">Titles take up to 30 characters and text up to 80, in plain ASCII. Reflash the clock if the Notification entity is missing. <a class="font-semibold text-white underline decoration-accent/60 underline-offset-4 hover:decoration-accent" href="https://github.com/blakenoll/hackable-desktop-clock/blob/main/docs/HOME_ASSISTANT.md#notifications">Full examples</a></p>
     </div>
