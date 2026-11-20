@@ -175,6 +175,7 @@ struct FaceDef {
   bool msgInDetail = false;   // a weather message with no icon ("ZIP not found") goes on the detail line
   bool fullDate = false;      // "TUESDAY" / "NOVEMBER" instead of "TUE" / "NOV"
   bool ringAtNight = false;   // the ring stays (dimmed) at night instead of fading out
+  bool ampmInline = false;    // AM/PM sits level with the time instead of hanging a few px below it
 };
 extern const FaceDef *const FACES[];  // in `enum Face` order
 const FaceDef &face();                // the active face (faces.cpp)

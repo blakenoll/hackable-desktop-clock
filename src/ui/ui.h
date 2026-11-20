@@ -22,7 +22,7 @@ enum Face {
   FACE_STACKED,   // hours over minutes, date and weather at the sides
   FACE_ANALOG,    // hands, date window, weather
   FACE_ZEN,       // light digits, one orbiting dot
-  FACE_FORECAST,  // weather in the centre, hourly rain bars
+  FACE_FORECAST,  // weather in the centre, hourly rain bars below
   FACE_RETRO,     // seven-segment LCD
   FACE_DAYLIGHT,  // 24 h dial with the sunrise-to-sunset arc
   FACE_TIDE,      // tide chart (sea level, 6 h back to 12 h ahead) with the next high / low

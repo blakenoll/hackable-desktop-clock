@@ -2,7 +2,7 @@
 
 namespace ui {
 
-// Weather in the centre, small time on top, hourly rain (or temperature) bars below, and a compass ring
+// Weather in the centre, small time on top, the wind line, weather, then hourly rain (or temperature) bars, and a compass ring
 // with a wind line from the side the wind comes from to an arrowhead where it blows (hidden when calm).
 static lv_obj_t *compRing, *compTick[12], *compCard[4], *windNeedle, *windTail, *windDot;
 static lv_point_precise_t compPts[12][2], needlePts[5], tailPts[2];  // must outlive the line objects
@@ -11,7 +11,7 @@ static char windStr[16] = "", feelsStr[16] = "";
 static constexpr float COMP_R = 111.0f;
 static constexpr int WIND_NIGHT = 35;           // nightC() brightness: the arrow stays, dim, on the quiet night face
 static lv_obj_t *bars[RAIN_BARS], *barLbl[RAIN_BARS], *barTemp[RAIN_BARS];
-static constexpr int BAR_W = 12, BAR_PITCH = 18, BAR_MAX = 24, BAR_BASE = 191;  // BAR_BASE: y of the bars' bottom edge
+static constexpr int BAR_W = 12, BAR_PITCH = 18, BAR_MAX = 24, BAR_BASE = 176;  // BAR_BASE: y of the bars' bottom edge
 
 // ---- Compass ring: wind direction needle ----
 
@@ -196,13 +196,23 @@ static void buildBars() {
 
 static void build() {
   buildCompass();
-  mkDateRow(-83, 5, 1);
-  mkTime(-59, &manrope_34);
-  mkWeather(0, -6, false, 2, &manrope_34, &weather_icons);  // high/low stacked to the right
-  mkDetail(0, 30);
+  mkDateRow(-84, 5, 1);
+  mkTime(-62, &manrope_20);
+  mkWeather(4, -2, false, 2, &manrope_34, &weather_icons);  // high/low stacked to the right; x=4 centres the ink (glyph padding leaves the row ~4 px left)
+  mkDetail(0, -38);
   buildBars();
   lv_obj_set_width(detailBox, 200);  // room for "NW 12 MPH · FEELS 65°"
-  mkOffline(-66, -59);
+  mkOffline(-66, -62);
+}
+
+// "TUE · 11-10" (month then day, or day first per the date-format option): short, the date row is narrow here.
+static void date(const DateParts &d) {
+  char line[12], wd[16];
+  int mon = d.t.tm_mon + 1, day = d.t.tm_mday;
+  snprintf(line, sizeof(line), "%d-%d", opt.dateFmt == 1 ? day : mon, opt.dateFmt == 1 ? mon : day);
+  snprintf(wd, sizeof(wd), "%s \xC2\xB7", d.wday);
+  setText(dayLabel, wd);
+  setText(dateLabel, line);
 }
 
 static void palette(Palette &p, const Theme &) { p.day = p.sub; }
@@ -271,7 +281,7 @@ static FaceDef make() {
   f.name = "Forecast";
   f.ring = K_CUSTOM;
   f.build = build;
-  f.date = dateQuietLine;
+  f.date = date;
   f.palette = palette;
   f.paint = paint;
   f.paintRing = paintRing;
@@ -281,6 +291,7 @@ static FaceDef make() {
   f.detailPrefix = detailPrefix;
   f.detailOwn = true;
   f.ringAtNight = true;  // the wind arrow stays, dim; the rest of the compass fades to black
+  f.ampmInline = true;   // the small time: AM/PM level with the digits
   f.msgInDetail = true;  // the big temperature has no room for "ZIP not found"
   return f;
 }
