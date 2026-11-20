@@ -80,7 +80,7 @@
       "fields": {
         "message": { "name": "Message", "description": "Up to 80 characters. Only plain letters, digits and punctuation can be drawn." },
         "title": { "name": "Title", "description": "Up to 30 characters." },
-        "level": { "name": "Level", "description": "Info and warning use the clock's colours (its night colour at night). An alarm is bright red, pulses and ignores night mode." },
+        "level": { "name": "Level", "description": "Info is green and warning is amber (both use the clock's night colour at night). An alarm is bright red, pulses and ignores night mode." },
         "duration": { "name": "Duration", "description": "Seconds to show the card, or 0 to keep it until it is dismissed. Default: 30." },
         "id": { "name": "ID", "description": "A name for this card, so Dismiss notification can remove just this one." }
       }
