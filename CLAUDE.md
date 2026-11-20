@@ -46,6 +46,7 @@ Docs: [CUSTOMIZING](docs/CUSTOMIZING.md) (recipes by task), [ARCHITECTURE](docs/
 - **Round screen:** at vertical offset `y` from the centre there are about `2*sqrt(120² - y²)` px of width; the seconds ring takes the outer ~12 px. Fonts are glyph subsets (`manrope_caps_12` has no lowercase), so check the range in the file header.
 - **Network:** one HTTPS session at a time (`NetLock`, `src/data/net.h`); keep background tasks at priority 1. See [docs/DATA.md](docs/DATA.md).
 - **Don't remove `fix_tft.py` or bump the pinned platform/libraries** in `platformio.ini` without checking that the display still initializes ([docs/HARDWARE.md](docs/HARDWARE.md)).
+- **One PR per change, never reuse a merged one.** Before pushing more commits to a branch, check `gh pr view --json state`. If its PR is `MERGED` (or closed), branch from the latest `origin/main`, carry over only the commits that aren't in main yet, and open a new PR. Pushing to a merged PR's branch silently loses the work.
 - **Keep docs true:** a change that moves, renames or adds behaviour updates the doc that describes it in the same commit. Put a fact in one place and link to it rather than copying numbers around.
 
 ## Gotchas (build, flash, serial; all hit during bring-up)
