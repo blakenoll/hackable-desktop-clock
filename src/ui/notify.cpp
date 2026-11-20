@@ -13,7 +13,7 @@ static int curLevel;
 static char curId[NOTIFY_ID_MAX + 1];
 
 constexpr int RING_SIZE = 228, RING_WIDTH = 6, CONTENT_W = 172;
-constexpr uint32_t ALARM_RED = 0xFF3030, ALARM_TEXT = 0xFFE8E8, ALARM_SUB = 0xFFB0B0, WARN_AMBER = 0xFFB020;
+constexpr uint32_t ALARM_RED = 0xFF3030, ALARM_TEXT = 0xFFE8E8, ALARM_SUB = 0xFFB0B0, WARN_AMBER = 0xFFB020, INFO_GREEN = 0x34C759;
 
 // Copies the text the fonts can draw: printable ASCII and the degree sign. Other characters become '?'
 // (one per character, not per byte) and control characters become spaces.
@@ -42,7 +42,7 @@ void notifyPaint() {
   if (!panel) return;
   Palette p = makePalette();
   bool alarm = curLevel == NOTIFY_ALARM;
-  lv_color_t c = alarm ? lv_color_hex(ALARM_RED) : curLevel == NOTIFY_WARN ? mixDN(WARN_AMBER, nightC(100)) : p.accent;
+  lv_color_t c = alarm ? lv_color_hex(ALARM_RED) : curLevel == NOTIFY_WARN ? mixDN(WARN_AMBER, nightC(100)) : mixDN(INFO_GREEN, nightC(100));
   lv_obj_set_style_arc_color(ring, c, LV_PART_INDICATOR);
   lv_obj_set_style_arc_color(ring, lv_color_mix(c, lv_color_black(), 70), LV_PART_MAIN);
   lv_obj_set_style_text_color(iconLbl, c, 0);
