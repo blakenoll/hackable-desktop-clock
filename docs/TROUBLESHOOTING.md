@@ -44,7 +44,7 @@
 
 **Re-open setup later.** Hold the **BOOT button for 3 seconds** while the clock is running.
 
-**The settings API says 401, or `deskclock-xxxx.local` doesn't resolve.** The key is at the bottom of the setup page. Some networks and older Android versions don't resolve `.local` names; use the clock's IP from your router or the serial log instead. See [API.md](API.md).
+**The settings API says 401, or `deskclock-xxxx.local` doesn't resolve.** The key is at the bottom of the setup page (Home Assistant gets it by [pairing](API.md#pairing) instead). Some networks and older Android versions don't resolve `.local` names; use the clock's IP from your router or the serial log instead. See [API.md](API.md).
 
 **Wipe all saved settings.** `pio run -t erase`, then flash again.
 

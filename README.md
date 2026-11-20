@@ -77,7 +77,7 @@ Settings are stored in flash and survive reboots and reflashing. To change them 
 [![Open your Home Assistant instance and add this repository to HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=blakenoll&repository=hackable-desktop-clock&category=integration)
 
 1. Click the badge above, or add `https://github.com/blakenoll/hackable-desktop-clock` to HACS as a custom repository of type **Integration**. Install **Hackable Desk Clock**, then **restart Home Assistant**.
-2. Your clock appears under Settings → Devices & services as **Discovered**. Click **Add** and enter its API key, shown at the bottom of the clock's setup page.
+2. Your clock appears under Settings → Devices & services as **Discovered**. Click **Add**, then press BOOT on the clock when it shows a pairing card with the same code as Home Assistant. No key to copy.
 3. Change the face, colour theme, night mode, timezone and other display options from Home Assistant, or switch them from automations. A face picked with the BOOT button shows up there within 30 seconds.
 
 Discovery needs Home Assistant on the same network as the clock (in Docker, `network_mode: host`); otherwise add the clock by its IP. Details, an example automation and troubleshooting are in [docs/HOME_ASSISTANT.md](docs/HOME_ASSISTANT.md). Home Assistant uses the clock's small JSON settings API, which scripts can use too ([docs/API.md](docs/API.md)).

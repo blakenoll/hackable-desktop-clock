@@ -14,3 +14,7 @@ PRIMARY_KEYS = {"face", "accent"}
 
 # Notification cards (notify.py). Levels and the default duration are the firmware's (POST /api/notify, docs/API.md).
 NOTIFY_LEVELS = ["info", "warn", "alarm"]
+
+# Pairing by BOOT press (config_flow.py, POST /api/pair in docs/API.md).
+PAIR_POLL_INTERVAL = 2  # seconds between checks while the clock waits for the button
+PAIR_GIVE_UP = 90  # seconds; the clock's own window is PAIR_WINDOW_SECONDS (60) in src/tuning.h

@@ -120,9 +120,11 @@ static void setNight(bool n) {
 }
 
 // BOOT: short press = next face, double press = next colour theme (both saved), long press = setup.
+// While a pairing request waits (POST /api/pair), a short press approves it and a double press cancels it.
 // While a notification card is showing, a short or double press only dismisses it.
 static void handleButton() {
   ButtonEvent ev = button_event();
+  if ((ev == BTN_SHORT || ev == BTN_DOUBLE) && api_pair_button(ev == BTN_SHORT)) return;
   if ((ev == BTN_SHORT || ev == BTN_DOUBLE) && ui_notify_clear(nullptr)) return;
   switch (ev) {
     case BTN_LONG: prov_run(true);
