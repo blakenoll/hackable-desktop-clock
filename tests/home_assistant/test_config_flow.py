@@ -94,6 +94,7 @@ async def test_reauth(hass, clock):
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reauth_successful"
     assert entry.data[CONF_API_KEY] == KEY
+    await hass.async_block_till_done()  # the reload that reauth triggers must finish before teardown
 
 
 async def test_old_firmware(hass, clock, caplog):
