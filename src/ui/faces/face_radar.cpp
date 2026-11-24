@@ -105,7 +105,7 @@ static void radarPaint() {
   if (!sweepBox) return;
   const Theme &T = THEMES[opt.theme];
   for (int i = 0; i < RINGS; i++)
-    lv_obj_set_style_border_color(rings[i], mixDN(scaleHex(PHOSPHOR, i % 2 ? 25 : 42), nightC(i % 2 ? 16 : 24)), 0);
+    lv_obj_set_style_border_color(rings[i], mixDN(scaleHex(PHOSPHOR, i % 2 ? 34 : 20), nightC(i % 2 ? 20 : 13)), 0);
   bgc(crossH, mixDN(scaleHex(PHOSPHOR, 13), nightC(9)));
   bgc(crossV, mixDN(scaleHex(PHOSPHOR, 13), nightC(9)));
   bgc(home, mixDN(PHOSPHOR, nightC(60)));
