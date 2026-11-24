@@ -105,7 +105,7 @@ static void radarPaint() {
   if (!sweepBox) return;
   const Theme &T = THEMES[opt.theme];
   for (int i = 0; i < RINGS; i++)
-    lv_obj_set_style_border_color(rings[i], mixDN(scaleHex(PHOSPHOR, i % 2 ? 34 : 20), nightC(i % 2 ? 20 : 13)), 0);
+    lv_obj_set_style_border_color(rings[i], mixDN(scaleHex(PHOSPHOR, i % 2 ? 50 : 30), nightC(i % 2 ? 28 : 18)), 0);
   bgc(crossH, mixDN(scaleHex(PHOSPHOR, 13), nightC(9)));
   bgc(crossV, mixDN(scaleHex(PHOSPHOR, 13), nightC(9)));
   bgc(home, mixDN(PHOSPHOR, nightC(60)));
@@ -261,7 +261,7 @@ static void build() {
     lv_obj_set_size(rings[i], d + 1, d + 1);
     lv_obj_center(rings[i]);
     lv_obj_set_style_radius(rings[i], LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_border_width(rings[i], 1, 0);
+    lv_obj_set_style_border_width(rings[i], i == RINGS - 1 ? 2 : 1, 0);  // outer edge (query range) a touch heavier
     lv_obj_set_style_border_opa(rings[i], LV_OPA_COVER, 0);
   }
   for (lv_obj_t **o : {&crossH, &crossV}) {
