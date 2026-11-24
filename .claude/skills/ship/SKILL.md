@@ -5,7 +5,7 @@ description: Verify the current changes with parallel eval subagents and, only i
 
 # Evaluate, then open a PR
 
-Never flash the board. Never print or commit credentials, `include/secrets.h`, or the street address.
+Never flash the board. Never print or commit credentials, the local secrets header (`secrets.h`), or the street address.
 
 ## 1. Evaluate
 Run `sh docs/tools/verify.sh` first (the gate; stop on failure and fix). Then launch these subagents **in one message, in parallel**:
@@ -18,7 +18,7 @@ Any `FAIL`: fix the cause, rerun only the failing evals, and repeat. Stop after 
 
 ## 2. Branch
 - Check `gh pr view --json state` for the current branch. If its PR is `MERGED` or closed, or the branch is `main`, create a new branch from the latest `origin/main` (`git fetch origin`) and carry over only the commits not in main.
-- Stage files by name (never `git add -A`; skip `.claude/worktrees/` and `include/secrets.h`). Include re-rendered `docs/faces/` PNGs and `custom_components/deskclock/brand/` when the look changed.
+- Stage files by name (never `git add -A`; skip the untracked worktrees folder and `secrets.h`). Include re-rendered `docs/faces/` PNGs and `custom_components/deskclock/brand/` when the look changed.
 
 ## 3. PR
 Commit with a clear message, `git push -u origin <branch>`, then `gh pr create` with: what changed and why, the eval results (one line each), and for UI changes the changed `docs/faces/*.png` paths. Return the PR URL.
