@@ -24,3 +24,7 @@ run = "sh docs/tools/sim/render.sh"
 [tasks.check]
 description = "Check that the docs match the code (paths, functions, faces, web flasher palettes)"
 run = "python3 docs/tools/check.py"
+
+[tasks.verify]
+description = "Run every check CI runs, plus the face renders (docs/tools/verify.sh)"
+run = "sh docs/tools/verify.sh"

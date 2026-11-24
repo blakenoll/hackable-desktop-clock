@@ -34,6 +34,7 @@ Docs: [CUSTOMIZING](docs/CUSTOMIZING.md) (recipes by task), [ARCHITECTURE](docs/
 - `pio` lives in `~/.platformio/penv/bin` and may not be on PATH in agent shells: `export PATH="$PATH:$HOME/.platformio/penv/bin"`.
 - Host renders: `sh docs/tools/sim/render.sh` compiles `src/ui/` for this computer and writes `docs/faces/*.png` (needs gcc, python3 and one prior `pio run` for LVGL, or `LVGL_DIR=<lvgl 9.6 checkout>`). Use it to check layout before flashing, and **rerun it after any change to how a face, theme or colour looks** (even a small brightness tweak) and commit the updated `docs/faces/` PNGs (and `custom_components/deskclock/brand/`, the Home Assistant icon) with it; the web flasher, docs and Home Assistant show those images.
 - Home Assistant integration tests: `pip install -r tests/home_assistant/requirements.txt && pytest tests/home_assistant` (Python 3.14; CI runs them). Run them after changing the API or the integration.
+- Before a PR: `mise run verify` (or `sh docs/tools/verify.sh`) runs every CI check plus the face renders. The `/ship` skill runs it, then the eval subagents in `.claude/agents/` (`build-eval`, `render-eval`, `rules-eval`, `ha-eval`) in parallel, and opens the PR only if all pass. A Stop hook (`docs/tools/stop-gate.sh`) runs verify when `src/`, `docs/` or `custom_components/` changed.
 - Consistency check: `python3 docs/tools/check.py`. It confirms that paths and functions named in the docs exist and that the web flasher's palettes match `theme.cpp`. CI runs it; run it after moving or renaming anything.
 
 ## Rules
