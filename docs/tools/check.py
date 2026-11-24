@@ -28,6 +28,9 @@ DOCS = ["CLAUDE.md", "README.md"] + sorted(
     glob.glob("docs/*.md", root_dir=ROOT) + glob.glob(".claude/skills/*/SKILL.md", root_dir=ROOT)
     + glob.glob("src/**/README.md", root_dir=ROOT, recursive=True))
 
+# Untracked files that exist only on a developer's machine; docs may name them but CI can't see them.
+LOCAL_ONLY = {"include/secrets.h", ".claude/worktrees"}
+
 # ---- Paths -----------------------------------------------------------------------------------------
 PATH_RE = re.compile(r"`((?:src|docs|include|site|\.claude|\.github|custom_components|tests)/[^`\s]*|[\w.-]+\.(?:ini|py|toml|md))`")
 for doc in DOCS:
@@ -35,6 +38,8 @@ for doc in DOCS:
     for m in PATH_RE.finditer(text):
         p = m.group(1).rstrip("/").split(":")[0]
         if "<" in p or "{" in p:  # placeholders such as face_<name>.cpp
+            continue
+        if p in LOCAL_ONLY:
             continue
         base = ROOT if "/" in p or os.path.exists(os.path.join(ROOT, p)) else os.path.join(ROOT, os.path.dirname(doc))
         if not glob.glob(os.path.join(base, p)):
